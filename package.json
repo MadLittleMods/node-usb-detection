@@ -1,0 +1,39 @@
+{
+  "name": "usb-detection",
+  "version": "0.1.0",
+  "description": "List USB devices in system and detect changes on them.",
+  "main": "index.js",
+  "dependencies": {
+    "bindings": "1.1.0",
+    "eventemitter2": ">=0.4.11"
+  },
+  "optionalDependencies": {
+    "udev": ">=0.1.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "preinstall": "node-gyp rebuild"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/KABA-CCEAC/node-usb-detection.git"
+  },
+  "keywords": [
+    "usb",
+    "list",
+    "add",
+    "remove",
+    "change",
+    "plug",
+    "unplug",
+    "notification"
+  ],
+  "homepage": "https://github.com/KABA-CCEAC/node-usb-detection",
+  "bugs": {
+    "url": "https://github.com/KABA-CCEAC/node-usb-detection/issues"
+  },
+  "license": {
+    "type": "MIT",
+    "url": "https://raw.github.com/KABA-CCEAC/node-usb-detection/master/licence"
+  }
+}
