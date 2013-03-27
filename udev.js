@@ -20,33 +20,37 @@ var detector = new EventEmitter2({
 
 detector.find = function(vid, pid, callback) {
 	var found = _.find(devices, function(d) {
-		return d.ID_VENDOR_ID == vid && d.ID_MODEL_ID;
+		return parseInt(d.ID_VENDOR_ID, 16) == vid && parseInt(d.ID_MODEL_ID, 16);
 	});
 
 	callback(null, found);
 };
 
 monitor.on('add', function (device) {
-	if (device.ID_VENDOR_ID) {
+	if (device.ID_VENDOR_ID && device.ID_MODEL_ID) {
+		var vid = parseInt(device.ID_VENDOR_ID, 16);
+		var pid = parseInt(device.ID_MODEL_ID, 16);
 		devices.push(device);
-		detector.emit('add:' + device.ID_VENDOR_ID + ':' + device.ID_MODEL_ID, device);
-		detector.emit('add:' + device.ID_VENDOR_ID, device);
+		detector.emit('add:' + vid + ':' + pid, device);
+		detector.emit('add:' + vid, device);
 		detector.emit('add', device);
-		detector.emit('change:' + device.ID_VENDOR_ID + ':' + device.ID_MODEL_ID, device);
-		detector.emit('change:' + device.ID_VENDOR_ID, device);
+		detector.emit('change:' + vid + ':' + pid, device);
+		detector.emit('change:' + vid, device);
 		detector.emit('change', device);
 	}
 });
 monitor.on('remove', function (device) {
-	if (device.ID_VENDOR_ID) {
+	if (device.ID_VENDOR_ID && device.ID_MODEL_ID) {
+		var vid = parseInt(device.ID_VENDOR_ID, 16);
+		var pid = parseInt(device.ID_MODEL_ID, 16);
 		devices = _.reject(devices, function(dev) {
 			return dev.syspath === device.syspath;
 		});
-		detector.emit('remove:' + device.ID_VENDOR_ID + ':' + device.ID_MODEL_ID, device);
-		detector.emit('remove:' + device.ID_VENDOR_ID, device);
+		detector.emit('remove:' + vid + ':' + pid, device);
+		detector.emit('remove:' + vid, device);
 		detector.emit('remove', device);
-		detector.emit('change:' + device.ID_VENDOR_ID + ':' + device.ID_MODEL_ID, device);
-		detector.emit('change:' + device.ID_VENDOR_ID, device);
+		detector.emit('change:' + vid + ':' + pid, device);
+		detector.emit('change:' + vid, device);
 		detector.emit('change', device);
 	}
 });
