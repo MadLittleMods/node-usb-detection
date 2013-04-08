@@ -88,7 +88,8 @@ void extractVidPid(char * buf, ListResultItem * item)
     char* string;
     char* temp;
     char* pidStr, *vidStr;
-    int vid, pid;
+    int vid = 0;
+    int pid = 0;
 
     string = new char[strlen(buf) + 1];
     memcpy(string, buf, strlen(buf) + 1);
@@ -246,20 +247,24 @@ DWORD WINAPI ListenerThread( LPVOID lpParam )
 
 void EIO_Find(uv_work_t* req)
 {
+
     ListBaton* data = static_cast<ListBaton*>(req->data);
 
     DeviceListItem_t* current = deviceItemList;
-
     while(current != NULL)
     {
-        ListResultItem * item = current->device->item;
-
-        if (((data->vid != 0 && data->pid != 0) && (data->vid == item->vendorId && data->pid == item->productId))
-            || ((data->vid != 0 && data->pid == 0) && data->vid == item->vendorId)
-            || (data->vid == 0 && data->pid == 0))
+        if(current->device != NULL)
         {
-            data->results.push_back(item);
+            ListResultItem * item = current->device->item;
+
+            if (((data->vid != 0 && data->pid != 0) && (data->vid == item->vendorId && data->pid == item->productId))
+                || ((data->vid != 0 && data->pid == 0) && data->vid == item->vendorId)
+                || (data->vid == 0 && data->pid == 0))
+            {
+                data->results.push_back(item);
+            }
         }
+        current = current->next;
     }
 }
 
@@ -294,7 +299,7 @@ void BuildInitialDeviceList()
         DWORD DataT;
         SetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_HARDWAREID, &DataT, (PBYTE)buf, MAX_PATH, &nSize);
 
-        AddRemoveDevice(currentDevice, DeviceState_Connect, buf);
+        AddRemoveDevice(device, DeviceState_Connect, buf);
         ExtractDeviceInfo(hDevInfo, pspDevInfoData, buf, MAX_PATH, device->item);
     }
 
