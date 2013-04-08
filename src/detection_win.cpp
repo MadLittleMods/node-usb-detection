@@ -16,14 +16,16 @@
 
 using namespace std;
 
-
+/**********************************
+ * Local defines
+ **********************************/
 #define VID_TAG "VID_"
 #define PID_TAG "PID_"
 
-// Linked libraries
-#pragma comment (lib , "setupapi.lib" )
 
-
+/**********************************
+ * Local typedefs
+ **********************************/
 typedef enum  _DeviceState_t
 {
     DeviceState_Connect,
@@ -50,8 +52,10 @@ typedef struct _DeviceListItem_t
 } DeviceListItem_t;
 
 
+/**********************************
+ * Local Variables
+ **********************************/
 GUID GUID_DEVINTERFACE_USB_DEVICE = { 0xA5DCBF10L, 0x6530, 0x11D2, 0x90, 0x1F, 0x00, 0xC0, 0x4F, 0xB9, 0x51, 0xED};
-//GUID GUID_DEVINTERFACE_USB_DEVICE = { 0x25dbce51, 0x6c8f, 0x4a72, 0x8a,0x6d,0xb5,0x4c,0x2b,0x4f,0xc8,0x35 };
 
 HWND handle;
 DWORD threadId;
@@ -64,6 +68,9 @@ DeviceListItem_t* deviceItemList = NULL;
 DeviceListItem_t* currentListItem = NULL;
 
 
+/**********************************
+ * Local Helper Functions protoypes
+ **********************************/
 void UpdateDevice(PDEV_BROADCAST_DEVICEINTERFACE pDevInf, WPARAM wParam, DeviceState_t state);
 DWORD WINAPI ListenerThread( LPVOID lpParam );
 
@@ -77,9 +84,83 @@ DeviceData_t* GetDeviceForIdentifier(TCHAR* identifier);
 void ExtractDeviceInfo(HDEVINFO hDevInfo, SP_DEVINFO_DATA* pspDevInfoData, TCHAR* buf, DWORD buffSize, ListResultItem* resultItem);
 
 
-void extractVidPid(char * buf, ListResultItem * item)
+
+/**********************************
+ * Public Functions
+ **********************************/
+void NotifyAsync(uv_work_t* req)
+{
+    WaitForSingleObject(deviceChangedEvent, INFINITE);
+}
+
+
+void NotifyFinished(uv_work_t* req)
 {
 
+    if(currentDevice->state == DeviceState_Connect)
+    {
+        NotifyAdded(currentDevice->item);
+    }
+    else
+    {
+        NotifyRemoved(currentDevice->item);
+        delete currentDevice->item;
+        delete currentDevice;
+    }
+
+    uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
+}
+
+
+void InitDetection()
+{
+
+    threadHandle = CreateThread( 
+        NULL,                   // default security attributes
+        0,                      // use default stack size  
+        ListenerThread,         // thread function name
+        NULL,                   // argument to thread function 
+        0,                      // use default creation flags 
+        &threadId);   
+
+    deviceChangedEvent = CreateEvent(NULL, false /* auto-reset event */, false /* non-signalled state */, "");
+
+    BuildInitialDeviceList();
+
+    uv_work_t* req = new uv_work_t();
+    uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
+}
+
+
+void EIO_Find(uv_work_t* req)
+{
+
+    ListBaton* data = static_cast<ListBaton*>(req->data);
+
+    DeviceListItem_t* current = deviceItemList;
+    while(current != NULL)
+    {
+        if(current->device != NULL)
+        {
+            ListResultItem * item = current->device->item;
+
+            if (((data->vid != 0 && data->pid != 0) && (data->vid == item->vendorId && data->pid == item->productId))
+                || ((data->vid != 0 && data->pid == 0) && data->vid == item->vendorId)
+                || (data->vid == 0 && data->pid == 0))
+            {
+                data->results.push_back(item);
+            }
+        }
+        current = current->next;
+    }
+}
+
+
+/**********************************
+ * Local Functions
+ **********************************/
+void extractVidPid(char * buf, ListResultItem * item)
+{
     if(buf == NULL)
     {
         return;
@@ -143,50 +224,6 @@ LRESULT CALLBACK DetectCallback(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
     }
 
     return 1;
-}//WinProc
-
-
-void NotifyAsync(uv_work_t* req)
-{
-    WaitForSingleObject(deviceChangedEvent, INFINITE);
-}
-
-
-void NotifyFinished(uv_work_t* req)
-{
-
-    if(currentDevice->state == DeviceState_Connect)
-    {
-        NotifyAdded(currentDevice->item);
-    }
-    else
-    {
-        NotifyRemoved(currentDevice->item);
-        delete currentDevice->item;
-        delete currentDevice;
-    }
-
-    uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
-}
-
-
-void InitDetection()
-{
-
-    threadHandle = CreateThread( 
-        NULL,                   // default security attributes
-        0,                      // use default stack size  
-        ListenerThread,         // thread function name
-        NULL,                   // argument to thread function 
-        0,                      // use default creation flags 
-        &threadId);   
-
-    deviceChangedEvent = CreateEvent(NULL, false /* auto-reset event */, false /* non-signalled state */, "");
-
-    BuildInitialDeviceList();
-
-    uv_work_t* req = new uv_work_t();
-    uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
 }
 
 
@@ -243,30 +280,6 @@ DWORD WINAPI ListenerThread( LPVOID lpParam )
 
     return 0;
 } 
-
-
-void EIO_Find(uv_work_t* req)
-{
-
-    ListBaton* data = static_cast<ListBaton*>(req->data);
-
-    DeviceListItem_t* current = deviceItemList;
-    while(current != NULL)
-    {
-        if(current->device != NULL)
-        {
-            ListResultItem * item = current->device->item;
-
-            if (((data->vid != 0 && data->pid != 0) && (data->vid == item->vendorId && data->pid == item->productId))
-                || ((data->vid != 0 && data->pid == 0) && data->vid == item->vendorId)
-                || (data->vid == 0 && data->pid == 0))
-            {
-                data->results.push_back(item);
-            }
-        }
-        current = current->next;
-    }
-}
 
 
 void BuildInitialDeviceList()
@@ -417,7 +430,6 @@ DeviceData_t* GetDeviceForIdentifier(TCHAR* identifier)
         current = current->next;
     }
 }
-
 
  
 void UpdateDevice(PDEV_BROADCAST_DEVICEINTERFACE pDevInf, WPARAM wParam, DeviceState_t state)
