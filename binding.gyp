@@ -24,13 +24,13 @@
                   {
                     'libraries': 
                     [
-                      '-l/Windows/System32/Setupapi.lib'
+                      '-lC:/Windows/System32/Setupapi.lib'
                     ]
                   }
                 ],
                 ["target_arch=='x64'", {
                   'libraries': [
-                    '-l/Program Files (x86)/Microsoft SDKs/Windows/v7.0A/Lib/x64/Setupapi.lib',
+                    '-lC:/Program Files (x86)/Microsoft SDKs/Windows/v7.0A/Lib/x64/Setupapi.lib',
                   ]
                   }
                 ]
