@@ -1,6 +1,6 @@
 
-#ifndef _serialport_h_
-#define _serialport_h_
+#ifndef _USB_DETECTION_H
+#define _USB_DETECTION_H
 
 #include <node.h>
 #include <v8.h>
