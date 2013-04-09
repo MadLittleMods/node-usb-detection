@@ -74,6 +74,7 @@ void NotifyFinished(uv_work_t* req)
     } else 
     {
         NotifyRemoved(currentItem);
+        delete currentItem;
     }
 
     pthread_mutex_unlock(&notify_mutex);
@@ -148,6 +149,8 @@ void EIO_Find(uv_work_t* req)
     }
     item->vendorId = strtol (udev_device_get_sysattr_value(dev,"idVendor"), NULL, 16);
     item->productId = strtol (udev_device_get_sysattr_value(dev,"idProduct"), NULL, 16);
+    item->deviceAddress = 0;
+    item->locationId = 0;
 
     return item;
 }
@@ -220,6 +223,8 @@ void* ThreadFunc(void* ptr)
             udev_device_unref(dev);
         }
     }
+
+    return NULL;
 }
 
 
@@ -273,6 +278,9 @@ void BuildInitialDeviceList()
         {
             item->deviceParams.serialNumber = udev_device_get_sysattr_value(dev, "serial");
         }
+        item->deviceParams.deviceAddress = 0;
+        item->deviceParams.locationId = 0;
+
         item->deviceState = DeviceState_Connect;
 
         AddItemToList((char *)udev_device_get_devnode(dev), item);
