@@ -178,7 +178,7 @@ void DeviceRemoved(struct udev_device* dev)
         {
             item = CopyElement(&deviceItem->deviceParams);
         }
-
+        RemoveItemFromList(deviceItem);
         delete deviceItem;
     }
 

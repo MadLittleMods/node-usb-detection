@@ -5,6 +5,7 @@
       "sources": [
         "src/detection.cpp",
         "src/detection.h",
+        "src/deviceList.cpp"
       ],
       'conditions': [
         ['OS=="win"',
@@ -48,8 +49,7 @@
         ['OS=="linux"',
           {
             'sources': [
-              "src/detection_linux.cpp",
-              "src/deviceList.cpp"
+              "src/detection_linux.cpp"
             ],
             'link_settings': {
               'libraries': [
