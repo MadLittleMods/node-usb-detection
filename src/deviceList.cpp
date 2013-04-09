@@ -8,7 +8,6 @@
 using namespace std;
 
 map<string, DeviceItem_t*> deviceMap;
-map<string, DeviceItem_t*>::iterator it;
 
 void AddItemToList(char* key, DeviceItem_t * item)
 {
@@ -23,6 +22,8 @@ void RemoveItemFromList(DeviceItem_t* item)
 
 DeviceItem_t* GetItemFromList(char* key)
 {
+	map<string, DeviceItem_t*>::iterator it;
+
 	it = deviceMap.find(key);
 	if(it == deviceMap.end())
 	{
@@ -36,6 +37,8 @@ DeviceItem_t* GetItemFromList(char* key)
 
 bool IsItemAlreadyStored(char* key)
 {
+	map<string, DeviceItem_t*>::iterator it;
+
 	it = deviceMap.find(key);
 	if(it == deviceMap.end())
 	{
@@ -63,13 +66,15 @@ ListResultItem_t* CopyElement(ListResultItem_t* item)
 
 void CreateFilteredList(list<ListResultItem_t*> *filteredList, int vid, int pid)
 {
+	map<string, DeviceItem_t*>::iterator it;
+
 	for (it = deviceMap.begin(); it != deviceMap.end(); ++it)
     {    
     	DeviceItem_t* item = it->second; 
 
         if (((	vid != 0 && pid != 0) && (vid == item->deviceParams.vendorId && pid == item->deviceParams.productId))
         	|| 	((vid != 0 && pid == 0) && vid == item->deviceParams.vendorId)
-            ||	(vid == 0 && pid == 0))
+        	||	(vid == 0 && pid == 0))
         {
         	(*filteredList).push_back(CopyElement(&item->deviceParams));
         }
