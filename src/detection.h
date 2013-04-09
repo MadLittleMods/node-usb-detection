@@ -10,34 +10,36 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "deviceList.h"
+
 v8::Handle<v8::Value> Find(const v8::Arguments& args);
 void EIO_Find(uv_work_t* req);
 void EIO_AfterFind(uv_work_t* req);
 void InitDetection();
 
-struct ListResultItem {
-public:
-  int locationId;
-  int vendorId;
-  int productId;
-  std::string deviceName;
-  std::string manufacturer;
-  std::string serialNumber;
-  int deviceAddress;
-};
+// struct ListResultItem {
+// public:
+//   int locationId;
+//   int vendorId;
+//   int productId;
+//   std::string deviceName;
+//   std::string manufacturer;
+//   std::string serialNumber;
+//   int deviceAddress;
+// };
 
 struct ListBaton {
 public:
   v8::Persistent<v8::Value> callback;
-  std::list<ListResultItem*> results;
+  std::list<ListResultItem_t*> results;
   char errorString[1024];
   int vid;
   int pid;
 };
 
 v8::Handle<v8::Value> RegisterAdded(const v8::Arguments& args);
-void NotifyAdded(ListResultItem* it);
+void NotifyAdded(ListResultItem_t* it);
 v8::Handle<v8::Value> RegisterRemoved(const v8::Arguments& args);
-void NotifyRemoved(ListResultItem* it);
+void NotifyRemoved(ListResultItem_t* it);
 
 #endif

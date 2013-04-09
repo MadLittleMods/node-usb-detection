@@ -7,9 +7,6 @@
     "bindings": "1.1.0",
     "eventemitter2": ">=0.4.11"
   },
-  "optionalDependencies": {
-    "udev": ">=0.1.0"
-  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "preinstall": "node-gyp rebuild"

@@ -33,7 +33,7 @@ v8::Handle<v8::Value> RegisterAdded(const v8::Arguments& args) {
   return scope.Close(v8::Undefined());
 }
 
-void NotifyAdded(ListResultItem* it) {
+void NotifyAdded(ListResultItem_t* it) {
   if (isAddedRegistered) {
     v8::Handle<v8::Value> argv[1];
     v8::Local<v8::Object> item = v8::Object::New();
@@ -76,7 +76,7 @@ v8::Handle<v8::Value> RegisterRemoved(const v8::Arguments& args) {
   return scope.Close(v8::Undefined());
 }
 
-void NotifyRemoved(ListResultItem* it) {
+void NotifyRemoved(ListResultItem_t* it) {
   if (isRemovedRegistered) {
     v8::Handle<v8::Value> argv[1];
     v8::Local<v8::Object> item = v8::Object::New();
@@ -171,7 +171,7 @@ void EIO_AfterFind(uv_work_t* req) {
   } else {
     v8::Local<v8::Array> results = v8::Array::New();
     int i = 0;
-    for(std::list<ListResultItem*>::iterator it = data->results.begin(); it != data->results.end(); it++, i++) {
+    for(std::list<ListResultItem_t*>::iterator it = data->results.begin(); it != data->results.end(); it++, i++) {
       v8::Local<v8::Object> item = v8::Object::New();
       item->Set(v8::String::New("locationId"), v8::Number::New((*it)->locationId));
       item->Set(v8::String::New("vendorId"), v8::Number::New((*it)->vendorId));
@@ -188,7 +188,7 @@ void EIO_AfterFind(uv_work_t* req) {
   v8::Function::Cast(*data->callback)->Call(v8::Context::GetCurrent()->Global(), 2, argv);
 
   data->callback.Dispose();
-  for(std::list<ListResultItem*>::iterator it = data->results.begin(); it != data->results.end(); it++) {
+  for(std::list<ListResultItem_t*>::iterator it = data->results.begin(); it != data->results.end(); it++) {
     delete *it;
   }
   delete data;

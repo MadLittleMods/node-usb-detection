@@ -3,5 +3,5 @@ if (process.platform === 'win32') {
 } else if (process.platform === 'darwin') {
 	module.exports = require('./native');
 } else {
-	module.exports = require('./udev');
+	module.exports = require('./native');
 }

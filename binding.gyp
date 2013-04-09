@@ -44,6 +44,19 @@
               "src/detection_mac.cpp"
             ]
           }
+        ],
+        ['OS=="linux"',
+          {
+            'sources': [
+              "src/detection_linux.cpp",
+              "src/deviceList.cpp"
+            ],
+            'link_settings': {
+              'libraries': [
+                '-ludev'
+              ]
+            }
+          }
         ]
       ]
     }
