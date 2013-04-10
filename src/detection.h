@@ -17,17 +17,6 @@ void EIO_Find(uv_work_t* req);
 void EIO_AfterFind(uv_work_t* req);
 void InitDetection();
 
-// struct ListResultItem {
-// public:
-//   int locationId;
-//   int vendorId;
-//   int productId;
-//   std::string deviceName;
-//   std::string manufacturer;
-//   std::string serialNumber;
-//   int deviceAddress;
-// };
-
 struct ListBaton {
 public:
   v8::Persistent<v8::Value> callback;

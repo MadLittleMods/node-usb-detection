@@ -1,4 +1,5 @@
 #include "detection.h"
+#include "deviceList.h"
 
 #include <CoreFoundation/CoreFoundation.h>
 
@@ -46,7 +47,7 @@ static pthread_t lookupThread;
 
 pthread_mutex_t notify_mutex;
 pthread_cond_t notify_cv;
-ListResultItem* notify_item;
+ListResultItem_t* notify_item;
 bool isAdded = false;
 
 //================================================================================================
@@ -89,7 +90,7 @@ void DeviceRemoved(void *refCon, io_service_t service, natural_t messageType, vo
 
         pthread_mutex_lock(&notify_mutex);
 
-        notify_item = new ListResultItem();
+        notify_item = new ListResultItem_t();
         if (usbDev->deviceName != NULL) {
           notify_item->deviceName = usbDev->deviceName;
         }
@@ -314,7 +315,7 @@ void DeviceAdded(void *refCon, io_iterator_t iterator)
 
         pthread_mutex_lock(&notify_mutex);
 
-        notify_item = new ListResultItem();
+        notify_item = new ListResultItem_t();
         if (usbDev->deviceName != NULL) {
           notify_item->deviceName = usbDev->deviceName;
         }
@@ -475,7 +476,7 @@ void EIO_Find(uv_work_t* req) {
                 ||
                 (data->vid == 0 && data->pid == 0))
             {
-                ListResultItem* resultItem = new ListResultItem();
+                ListResultItem_t* resultItem = new ListResultItem_t();
 
                 if (device.deviceName != NULL) {
                   resultItem->deviceName = device.deviceName;
