@@ -1,6 +1,6 @@
 {
   "name": "usb-detection",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "List USB devices in system and detect changes on them.",
   "main": "index.js",
   "dependencies": {
