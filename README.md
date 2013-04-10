@@ -15,6 +15,7 @@ Ensure that you have at a minimum the xCode Command Line Tools installed appropr
 ### Linux:
 
 You know what you need for you system, basically your appropriate analog of build-essential. Keep rocking!
+
 **Make sure you've installed libudev!**
 
 # Usage
