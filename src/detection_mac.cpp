@@ -13,32 +13,17 @@
 
 #include <uv.h>
 
-typedef struct UsbDevice {
-    char deviceName[MAXPATHLEN];
-    UInt32 locationId;
-    UInt16 deviceAddress;
-    UInt16 vendorId;
-    UInt16 productId;
-    char manufacturer[MAXPATHLEN];
-    char serialNumber[MAXPATHLEN];
-} stUsbDevice;
 
 typedef struct DeviceListItem {
     io_object_t       notification;
     IOUSBDeviceInterface  **deviceInterface;
-    struct UsbDevice value;
-    struct DeviceListItem *prev;
-    struct DeviceListItem *next;
-    int* length;
+    DeviceItem_t* deviceItem;
 } stDeviceListItem;
 
 static IONotificationPortRef    gNotifyPort;
 static io_iterator_t            gAddedIter;
 static CFRunLoopRef             gRunLoop;
 
-static stDeviceListItem* devices = NULL;
-static stDeviceListItem* lastDevice = NULL;
-static int length = 0;
 
 CFMutableDictionaryRef  matchingDict;
 CFRunLoopSourceRef      runLoopSource;
@@ -63,61 +48,32 @@ void DeviceRemoved(void *refCon, io_service_t service, natural_t messageType, vo
 {
     kern_return_t   kr;
     stDeviceListItem* deviceListItem = (stDeviceListItem *) refCon;
-    stUsbDevice *usbDev = &(deviceListItem->value);
+    DeviceItem_t* deviceItem = deviceListItem->deviceItem;
     
-    if (messageType == kIOMessageServiceIsTerminated) {
-        if (deviceListItem->deviceInterface) {
+    if (messageType == kIOMessageServiceIsTerminated) 
+    {
+        if (deviceListItem->deviceInterface) 
+        {
             kr = (*deviceListItem->deviceInterface)->Release(deviceListItem->deviceInterface);
         }
         
         kr = IOObjectRelease(deviceListItem->notification);
         
-        if (deviceListItem->prev && deviceListItem->next) {
-            deviceListItem->prev->next = deviceListItem->next;
-            deviceListItem->next->prev = deviceListItem->prev;
-        }
-        
-        if (deviceListItem->prev && !deviceListItem->next) {
-            deviceListItem->prev->next = NULL;
-        }
-        
-        if (!deviceListItem->prev && deviceListItem->next) {
-            deviceListItem->next->prev = NULL;
-        }
-        
-        length--;
 
-
+        ListResultItem_t* item = NULL;
+        if(deviceItem)
+        {
+            item = CopyElement(&deviceItem->deviceParams);
+            RemoveItemFromList(deviceItem);
+            delete deviceItem;
+        }
+        
+        notify_item = item;
         pthread_mutex_lock(&notify_mutex);
-
-        notify_item = new ListResultItem_t();
-        if (usbDev->deviceName != NULL) {
-          notify_item->deviceName = usbDev->deviceName;
-        }
-        if (usbDev->locationId != 0) {
-          notify_item->locationId = usbDev->locationId;
-        }
-        if (usbDev->vendorId != 0) {
-          notify_item->vendorId = usbDev->vendorId;
-        }
-        if (usbDev->productId != 0) {
-          notify_item->productId = usbDev->productId;
-        }
-        if (usbDev->manufacturer != NULL) {
-          notify_item->manufacturer = usbDev->manufacturer;
-        }
-        if (usbDev->serialNumber != NULL) {
-          notify_item->serialNumber = usbDev->serialNumber;
-        }
-        if (usbDev->deviceAddress != 0) {
-          notify_item->deviceAddress = usbDev->deviceAddress;
-        }
         isAdded = false;
         pthread_cond_signal(&notify_cv);
-
         pthread_mutex_unlock(&notify_mutex);
         
-        // free(deviceListItem);
     }
 }
 
@@ -143,24 +99,21 @@ void DeviceAdded(void *refCon, io_iterator_t iterator)
     SInt32              score;
     HRESULT             res;
     
-    while ((usbDevice = IOIteratorNext(iterator))) {
+    while ((usbDevice = IOIteratorNext(iterator))) 
+    {
         io_name_t       deviceName;
         CFStringRef     deviceNameAsCFString;   
-        stUsbDevice     *usbDev = NULL;
         UInt32          locationID;
         UInt16          vendorId;
         UInt16          productId;
         UInt16          addr;
-        
-        
-        // Add some app-specific information about this device.
-        // Create a buffer to hold the data.
-        usbDev = (stUsbDevice *) malloc(sizeof(stUsbDevice));
-        bzero(usbDev, sizeof(stUsbDevice));
+
+        DeviceItem_t* deviceItem = new DeviceItem_t();
         
         // Get the USB device's name.
         kr = IORegistryEntryGetName(usbDevice, deviceName);
-        if (KERN_SUCCESS != kr) {
+        if (KERN_SUCCESS != kr) 
+        {
             deviceName[0] = '\0';
         }
         
@@ -179,8 +132,9 @@ void DeviceAdded(void *refCon, io_iterator_t iterator)
                                         sizeof(deviceName),
                                         kCFStringEncodingUTF8);
             
-            if (result) {
-                strcpy(usbDev->deviceName, deviceName);
+            if (result) 
+            {
+                deviceItem->deviceParams.deviceName = deviceName;
             }
             
             CFRelease(deviceNameAsCFString);
@@ -203,8 +157,9 @@ void DeviceAdded(void *refCon, io_iterator_t iterator)
                                         sizeof(manufacturer),
                                         kCFStringEncodingUTF8);
             
-            if (result) {
-                strcpy(usbDev->manufacturer, manufacturer);
+            if (result) 
+            {
+                deviceItem->deviceParams.manufacturer = manufacturer;
             }
             
             CFRelease(manufacturerAsCFString);
@@ -227,8 +182,9 @@ void DeviceAdded(void *refCon, io_iterator_t iterator)
                                         sizeof(serialNumber),
                                         kCFStringEncodingUTF8);
             
-            if (result) {
-                strcpy(usbDev->serialNumber, serialNumber);
+            if (result) 
+            {
+                deviceItem->deviceParams.serialNumber = serialNumber;
             }
             
             CFRelease(serialNumberAsCFString);
@@ -241,12 +197,13 @@ void DeviceAdded(void *refCon, io_iterator_t iterator)
         kr = IOCreatePlugInInterfaceForService(usbDevice, kIOUSBDeviceUserClientTypeID, kIOCFPlugInInterfaceID,
                                                &plugInInterface, &score);
 
-        if ((kIOReturnSuccess != kr) || !plugInInterface) {
+        if ((kIOReturnSuccess != kr) || !plugInInterface) 
+        {
             fprintf(stderr, "IOCreatePlugInInterfaceForService returned 0x%08x.\n", kr);
             continue;
         }
         
-        stDeviceListItem *deviceListItem = (stDeviceListItem*) malloc(sizeof(stDeviceListItem));
+        stDeviceListItem *deviceListItem = new stDeviceListItem();
 
         // Use the plugin interface to retrieve the device interface.
         res = (*plugInInterface)->QueryInterface(plugInInterface, CFUUIDGetUUIDBytes(kIOUSBDeviceInterfaceID),
@@ -255,7 +212,8 @@ void DeviceAdded(void *refCon, io_iterator_t iterator)
         // Now done with the plugin interface.
         (*plugInInterface)->Release(plugInInterface);
                     
-        if (res || deviceListItem->deviceInterface == NULL) {
+        if (res || deviceListItem->deviceInterface == NULL) 
+        {
             fprintf(stderr, "QueryInterface returned %d.\n", (int) res);
             continue;
         }
@@ -265,78 +223,64 @@ void DeviceAdded(void *refCon, io_iterator_t iterator)
         // and will remain the same, even across reboots, so long as the bus topology doesn't change.
         
         kr = (*deviceListItem->deviceInterface)->GetLocationID(deviceListItem->deviceInterface, &locationID);
-        if (KERN_SUCCESS != kr) {
+        if (KERN_SUCCESS != kr) 
+        {
             fprintf(stderr, "GetLocationID returned 0x%08x.\n", kr);
             continue;
         }
-        usbDev->locationId = locationID;
+        deviceItem->deviceParams.locationId = locationID;
 
         
         kr = (*deviceListItem->deviceInterface)->GetDeviceAddress(deviceListItem->deviceInterface, &addr);
-        if (KERN_SUCCESS != kr) {
+        if (KERN_SUCCESS != kr) 
+        {
             fprintf(stderr, "GetDeviceAddress returned 0x%08x.\n", kr);
             continue;
         }
-        usbDev->deviceAddress = addr;
+        deviceItem->deviceParams.deviceAddress = addr;
 
-        // UInt16 realLocId = (locationID >> 16 & 0xff00) + addr;
-        // usbDev->locationID = realLocId;
-        
         
         kr = (*deviceListItem->deviceInterface)->GetDeviceVendor(deviceListItem->deviceInterface, &vendorId);
-        if (KERN_SUCCESS != kr) {
+        if (KERN_SUCCESS != kr) 
+        {
             fprintf(stderr, "GetDeviceVendor returned 0x%08x.\n", kr);
             continue;
         }
-        usbDev->vendorId = vendorId;
+        deviceItem->deviceParams.vendorId = vendorId;
         
         kr = (*deviceListItem->deviceInterface)->GetDeviceProduct(deviceListItem->deviceInterface, &productId);
-        if (KERN_SUCCESS != kr) {
+        if (KERN_SUCCESS != kr) 
+        {
             fprintf(stderr, "GetDeviceProduct returned 0x%08x.\n", kr);
             continue;
         }
-        usbDev->productId = productId;
+        deviceItem->deviceParams.productId = productId;
         
+        
+        io_string_t pathName;
+        IORegistryEntryGetPath(usbDevice, kIOServicePlane, pathName);
+        deviceNameAsCFString = CFStringCreateWithCString(kCFAllocatorDefault, pathName, kCFStringEncodingASCII);
+        char cPathName[MAXPATHLEN];
 
-        deviceListItem->value = *usbDev;
-        deviceListItem->next = NULL;
-        deviceListItem->prev = lastDevice;
-        deviceListItem->length = &length;
-        
-        if (devices == NULL) {
-            devices = deviceListItem;
+        if (deviceNameAsCFString)
+        {
+            Boolean result;
+            
+            // Convert from a CFString to a C (NUL-terminated)
+            result = CFStringGetCString(deviceNameAsCFString,
+                                        cPathName,
+                                        sizeof(cPathName),
+                                        kCFStringEncodingUTF8);
+            
+                       
+            CFRelease(deviceNameAsCFString);
         }
-        else {
-            lastDevice->next = deviceListItem;
-        }
-        
-        lastDevice = deviceListItem;
-        length++;
 
+        AddItemToList(cPathName, deviceItem);
+        deviceListItem->deviceItem = deviceItem;
+
+        notify_item = &deviceItem->deviceParams;
         pthread_mutex_lock(&notify_mutex);
-
-        notify_item = new ListResultItem_t();
-        if (usbDev->deviceName != NULL) {
-          notify_item->deviceName = usbDev->deviceName;
-        }
-        if (usbDev->locationId != 0) {
-          notify_item->locationId = usbDev->locationId;
-        }
-        if (usbDev->vendorId != 0) {
-          notify_item->vendorId = usbDev->vendorId;
-        }
-        if (usbDev->productId != 0) {
-          notify_item->productId = usbDev->productId;
-        }
-        if (usbDev->manufacturer != NULL) {
-          notify_item->manufacturer = usbDev->manufacturer;
-        }
-        if (usbDev->serialNumber != NULL) {
-          notify_item->serialNumber = usbDev->serialNumber;
-        }
-        if (usbDev->deviceAddress != 0) {
-          notify_item->deviceAddress = usbDev->deviceAddress;
-        }
         isAdded = true;
         pthread_cond_signal(&notify_cv);
 
@@ -352,7 +296,8 @@ void DeviceAdded(void *refCon, io_iterator_t iterator)
                                               &(deviceListItem->notification)   // notification
                                               );
                                                 
-        if (KERN_SUCCESS != kr) {
+        if (KERN_SUCCESS != kr) 
+        {
             printf("IOServiceAddInterestNotification returned 0x%08x.\n", kr);
         }
         
@@ -391,9 +336,11 @@ void NotifyFinished(uv_work_t* req)
 {
     pthread_mutex_lock(&notify_mutex);
 
-    if (isAdded) {
+    if (isAdded) 
+    {
         NotifyAdded(notify_item);
-    } else {
+    } else 
+    {
         NotifyRemoved(notify_item);
     }
 
@@ -417,7 +364,8 @@ void InitDetection() {
     matchingDict = IOServiceMatching(kIOUSBDeviceClassName);    // Interested in instances of class
                                                                 // IOUSBDevice and its subclasses
     
-    if (matchingDict == NULL) {
+    if (matchingDict == NULL) 
+    {
         fprintf(stderr, "IOServiceMatching returned NULL.\n");
     }
 
@@ -435,7 +383,8 @@ void InitDetection() {
                                           &gAddedIter                   // notification
                                           );        
     
-    if (KERN_SUCCESS != kr) {
+    if (KERN_SUCCESS != kr) 
+    {
         printf("IOServiceAddMatchingNotification returned 0x%08x.\n", kr);
     }
 
@@ -448,7 +397,8 @@ void InitDetection() {
 
 
     int rc = pthread_create(&lookupThread, NULL, RunLoop, NULL);
-    if (rc){
+    if (rc)
+    {
          printf("ERROR; return code from pthread_create() is %d\n", rc);
          exit(-1);
     }
@@ -457,58 +407,11 @@ void InitDetection() {
     uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
 }
 
-void EIO_Find(uv_work_t* req) {
+void EIO_Find(uv_work_t* req) 
+{
 
     ListBaton* data = static_cast<ListBaton*>(req->data);
 
-    if (*(devices->length) > 0)
-    {    
-        stDeviceListItem* next = devices;
-        
-        for (int i = 0, len = *(devices->length); i < len; i++) {
-            stUsbDevice device = (* next).value;
-
-            if (((data->vid != 0 && data->pid != 0) &&
-                (data->vid == device.vendorId && data->pid == device.productId))
-                ||
-                ((data->vid != 0 && data->pid == 0) &&
-                data->vid == device.vendorId)
-                ||
-                (data->vid == 0 && data->pid == 0))
-            {
-                ListResultItem_t* resultItem = new ListResultItem_t();
-
-                if (device.deviceName != NULL) {
-                  resultItem->deviceName = device.deviceName;
-                }
-                if (device.locationId != 0) {
-                  resultItem->locationId = device.locationId;
-                }
-                if (device.vendorId != 0) {
-                  resultItem->vendorId = device.vendorId;
-                }
-                if (device.productId != 0) {
-                  resultItem->productId = device.productId;
-                }
-                if (device.manufacturer != NULL) {
-                  resultItem->manufacturer = device.manufacturer;
-                }
-                if (device.serialNumber != NULL) {
-                  resultItem->serialNumber = device.serialNumber;
-                }
-                data->results.push_back(resultItem);
-            }
-
-            stDeviceListItem* current = next;
-
-            if (next->next != NULL)
-            {
-              next = next->next;
-            }
-
-            // free(current);
-        }
-
-    }
+    CreateFilteredList(&data->results, data->vid, data->pid);
 
 }
