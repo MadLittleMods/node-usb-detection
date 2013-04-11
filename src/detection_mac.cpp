@@ -14,10 +14,11 @@
 #include <uv.h>
 
 
-typedef struct DeviceListItem {
-    io_object_t       notification;
-    IOUSBDeviceInterface  **deviceInterface;
-    DeviceItem_t* deviceItem;
+typedef struct DeviceListItem 
+{
+    io_object_t             notification;
+    IOUSBDeviceInterface**  deviceInterface;
+    DeviceItem_t*           deviceItem;
 } stDeviceListItem;
 
 static IONotificationPortRef    gNotifyPort;
@@ -66,6 +67,10 @@ void DeviceRemoved(void *refCon, io_service_t service, natural_t messageType, vo
             item = CopyElement(&deviceItem->deviceParams);
             RemoveItemFromList(deviceItem);
             delete deviceItem;
+        }
+        else
+        {
+            item = new ListResultItem_t();
         }
         
         notify_item = item;
@@ -117,8 +122,7 @@ void DeviceAdded(void *refCon, io_iterator_t iterator)
             deviceName[0] = '\0';
         }
         
-        deviceNameAsCFString = CFStringCreateWithCString(kCFAllocatorDefault, deviceName, 
-                                                         kCFStringEncodingASCII);
+        deviceNameAsCFString = CFStringCreateWithCString(kCFAllocatorDefault, deviceName, kCFStringEncodingASCII);
         
         
         if (deviceNameAsCFString)
@@ -194,8 +198,7 @@ void DeviceAdded(void *refCon, io_iterator_t iterator)
         // Now, get the locationID of this device. In order to do this, we need to create an IOUSBDeviceInterface 
         // for our device. This will create the necessary connections between our userland application and the 
         // kernel object for the USB Device.
-        kr = IOCreatePlugInInterfaceForService(usbDevice, kIOUSBDeviceUserClientTypeID, kIOCFPlugInInterfaceID,
-                                               &plugInInterface, &score);
+        kr = IOCreatePlugInInterfaceForService(usbDevice, kIOUSBDeviceUserClientTypeID, kIOCFPlugInInterfaceID, &plugInInterface, &score);
 
         if ((kIOReturnSuccess != kr) || !plugInInterface) 
         {
@@ -206,8 +209,7 @@ void DeviceAdded(void *refCon, io_iterator_t iterator)
         stDeviceListItem *deviceListItem = new stDeviceListItem();
 
         // Use the plugin interface to retrieve the device interface.
-        res = (*plugInInterface)->QueryInterface(plugInInterface, CFUUIDGetUUIDBytes(kIOUSBDeviceInterfaceID),
-                                                 (LPVOID*) &deviceListItem->deviceInterface);
+        res = (*plugInInterface)->QueryInterface(plugInInterface, CFUUIDGetUUIDBytes(kIOUSBDeviceInterfaceID), (LPVOID*) &deviceListItem->deviceInterface);
         
         // Now done with the plugin interface.
         (*plugInInterface)->Release(plugInInterface);
@@ -257,6 +259,7 @@ void DeviceAdded(void *refCon, io_iterator_t iterator)
         deviceItem->deviceParams.productId = productId;
         
         
+        // Extract path name as unique key
         io_string_t pathName;
         IORegistryEntryGetPath(usbDevice, kIOServicePlane, pathName);
         deviceNameAsCFString = CFStringCreateWithCString(kCFAllocatorDefault, pathName, kCFStringEncodingASCII);
@@ -349,7 +352,8 @@ void NotifyFinished(uv_work_t* req)
     uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
 }
 
-void InitDetection() {
+void InitDetection() 
+{
 
     kern_return_t           kr;
 
@@ -409,9 +413,7 @@ void InitDetection() {
 
 void EIO_Find(uv_work_t* req) 
 {
-
     ListBaton* data = static_cast<ListBaton*>(req->data);
 
     CreateFilteredList(&data->results, data->vid, data->pid);
-
 }
