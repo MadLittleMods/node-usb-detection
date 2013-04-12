@@ -23,7 +23,7 @@ using namespace std;
 #define VID_TAG "VID_"
 #define PID_TAG "PID_"
 
-#define LIBRARY_NAME    "setupapi.dll"
+#define LIBRARY_NAME    ("setupapi.dll")
 
 
 #define DllImport   __declspec( dllimport )
@@ -50,18 +50,18 @@ bool isAdded;
 
 HINSTANCE hinstLib; 
 
-typedef BOOL        (*_SetupDiEnumDeviceInfo) (HDEVINFO DeviceInfoSet, DWORD MemberIndex, PSP_DEVINFO_DATA DeviceInfoData);
-typedef HDEVINFO    (*_SetupDiGetClassDevsA) (const GUID *ClassGuid, PCTSTR Enumerator, HWND hwndParent, DWORD Flags);
-typedef BOOL        (*_SetupDiDestroyDeviceInfoList) (HDEVINFO DeviceInfoSet);
-typedef BOOL        (*_SetupDiGetDeviceInstanceIdA) (HDEVINFO DeviceInfoSet, PSP_DEVINFO_DATA DeviceInfoData, PTSTR DeviceInstanceId, DWORD DeviceInstanceIdSize, PDWORD RequiredSize);
-typedef BOOL        (*_SetupDiGetDeviceRegistryPropertyA) (HDEVINFO DeviceInfoSet, PSP_DEVINFO_DATA DeviceInfoData, DWORD Property, PDWORD PropertyRegDataType, PBYTE PropertyBuffer, DWORD PropertyBufferSize, PDWORD RequiredSize);
+typedef BOOL        (WINAPI  *_SetupDiEnumDeviceInfo) (HDEVINFO DeviceInfoSet, DWORD MemberIndex, PSP_DEVINFO_DATA DeviceInfoData);
+typedef HDEVINFO    (WINAPI  *_SetupDiGetClassDevs) (const GUID *ClassGuid, PCTSTR Enumerator, HWND hwndParent, DWORD Flags);
+typedef BOOL        (WINAPI  *_SetupDiDestroyDeviceInfoList) (HDEVINFO DeviceInfoSet);
+typedef BOOL        (WINAPI  *_SetupDiGetDeviceInstanceId) (HDEVINFO DeviceInfoSet, PSP_DEVINFO_DATA DeviceInfoData, PTSTR DeviceInstanceId, DWORD DeviceInstanceIdSize, PDWORD RequiredSize);
+typedef BOOL        (WINAPI  *_SetupDiGetDeviceRegistryProperty) (HDEVINFO DeviceInfoSet, PSP_DEVINFO_DATA DeviceInfoData, DWORD Property, PDWORD PropertyRegDataType, PBYTE PropertyBuffer, DWORD PropertyBufferSize, PDWORD RequiredSize);
 
 
 _SetupDiEnumDeviceInfo DllSetupDiEnumDeviceInfo;
-_SetupDiGetClassDevsA DllSetupDiGetClassDevsA;
+_SetupDiGetClassDevs DllSetupDiGetClassDevs;
 _SetupDiDestroyDeviceInfoList DllSetupDiDestroyDeviceInfoList;
-_SetupDiGetDeviceInstanceIdA DllSetupDiGetDeviceInstanceIdA;
-_SetupDiGetDeviceRegistryPropertyA DllSetupDiGetDeviceRegistryPropertyA;
+_SetupDiGetDeviceInstanceId DllSetupDiGetDeviceInstanceId;
+_SetupDiGetDeviceRegistryProperty DllSetupDiGetDeviceRegistryProperty;
 
 
 /**********************************
@@ -117,17 +117,17 @@ void LoadFunctions()
         DllSetupDiEnumDeviceInfo = (_SetupDiEnumDeviceInfo) GetProcAddress(hinstLib, "SetupDiEnumDeviceInfo"); 
         success = (DllSetupDiEnumDeviceInfo == NULL) ? false : true;
 
-        DllSetupDiGetClassDevsA = (_SetupDiGetClassDevsA) GetProcAddress(hinstLib, "SetupDiGetClassDevsA"); 
-        success = (DllSetupDiGetClassDevsA == NULL) ? false : true;
+        DllSetupDiGetClassDevs = (_SetupDiGetClassDevs) GetProcAddress(hinstLib, "SetupDiGetClassDevsA"); 
+        success = (DllSetupDiGetClassDevs == NULL) ? false : true;
 
         DllSetupDiDestroyDeviceInfoList = (_SetupDiDestroyDeviceInfoList) GetProcAddress(hinstLib, "SetupDiDestroyDeviceInfoList"); 
         success = (DllSetupDiDestroyDeviceInfoList == NULL) ? false : true;
 
-        DllSetupDiGetDeviceInstanceIdA = (_SetupDiGetDeviceInstanceIdA) GetProcAddress(hinstLib, "SetupDiGetDeviceInstanceIdA"); 
-        success = (DllSetupDiGetDeviceInstanceIdA == NULL) ? false : true;
+        DllSetupDiGetDeviceInstanceId = (_SetupDiGetDeviceInstanceId) GetProcAddress(hinstLib, "SetupDiGetDeviceInstanceIdA"); 
+        success = (DllSetupDiGetDeviceInstanceId == NULL) ? false : true;
 
-        DllSetupDiGetDeviceRegistryPropertyA = (_SetupDiGetDeviceRegistryPropertyA) GetProcAddress(hinstLib, "SetupDiGetDeviceRegistryPropertyA"); 
-        success = (DllSetupDiGetDeviceRegistryPropertyA == NULL) ? false : true;
+        DllSetupDiGetDeviceRegistryProperty = (_SetupDiGetDeviceRegistryProperty) GetProcAddress(hinstLib, "SetupDiGetDeviceRegistryPropertyA"); 
+        success = (DllSetupDiGetDeviceRegistryProperty == NULL) ? false : true;
     } 
 
     if(!success)
@@ -142,6 +142,10 @@ void InitDetection()
 
     LoadFunctions();
 
+    deviceChangedEvent = CreateEvent(NULL, false /* auto-reset event */, false /* non-signalled state */, "");
+
+    BuildInitialDeviceList();
+
     threadHandle = CreateThread( 
         NULL,                   // default security attributes
         0,                      // use default stack size  
@@ -149,10 +153,6 @@ void InitDetection()
         NULL,                   // argument to thread function 
         0,                      // use default creation flags 
         &threadId);   
-
-    deviceChangedEvent = CreateEvent(NULL, false /* auto-reset event */, false /* non-signalled state */, "");
-
-    BuildInitialDeviceList();
 
     uv_work_t* req = new uv_work_t();
     uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
@@ -171,12 +171,25 @@ void EIO_Find(uv_work_t* req)
 /**********************************
  * Local Functions
  **********************************/
+void ToUpper(char * buf)
+{
+    char* c = buf;
+    while (*c != '\0') 
+    {
+        *c = toupper((unsigned char)*c);
+        c++;
+    }
+}
+
+
 void extractVidPid(char * buf, ListResultItem_t * item)
 {
     if(buf == NULL)
     {
         return;
     }
+
+    ToUpper(buf);
 
     char* string;
     char* temp;
@@ -218,19 +231,11 @@ LRESULT CALLBACK DetectCallback(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         {
             PDEV_BROADCAST_HDR pHdr = (PDEV_BROADCAST_HDR)lParam;  
             PDEV_BROADCAST_DEVICEINTERFACE pDevInf;  
-            PDEV_BROADCAST_PORT pDevPort; 
 
             if(pHdr->dbch_devicetype == DBT_DEVTYP_DEVICEINTERFACE)
             {
                 pDevInf = (PDEV_BROADCAST_DEVICEINTERFACE)pHdr; 
-                if(DBT_DEVICEARRIVAL == wParam)
-                {
-                    UpdateDevice(pDevInf, wParam, DeviceState_Connect);
-                }
-                else
-                {
-                    UpdateDevice(pDevInf, wParam, DeviceState_Disconnect);
-                }
+                UpdateDevice(pDevInf, wParam, (DBT_DEVICEARRIVAL == wParam) ? DeviceState_Connect : DeviceState_Disconnect);
             }
         }
     }
@@ -241,6 +246,7 @@ LRESULT CALLBACK DetectCallback(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 
 DWORD WINAPI ListenerThread( LPVOID lpParam ) 
 { 
+
     const char *className = "ListnerThread";
 
     WNDCLASSA wincl = {0};
@@ -296,8 +302,9 @@ DWORD WINAPI ListenerThread( LPVOID lpParam )
 
 void BuildInitialDeviceList()
 {
+    TCHAR buf[MAX_PATH];
     DWORD dwFlag = (DIGCF_ALLCLASSES | DIGCF_PRESENT);
-    HDEVINFO hDevInfo = DllSetupDiGetClassDevsA(NULL, "USB", NULL, dwFlag);
+    HDEVINFO hDevInfo = DllSetupDiGetClassDevs(NULL, "USB", NULL, dwFlag);
 
     if( INVALID_HANDLE_VALUE == hDevInfo )
     {
@@ -309,9 +316,8 @@ void BuildInitialDeviceList()
     for(int i=0; DllSetupDiEnumDeviceInfo(hDevInfo, i, pspDevInfoData); i++)
     {
         DWORD nSize=0 ;
-        TCHAR buf[MAX_PATH];
 
-        if ( !DllSetupDiGetDeviceInstanceIdA(hDevInfo, pspDevInfoData, buf, sizeof(buf), &nSize) )
+        if ( !DllSetupDiGetDeviceInstanceId(hDevInfo, pspDevInfoData, buf, sizeof(buf), &nSize) )
         {
             break;
         }
@@ -320,15 +326,21 @@ void BuildInitialDeviceList()
         item->deviceState = DeviceState_Connect;
 
         DWORD DataT;
-        DllSetupDiGetDeviceRegistryPropertyA(hDevInfo, pspDevInfoData, SPDRP_HARDWAREID, &DataT, (PBYTE)buf, MAX_PATH, &nSize);
+        DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_HARDWAREID, &DataT, (PBYTE)buf, MAX_PATH, &nSize);
 
         AddItemToList(buf, item);
         ExtractDeviceInfo(hDevInfo, pspDevInfoData, buf, MAX_PATH, &item->deviceParams);
     }
+    
+    if ( pspDevInfoData ) 
+    {
+        HeapFree(GetProcessHeap(), 0, pspDevInfoData);
+    }
 
-    if ( pspDevInfoData ) HeapFree(GetProcessHeap(), 0, pspDevInfoData);
-    DllSetupDiDestroyDeviceInfoList(hDevInfo);
-
+    if(hDevInfo)
+    {
+        DllSetupDiDestroyDeviceInfoList(hDevInfo);
+    }
 }
 
 
@@ -342,19 +354,19 @@ void ExtractDeviceInfo(HDEVINFO hDevInfo, SP_DEVINFO_DATA* pspDevInfoData, TCHAR
     resultItem->deviceAddress = dummy++;
 
     // device found
-    if ( DllSetupDiGetDeviceRegistryPropertyA(hDevInfo, pspDevInfoData, SPDRP_FRIENDLYNAME, &DataT, (PBYTE)buf, buffSize, &nSize) ) 
+    if ( DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_FRIENDLYNAME, &DataT, (PBYTE)buf, buffSize, &nSize) ) 
     {
         resultItem->deviceName = buf;
     } 
-    else if ( DllSetupDiGetDeviceRegistryPropertyA(hDevInfo, pspDevInfoData, SPDRP_DEVICEDESC, &DataT, (PBYTE)buf, buffSize, &nSize) ) 
+    else if ( DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_DEVICEDESC, &DataT, (PBYTE)buf, buffSize, &nSize) ) 
     {
         resultItem->deviceName = buf;
     } 
-    if ( DllSetupDiGetDeviceRegistryPropertyA(hDevInfo, pspDevInfoData, SPDRP_MFG, &DataT, (PBYTE)buf, buffSize, &nSize) ) 
+    if ( DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_MFG, &DataT, (PBYTE)buf, buffSize, &nSize) ) 
     {
         resultItem->manufacturer = buf;
-    }  
-    if ( DllSetupDiGetDeviceRegistryPropertyA(hDevInfo, pspDevInfoData, SPDRP_HARDWAREID, &DataT, (PBYTE)buf, buffSize, &nSize) ) 
+    } 
+    if ( DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_HARDWAREID, &DataT, (PBYTE)buf, buffSize, &nSize) ) 
     {
         // Use this to extract VID / PID
         extractVidPid(buf, resultItem);
@@ -382,7 +394,7 @@ void UpdateDevice(PDEV_BROADCAST_DEVICEINTERFACE pDevInf, WPARAM wParam, DeviceS
     // if we are adding device, we only need present devices
     // otherwise, we need all devices
     DWORD dwFlag = DBT_DEVICEARRIVAL != wParam ? DIGCF_ALLCLASSES : (DIGCF_ALLCLASSES | DIGCF_PRESENT);
-    HDEVINFO hDevInfo = DllSetupDiGetClassDevsA(NULL, szClass, NULL, dwFlag);
+    HDEVINFO hDevInfo = DllSetupDiGetClassDevs(NULL, szClass, NULL, dwFlag);
     if( INVALID_HANDLE_VALUE == hDevInfo )
     {
         return;
@@ -395,7 +407,7 @@ void UpdateDevice(PDEV_BROADCAST_DEVICEINTERFACE pDevInf, WPARAM wParam, DeviceS
         DWORD nSize=0 ;
         TCHAR buf[MAX_PATH];
 
-        if ( !DllSetupDiGetDeviceInstanceIdA(hDevInfo, pspDevInfoData, buf, sizeof(buf), &nSize) )
+        if ( !DllSetupDiGetDeviceInstanceId(hDevInfo, pspDevInfoData, buf, sizeof(buf), &nSize) )
         {
             break;
         }
@@ -404,7 +416,7 @@ void UpdateDevice(PDEV_BROADCAST_DEVICEINTERFACE pDevInf, WPARAM wParam, DeviceS
         {
             DWORD DataT;
             DWORD nSize;
-            DllSetupDiGetDeviceRegistryPropertyA(hDevInfo, pspDevInfoData, SPDRP_HARDWAREID, &DataT, (PBYTE)buf, MAX_PATH, &nSize);
+            DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_HARDWAREID, &DataT, (PBYTE)buf, MAX_PATH, &nSize);
 
             if(state == DeviceState_Connect)
             {
@@ -443,8 +455,15 @@ void UpdateDevice(PDEV_BROADCAST_DEVICEINTERFACE pDevInf, WPARAM wParam, DeviceS
         }
     }
 
-    if ( pspDevInfoData ) HeapFree(GetProcessHeap(), 0, pspDevInfoData);
-    DllSetupDiDestroyDeviceInfoList(hDevInfo);
+    if ( pspDevInfoData ) 
+    {
+        HeapFree(GetProcessHeap(), 0, pspDevInfoData);
+    }
+
+    if(hDevInfo)
+    {
+        DllSetupDiDestroyDeviceInfoList(hDevInfo);
+    }
 
     SetEvent(deviceChangedEvent);
 }
