@@ -35,6 +35,7 @@ pthread_mutex_t notify_mutex;
 pthread_cond_t notify_cv;
 ListResultItem_t* notify_item;
 bool isAdded = false;
+bool isRunning = false;
 
 //================================================================================================
 //
@@ -339,17 +340,47 @@ void NotifyFinished(uv_work_t* req)
 {
     pthread_mutex_lock(&notify_mutex);
 
-    if (isAdded) 
+    if (isRunning) 
     {
-        NotifyAdded(notify_item);
-    } else 
-    {
-        NotifyRemoved(notify_item);
+        if (isAdded) 
+        {
+            NotifyAdded(notify_item);
+        } else 
+        {
+            NotifyRemoved(notify_item);
+        }
     }
 
     pthread_mutex_unlock(&notify_mutex);
 
+    if (isRunning) 
+    {
+        uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
+    }
+}
+
+void Start()
+{
+    isRunning = true;
+    int rc = pthread_create(&lookupThread, NULL, RunLoop, NULL);
+    if (rc)
+    {
+         printf("ERROR; return code from pthread_create() is %d\n", rc);
+         exit(-1);
+    }
+
+    uv_work_t* req = new uv_work_t();
     uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
+}
+
+void Stop()
+{
+    isRunning = false;
+    pthread_mutex_lock(&notify_mutex);
+    pthread_cond_signal(&notify_cv);
+    pthread_mutex_unlock(&notify_mutex);
+
+    // pthread_exit(&lookupThread);
 }
 
 void InitDetection() 
@@ -399,16 +430,7 @@ void InitDetection()
     pthread_mutex_init(&notify_mutex, NULL);
     pthread_cond_init(&notify_cv, NULL);
 
-
-    int rc = pthread_create(&lookupThread, NULL, RunLoop, NULL);
-    if (rc)
-    {
-         printf("ERROR; return code from pthread_create() is %d\n", rc);
-         exit(-1);
-    }
-
-    uv_work_t* req = new uv_work_t();
-    uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
+    Start();
 }
 
 void EIO_Find(uv_work_t* req) 

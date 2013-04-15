@@ -47,6 +47,7 @@ HANDLE deviceChangedEvent;
 
 ListResultItem_t* currentDevice;
 bool isAdded;
+bool isRunning = false;
 
 HINSTANCE hinstLib; 
 
@@ -90,18 +91,20 @@ void NotifyAsync(uv_work_t* req)
 
 void NotifyFinished(uv_work_t* req)
 {
-
-    if(isAdded)
+    if (isRunning)
     {
-        NotifyAdded(currentDevice);
-    }
-    else
-    {
-        NotifyRemoved(currentDevice);
-        delete currentDevice;
-    }
+        if(isAdded)
+        {
+            NotifyAdded(currentDevice);
+        }
+        else
+        {
+            NotifyRemoved(currentDevice);
+            delete currentDevice;
+        }
 
-    uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
+        uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
+    }
 }
 
 void LoadFunctions()
@@ -137,15 +140,9 @@ void LoadFunctions()
     }
 }
 
-void InitDetection()
+void Start()
 {
-
-    LoadFunctions();
-
-    deviceChangedEvent = CreateEvent(NULL, false /* auto-reset event */, false /* non-signalled state */, "");
-
-    BuildInitialDeviceList();
-
+    isRunning = true;
     threadHandle = CreateThread( 
         NULL,                   // default security attributes
         0,                      // use default stack size  
@@ -156,6 +153,26 @@ void InitDetection()
 
     uv_work_t* req = new uv_work_t();
     uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
+}
+
+void Stop()
+{
+    isRunning = false;
+    SetEvent(deviceChangedEvent);
+
+    // ExitThread(threadHandle);
+}
+
+void InitDetection()
+{
+
+    LoadFunctions();
+
+    deviceChangedEvent = CreateEvent(NULL, false /* auto-reset event */, false /* non-signalled state */, "");
+
+    BuildInitialDeviceList();
+
+    Start();
 }
 
 

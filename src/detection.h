@@ -16,6 +16,11 @@ v8::Handle<v8::Value> Find(const v8::Arguments& args);
 void EIO_Find(uv_work_t* req);
 void EIO_AfterFind(uv_work_t* req);
 void InitDetection();
+v8::Handle<v8::Value> StartMonitoring(const v8::Arguments& args);
+void Start();
+v8::Handle<v8::Value> StopMonitoring(const v8::Arguments& args);
+void Stop();
+
 
 struct ListBaton {
 public:

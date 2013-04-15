@@ -195,6 +195,22 @@ void EIO_AfterFind(uv_work_t* req) {
   delete req;
 }
 
+v8::Handle<v8::Value> StartMonitoring(const v8::Arguments& args) {
+  v8::HandleScope scope;
+
+  Start();
+
+  return scope.Close(v8::Undefined());
+}
+
+v8::Handle<v8::Value> StopMonitoring(const v8::Arguments& args) {
+  v8::HandleScope scope;
+
+  Stop();
+
+  return scope.Close(v8::Undefined());
+}
+
 extern "C" {
   void init (v8::Handle<v8::Object> target) 
   {
@@ -202,6 +218,8 @@ extern "C" {
     NODE_SET_METHOD(target, "find", Find);
     NODE_SET_METHOD(target, "registerAdded", RegisterAdded);
     NODE_SET_METHOD(target, "registerRemoved", RegisterRemoved);
+    NODE_SET_METHOD(target, "startMonitoring", StartMonitoring);
+    NODE_SET_METHOD(target, "stopMonitoring", StopMonitoring);
     InitDetection();
   }
 }

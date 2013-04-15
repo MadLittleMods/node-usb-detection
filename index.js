@@ -27,4 +27,7 @@ detection.registerRemoved(function(device) {
 	detector.emit('change', device);
 });
 
+detector.startMonitoring = detection.startMonitoring;
+detector.stopMonitoring = detection.stopMonitoring;
+
 module.exports = detector;
