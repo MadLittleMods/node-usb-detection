@@ -30,4 +30,6 @@ detection.registerRemoved(function(device) {
 detector.startMonitoring = detection.startMonitoring;
 detector.stopMonitoring = detection.stopMonitoring;
 
+global['usb-detection'] = detector;
+
 module.exports = detector;
