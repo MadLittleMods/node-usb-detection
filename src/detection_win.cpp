@@ -264,7 +264,7 @@ LRESULT CALLBACK DetectCallback(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 DWORD WINAPI ListenerThread( LPVOID lpParam ) 
 { 
 
-    const char *className = "ListnerThread";
+    const char *className = "ListnerThreadUsbDetection";
 
     WNDCLASSA wincl = {0};
     wincl.hInstance = GetModuleHandle(0);
