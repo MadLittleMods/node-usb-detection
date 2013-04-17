@@ -74,10 +74,10 @@ void NotifyFinished(uv_work_t* req)
     {
         if (isAdded) 
         {
-            NotifyAdded(notify_item);
+            NotifyAdded(currentItem);
         } else 
         {
-            NotifyRemoved(notify_item);
+            NotifyRemoved(currentItem);
         }
     }
 
