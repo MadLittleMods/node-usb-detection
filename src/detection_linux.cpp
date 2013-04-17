@@ -231,7 +231,7 @@ void* ThreadFunc(void* ptr)
         dev = udev_monitor_receive_device(mon);
         if (dev) 
         {
-            if(strcmp(udev_device_get_devtype(dev), DEVICE_TYPE_DEVICE) == 0)
+            if(udev_device_get_devtype(dev) && strcmp(udev_device_get_devtype(dev), DEVICE_TYPE_DEVICE) == 0)
             {
                 if(strcmp(udev_device_get_action(dev), DEVICE_ACTION_ADDED) == 0)
                 {
