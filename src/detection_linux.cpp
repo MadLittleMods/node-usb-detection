@@ -43,48 +43,50 @@ int fd;
 
 pthread_t thread;
 pthread_mutex_t notify_mutex;
-pthread_cond_t notify_cv;
+pthread_cond_t notifyNewDevice;
+pthread_cond_t notifyDeviceHandled;
+
+bool newDeviceAvailable = false;
+bool deviceHandled = true;
+
+bool isRunning = false;
 /**********************************
  * Local Helper Functions protoypes
  **********************************/
 void BuildInitialDeviceList();
 
 void* ThreadFunc(void* ptr);
-
-bool isRunning = false;
+void WaitForDeviceHandled();
+void SignalDeviceHandled();
+void WaitForNewDevice();
+void SignalDeviceAvailable();
 
 /**********************************
  * Public Functions
  **********************************/
 void NotifyAsync(uv_work_t* req)
 {
-    pthread_mutex_lock(&notify_mutex);
-
-    pthread_cond_wait(&notify_cv, &notify_mutex);
-
-    pthread_mutex_unlock(&notify_mutex);
+    WaitForNewDevice();
 }
 
 
 void NotifyFinished(uv_work_t* req)
 {
-    pthread_mutex_lock(&notify_mutex);
-
     if (isRunning) 
     {
         if (isAdded) 
         {
             NotifyAdded(currentItem);
-        } else 
+        } 
+        else 
         {
             NotifyRemoved(currentItem);
         }
     }
 
-    pthread_mutex_unlock(&notify_mutex);
-
     if (isRunning) 
     {
+        SignalDeviceHandled();
         uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
     }
 }
@@ -102,7 +104,7 @@ void Stop()
 {
     isRunning = false;
     pthread_mutex_lock(&notify_mutex);
-    pthread_cond_signal(&notify_cv);
+    pthread_cond_signal(&notifyNewDevice);
     pthread_mutex_unlock(&notify_mutex);
 
     // pthread_exit(&thread);
@@ -129,7 +131,8 @@ void InitDetection()
     BuildInitialDeviceList();
 
     pthread_mutex_init(&notify_mutex, NULL);
-    pthread_cond_init(&notify_cv, NULL);
+    pthread_cond_init(&notifyNewDevice, NULL);
+    pthread_cond_init(&notifyDeviceHandled, NULL);
 
     Start();
 }
@@ -145,6 +148,45 @@ void EIO_Find(uv_work_t* req)
 /**********************************
  * Local Functions
  **********************************/
+void WaitForDeviceHandled()
+{
+    pthread_mutex_lock(&notify_mutex);
+    if(deviceHandled == false)
+    {
+        pthread_cond_wait(&notifyDeviceHandled, &notify_mutex);
+    }
+    deviceHandled = false;
+    pthread_mutex_unlock(&notify_mutex);
+}
+
+void SignalDeviceHandled()
+{
+    pthread_mutex_lock(&notify_mutex);
+    deviceHandled = true;
+    pthread_cond_signal(&notifyDeviceHandled);
+    pthread_mutex_unlock(&notify_mutex);
+}
+
+void WaitForNewDevice()
+{
+    pthread_mutex_lock(&notify_mutex);
+    if(newDeviceAvailable == false)
+    {
+        pthread_cond_wait(&notifyNewDevice, &notify_mutex);
+    }
+    newDeviceAvailable = false;
+    pthread_mutex_unlock(&notify_mutex);
+}
+
+void SignalDeviceAvailable()
+{
+    pthread_mutex_lock(&notify_mutex);
+    newDeviceAvailable = true;
+    pthread_cond_signal(&notifyNewDevice);
+    pthread_mutex_unlock(&notify_mutex);
+}
+
+
  ListResultItem_t* GetProperties(struct udev_device* dev, ListResultItem_t* item) 
  {
     struct udev_list_entry* sysattrs;
@@ -187,9 +229,7 @@ void DeviceAdded(struct udev_device* dev)
     currentItem = &item->deviceParams;
     isAdded = true;
 
-    pthread_mutex_lock(&notify_mutex);
-    pthread_cond_signal(&notify_cv);
-    pthread_mutex_unlock(&notify_mutex);
+    SignalDeviceAvailable();
 }
 
 void DeviceRemoved(struct udev_device* dev) 
@@ -216,9 +256,7 @@ void DeviceRemoved(struct udev_device* dev)
     currentItem = item;
     isAdded = false;
 
-    pthread_mutex_lock(&notify_mutex);
-    pthread_cond_signal(&notify_cv);
-    pthread_mutex_unlock(&notify_mutex);
+    SignalDeviceAvailable();
 }
 
 
@@ -235,10 +273,12 @@ void* ThreadFunc(void* ptr)
             {
                 if(strcmp(udev_device_get_action(dev), DEVICE_ACTION_ADDED) == 0)
                 {
+                    WaitForDeviceHandled();
                     DeviceAdded(dev);
                 }
                 else if(strcmp(udev_device_get_action(dev), DEVICE_ACTION_REMOVED) == 0)
                 {
+                    WaitForDeviceHandled();
                     DeviceRemoved(dev);
                 }
             }
