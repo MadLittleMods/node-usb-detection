@@ -28,6 +28,8 @@ using namespace std;
 
 #define DllImport   __declspec( dllimport )
 
+#define MAX_THREAD_WINDOW_NAME 64
+
 /**********************************
  * Local typedefs
  **********************************/
@@ -43,13 +45,15 @@ HWND handle;
 DWORD threadId;
 HANDLE threadHandle;
 
-HANDLE deviceChangedEvent; 
+HANDLE deviceChangedRegisteredEvent; 
+HANDLE deviceChangedSentEvent;
 
 ListResultItem_t* currentDevice;
 bool isAdded;
 bool isRunning = false;
 
 HINSTANCE hinstLib; 
+
 
 typedef BOOL        (WINAPI  *_SetupDiEnumDeviceInfo) (HDEVINFO DeviceInfoSet, DWORD MemberIndex, PSP_DEVINFO_DATA DeviceInfoData);
 typedef HDEVINFO    (WINAPI  *_SetupDiGetClassDevs) (const GUID *ClassGuid, PCTSTR Enumerator, HWND hwndParent, DWORD Flags);
@@ -77,7 +81,7 @@ void NotifyAsync(uv_work_t* req);
 void NotifyFinished(uv_work_t* req);
 
 void ExtractDeviceInfo(HDEVINFO hDevInfo, SP_DEVINFO_DATA* pspDevInfoData, TCHAR* buf, DWORD buffSize, ListResultItem_t* resultItem);
-
+bool CheckValidity(ListResultItem_t* item);
 
 
 /**********************************
@@ -85,7 +89,7 @@ void ExtractDeviceInfo(HDEVINFO hDevInfo, SP_DEVINFO_DATA* pspDevInfoData, TCHAR
  **********************************/
 void NotifyAsync(uv_work_t* req)
 {
-    WaitForSingleObject(deviceChangedEvent, INFINITE);
+    WaitForSingleObject(deviceChangedRegisteredEvent, INFINITE);
 }
 
 
@@ -102,9 +106,12 @@ void NotifyFinished(uv_work_t* req)
             NotifyRemoved(currentDevice);
             delete currentDevice;
         }
-
-        uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
     }
+
+    SetEvent(deviceChangedSentEvent);
+
+    currentDevice = NULL;
+    uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
 }
 
 void LoadFunctions()
@@ -158,7 +165,7 @@ void Start()
 void Stop()
 {
     isRunning = false;
-    SetEvent(deviceChangedEvent);
+    SetEvent(deviceChangedRegisteredEvent);
 
     // ExitThread(threadHandle);
 }
@@ -168,7 +175,8 @@ void InitDetection()
 
     LoadFunctions();
 
-    deviceChangedEvent = CreateEvent(NULL, false /* auto-reset event */, false /* non-signalled state */, "");
+    deviceChangedRegisteredEvent = CreateEvent(NULL, false /* auto-reset event */, false /* non-signalled state */, "");
+    deviceChangedSentEvent = CreateEvent(NULL, false /* auto-reset event */, true /* non-signalled state */, "");
 
     BuildInitialDeviceList();
 
@@ -263,8 +271,8 @@ LRESULT CALLBACK DetectCallback(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 
 DWORD WINAPI ListenerThread( LPVOID lpParam ) 
 { 
-
-    const char *className = "ListnerThreadUsbDetection";
+    char className[MAX_THREAD_WINDOW_NAME];
+    _snprintf(className, MAX_THREAD_WINDOW_NAME, "ListnerThreadUsbDetection_%d", GetCurrentThreadId());
 
     WNDCLASSA wincl = {0};
     wincl.hInstance = GetModuleHandle(0);
@@ -431,6 +439,9 @@ void UpdateDevice(PDEV_BROADCAST_DEVICEINTERFACE pDevInf, WPARAM wParam, DeviceS
 
         if ( szDevId == buf )
         {
+
+            WaitForSingleObject(deviceChangedSentEvent, INFINITE);
+            
             DWORD DataT;
             DWORD nSize;
             DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_HARDWAREID, &DataT, (PBYTE)buf, MAX_PATH, &nSize);
@@ -447,6 +458,7 @@ void UpdateDevice(PDEV_BROADCAST_DEVICEINTERFACE pDevInf, WPARAM wParam, DeviceS
             }
             else
             {
+
                 ListResultItem_t* item = NULL;
                 if(IsItemAlreadyStored(buf))
                 {
@@ -482,5 +494,44 @@ void UpdateDevice(PDEV_BROADCAST_DEVICEINTERFACE pDevInf, WPARAM wParam, DeviceS
         DllSetupDiDestroyDeviceInfoList(hDevInfo);
     }
 
-    SetEvent(deviceChangedEvent);
+//    if(CheckValidity(currentDevice))
+//    {
+        SetEvent(deviceChangedRegisteredEvent);
+//    }
+//    else
+//    {    
+//        SetEvent(deviceChangedSentEvent);
+//        currentDevice = NULL;
+//    }
 }
+
+//bool CheckValidity(ListResultItem_t* item)
+//{
+//    if(item == NULL)
+//    {
+//        printf("Invlaid device detected\n");
+//        return false;
+//    }
+//
+//    if(item->vendorId == 0 || item->productId == 0)
+//    {
+//        printf("Invlaid device detected\n");
+//        return false;
+//    }
+//
+//    if(item->deviceName.size() == 0  )
+//    {
+//        printf("Invlaid deviceName detected\n");
+//        return false;
+//    }
+//    if(item->manufacturer.size() == 0 )
+//    {
+//        printf("Invlaid manufacturer detected\n");
+//        return false;
+//    }
+//        printf("Valid device\n");
+//    return true;
+////  std::string deviceName;
+////  std::string manufacturer;
+////  std::string serialNumber;
+//}
