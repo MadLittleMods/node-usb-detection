@@ -84,30 +84,24 @@ void NotifyFinished(uv_work_t* req)
         }
     }
 
-    if (isRunning) 
+    // Delete Item in case of removal
+    if(isAdded == false)
     {
-        SignalDeviceHandled();
-        uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
+        delete currentItem;
     }
+
+    SignalDeviceHandled();
+    uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
 }
 
 void Start()
 {
     isRunning = true;
-    uv_work_t* req = new uv_work_t();
-    uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
-
-    pthread_create(&thread, NULL, ThreadFunc, NULL);
 }
 
 void Stop()
 {
     isRunning = false;
-    pthread_mutex_lock(&notify_mutex);
-    pthread_cond_signal(&notifyNewDevice);
-    pthread_mutex_unlock(&notify_mutex);
-
-    // pthread_exit(&thread);
 }
 
 void InitDetection()
@@ -133,6 +127,11 @@ void InitDetection()
     pthread_mutex_init(&notify_mutex, NULL);
     pthread_cond_init(&notifyNewDevice, NULL);
     pthread_cond_init(&notifyDeviceHandled, NULL);
+
+    uv_work_t* req = new uv_work_t();
+    uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
+
+    pthread_create(&thread, NULL, ThreadFunc, NULL);
 
     Start();
 }

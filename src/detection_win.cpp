@@ -104,8 +104,13 @@ void NotifyFinished(uv_work_t* req)
         else
         {
             NotifyRemoved(currentDevice);
-            delete currentDevice;
         }
+    }
+
+    // Delete Item in case of removal
+    if(isAdded == false)
+    {
+        delete currentDevice;
     }
 
     SetEvent(deviceChangedSentEvent);
@@ -150,24 +155,11 @@ void LoadFunctions()
 void Start()
 {
     isRunning = true;
-    threadHandle = CreateThread( 
-        NULL,                   // default security attributes
-        0,                      // use default stack size  
-        ListenerThread,         // thread function name
-        NULL,                   // argument to thread function 
-        0,                      // use default creation flags 
-        &threadId);   
-
-    uv_work_t* req = new uv_work_t();
-    uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
 }
 
 void Stop()
 {
     isRunning = false;
-    SetEvent(deviceChangedRegisteredEvent);
-
-    // ExitThread(threadHandle);
 }
 
 void InitDetection()
@@ -179,6 +171,17 @@ void InitDetection()
     deviceChangedSentEvent = CreateEvent(NULL, false /* auto-reset event */, true /* non-signalled state */, "");
 
     BuildInitialDeviceList();
+
+    threadHandle = CreateThread( 
+        NULL,                   // default security attributes
+        0,                      // use default stack size  
+        ListenerThread,         // thread function name
+        NULL,                   // argument to thread function 
+        0,                      // use default creation flags 
+        &threadId);   
+
+    uv_work_t* req = new uv_work_t();
+    uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
 
     Start();
 }

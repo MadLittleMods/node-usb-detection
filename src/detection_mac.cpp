@@ -32,11 +32,21 @@ CFRunLoopSourceRef      runLoopSource;
 static pthread_t lookupThread;
 
 pthread_mutex_t notify_mutex;
-pthread_cond_t notify_cv;
+pthread_cond_t notifyNewDevice;
+pthread_cond_t notifyDeviceHandled;
+
+bool newDeviceAvailable = false;
+bool deviceHandled = true;
+
 ListResultItem_t* notify_item;
 bool isAdded = false;
 bool isRunning = false;
+bool intialDeviceImport = true;
 
+void WaitForDeviceHandled();
+void SignalDeviceHandled();
+void WaitForNewDevice();
+void SignalDeviceAvailable();
 //================================================================================================
 //
 //  DeviceRemoved
@@ -74,11 +84,10 @@ void DeviceRemoved(void *refCon, io_service_t service, natural_t messageType, vo
             item = new ListResultItem_t();
         }
         
+        WaitForDeviceHandled();
         notify_item = item;
-        pthread_mutex_lock(&notify_mutex);
         isAdded = false;
-        pthread_cond_signal(&notify_cv);
-        pthread_mutex_unlock(&notify_mutex);
+        SignalDeviceAvailable();
         
     }
 }
@@ -283,12 +292,13 @@ void DeviceAdded(void *refCon, io_iterator_t iterator)
         AddItemToList(cPathName, deviceItem);
         deviceListItem->deviceItem = deviceItem;
 
-        notify_item = &deviceItem->deviceParams;
-        pthread_mutex_lock(&notify_mutex);
-        isAdded = true;
-        pthread_cond_signal(&notify_cv);
-
-        pthread_mutex_unlock(&notify_mutex);
+        if(intialDeviceImport == false)
+        {
+            WaitForDeviceHandled();
+            notify_item = &deviceItem->deviceParams;
+            isAdded = true;
+            SignalDeviceAvailable();
+        }
 
         // Register for an interest notification of this device being removed. Use a reference to our
         // private data as the refCon which will be passed to the notification callback.
@@ -310,6 +320,46 @@ void DeviceAdded(void *refCon, io_iterator_t iterator)
     }
 }
 
+
+void WaitForDeviceHandled()
+{
+    pthread_mutex_lock(&notify_mutex);
+    if(deviceHandled == false)
+    {
+        pthread_cond_wait(&notifyDeviceHandled, &notify_mutex);
+    }
+    deviceHandled = false;
+    pthread_mutex_unlock(&notify_mutex);
+}
+
+void SignalDeviceHandled()
+{
+    pthread_mutex_lock(&notify_mutex);
+    deviceHandled = true;
+    pthread_cond_signal(&notifyDeviceHandled);
+    pthread_mutex_unlock(&notify_mutex);
+}
+
+void WaitForNewDevice()
+{
+    pthread_mutex_lock(&notify_mutex);
+    if(newDeviceAvailable == false)
+    {
+        pthread_cond_wait(&notifyNewDevice, &notify_mutex);
+    }
+    newDeviceAvailable = false;
+    pthread_mutex_unlock(&notify_mutex);
+}
+
+void SignalDeviceAvailable()
+{
+    pthread_mutex_lock(&notify_mutex);
+    newDeviceAvailable = true;
+    pthread_cond_signal(&notifyNewDevice);
+    pthread_mutex_unlock(&notify_mutex);
+}
+
+
 void *RunLoop(void * arg)
 {
 
@@ -329,11 +379,7 @@ void *RunLoop(void * arg)
 
 void NotifyAsync(uv_work_t* req)
 {
-    pthread_mutex_lock(&notify_mutex);
-
-    pthread_cond_wait(&notify_cv, &notify_mutex);
-
-    pthread_mutex_unlock(&notify_mutex);
+    WaitForNewDevice();
 }
 
 void NotifyFinished(uv_work_t* req)
@@ -345,42 +391,31 @@ void NotifyFinished(uv_work_t* req)
         if (isAdded) 
         {
             NotifyAdded(notify_item);
-        } else 
+        } 
+        else 
         {
             NotifyRemoved(notify_item);
         }
     }
 
-    pthread_mutex_unlock(&notify_mutex);
-
-    if (isRunning) 
+    // Delete Item in case of removal
+    if(isAdded == false)
     {
-        uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
+        delete notify_item;
     }
+
+    uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
+    SignalDeviceHandled();
 }
 
 void Start()
 {
     isRunning = true;
-    int rc = pthread_create(&lookupThread, NULL, RunLoop, NULL);
-    if (rc)
-    {
-         printf("ERROR; return code from pthread_create() is %d\n", rc);
-         exit(-1);
-    }
-
-    uv_work_t* req = new uv_work_t();
-    uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
 }
 
 void Stop()
 {
     isRunning = false;
-    pthread_mutex_lock(&notify_mutex);
-    pthread_cond_signal(&notify_cv);
-    pthread_mutex_unlock(&notify_mutex);
-
-    // pthread_exit(&lookupThread);
 }
 
 void InitDetection() 
@@ -425,11 +460,23 @@ void InitDetection()
 
     // Iterate once to get already-present devices and arm the notification
     DeviceAdded(NULL, gAddedIter);
+    intialDeviceImport = false;
 
 
     pthread_mutex_init(&notify_mutex, NULL);
-    pthread_cond_init(&notify_cv, NULL);
+    pthread_cond_init(&notifyNewDevice, NULL);
+    pthread_cond_init(&notifyDeviceHandled, NULL);
 
+    int rc = pthread_create(&lookupThread, NULL, RunLoop, NULL);
+    if (rc)
+    {
+         printf("ERROR; return code from pthread_create() is %d\n", rc);
+         exit(-1);
+    }
+
+    uv_work_t* req = new uv_work_t();
+    uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
+    
     Start();
 }
 
