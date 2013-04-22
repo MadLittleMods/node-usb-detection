@@ -47,6 +47,7 @@ void WaitForDeviceHandled();
 void SignalDeviceHandled();
 void WaitForNewDevice();
 void SignalDeviceAvailable();
+
 //================================================================================================
 //
 //  DeviceRemoved
@@ -384,8 +385,6 @@ void NotifyAsync(uv_work_t* req)
 
 void NotifyFinished(uv_work_t* req)
 {
-    pthread_mutex_lock(&notify_mutex);
-
     if (isRunning) 
     {
         if (isAdded) 
@@ -404,8 +403,8 @@ void NotifyFinished(uv_work_t* req)
         delete notify_item;
     }
 
-    uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
-    SignalDeviceHandled();
+    uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);         
+    SignalDeviceHandled();   
 }
 
 void Start()
