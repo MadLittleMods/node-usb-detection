@@ -275,7 +275,7 @@ LRESULT CALLBACK DetectCallback(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 DWORD WINAPI ListenerThread( LPVOID lpParam ) 
 { 
     char className[MAX_THREAD_WINDOW_NAME];
-    _snprintf(className, MAX_THREAD_WINDOW_NAME, "ListnerThreadUsbDetection_%d", GetCurrentThreadId());
+    _snprintf_s(className, MAX_THREAD_WINDOW_NAME, "ListnerThreadUsbDetection_%d", GetCurrentThreadId());
 
     WNDCLASSA wincl = {0};
     wincl.hInstance = GetModuleHandle(0);
