@@ -22,7 +22,8 @@ v8::Handle<v8::Value> StopMonitoring(const v8::Arguments& args);
 void Stop();
 
 
-struct ListBaton {
+struct ListBaton 
+{
 public:
   v8::Persistent<v8::Value> callback;
   std::list<ListResultItem_t*> results;

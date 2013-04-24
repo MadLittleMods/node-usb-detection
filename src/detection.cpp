@@ -1,12 +1,23 @@
 #include "detection.h"
 
+
+#define OBJECT_ITEM_LOCATION_ID     "locationId"
+#define OBJECT_ITEM_VENDOR_ID       "vendorId"
+#define OBJECT_ITEM_PRODUCT_ID      "productId"
+#define OBJECT_ITEM_DEVICE_NAME     "deviceName"
+#define OBJECT_ITEM_MANUFACTURER    "manufacturer"
+#define OBJECT_ITEM_SERIAL_NUMBER   "serialNumber"
+#define OBJECT_ITEM_DEVICE_ADDRESS  "deviceAddress"
+
+
 v8::Persistent<v8::Value> addedCallback;
 bool isAddedRegistered = false;
 
 v8::Persistent<v8::Value> removedCallback;
 bool isRemovedRegistered = false;
 
-v8::Handle<v8::Value> RegisterAdded(const v8::Arguments& args) {
+v8::Handle<v8::Value> RegisterAdded(const v8::Arguments& args) 
+{
   v8::HandleScope scope;
 
   v8::Local<v8::Value> callback;
@@ -33,17 +44,19 @@ v8::Handle<v8::Value> RegisterAdded(const v8::Arguments& args) {
   return scope.Close(v8::Undefined());
 }
 
-void NotifyAdded(ListResultItem_t* it) {
-  if (isAddedRegistered) {
+void NotifyAdded(ListResultItem_t* it) 
+{
+  if (isAddedRegistered) 
+  {
     v8::Handle<v8::Value> argv[1];
     v8::Local<v8::Object> item = v8::Object::New();
-    item->Set(v8::String::New("locationId"), v8::Number::New(it->locationId));
-    item->Set(v8::String::New("vendorId"), v8::Number::New(it->vendorId));
-    item->Set(v8::String::New("productId"), v8::Number::New(it->productId));
-    item->Set(v8::String::New("deviceName"), v8::String::New(it->deviceName.c_str()));
-    item->Set(v8::String::New("manufacturer"), v8::String::New(it->manufacturer.c_str()));
-    item->Set(v8::String::New("serialNumber"), v8::String::New(it->serialNumber.c_str()));
-    item->Set(v8::String::New("deviceAddress"), v8::Number::New(it->deviceAddress));
+    item->Set(v8::String::New(OBJECT_ITEM_LOCATION_ID), v8::Number::New(it->locationId));
+    item->Set(v8::String::New(OBJECT_ITEM_VENDOR_ID), v8::Number::New(it->vendorId));
+    item->Set(v8::String::New(OBJECT_ITEM_PRODUCT_ID), v8::Number::New(it->productId));
+    item->Set(v8::String::New(OBJECT_ITEM_DEVICE_NAME), v8::String::New(it->deviceName.c_str()));
+    item->Set(v8::String::New(OBJECT_ITEM_MANUFACTURER), v8::String::New(it->manufacturer.c_str()));
+    item->Set(v8::String::New(OBJECT_ITEM_SERIAL_NUMBER), v8::String::New(it->serialNumber.c_str()));
+    item->Set(v8::String::New(OBJECT_ITEM_DEVICE_ADDRESS), v8::Number::New(it->deviceAddress));
     argv[0] = item;
     v8::Function::Cast(*addedCallback)->Call(v8::Context::GetCurrent()->Global(), 1, argv);
   }
@@ -76,23 +89,26 @@ v8::Handle<v8::Value> RegisterRemoved(const v8::Arguments& args) {
   return scope.Close(v8::Undefined());
 }
 
-void NotifyRemoved(ListResultItem_t* it) {
-  if (isRemovedRegistered) {
+void NotifyRemoved(ListResultItem_t* it) 
+{
+  if (isRemovedRegistered) 
+  {
     v8::Handle<v8::Value> argv[1];
     v8::Local<v8::Object> item = v8::Object::New();
-    item->Set(v8::String::New("locationId"), v8::Number::New(it->locationId));
-    item->Set(v8::String::New("vendorId"), v8::Number::New(it->vendorId));
-    item->Set(v8::String::New("productId"), v8::Number::New(it->productId));
-    item->Set(v8::String::New("deviceName"), v8::String::New(it->deviceName.c_str()));
-    item->Set(v8::String::New("manufacturer"), v8::String::New(it->manufacturer.c_str()));
-    item->Set(v8::String::New("serialNumber"), v8::String::New(it->serialNumber.c_str()));
-    item->Set(v8::String::New("deviceAddress"), v8::Number::New(it->deviceAddress));
+    item->Set(v8::String::New(OBJECT_ITEM_LOCATION_ID), v8::Number::New(it->locationId));
+    item->Set(v8::String::New(OBJECT_ITEM_VENDOR_ID), v8::Number::New(it->vendorId));
+    item->Set(v8::String::New(OBJECT_ITEM_PRODUCT_ID), v8::Number::New(it->productId));
+    item->Set(v8::String::New(OBJECT_ITEM_DEVICE_NAME), v8::String::New(it->deviceName.c_str()));
+    item->Set(v8::String::New(OBJECT_ITEM_MANUFACTURER), v8::String::New(it->manufacturer.c_str()));
+    item->Set(v8::String::New(OBJECT_ITEM_SERIAL_NUMBER), v8::String::New(it->serialNumber.c_str()));
+    item->Set(v8::String::New(OBJECT_ITEM_DEVICE_ADDRESS), v8::Number::New(it->deviceAddress));
     argv[0] = item;
     v8::Function::Cast(*removedCallback)->Call(v8::Context::GetCurrent()->Global(), 1, argv);
   }
 }
 
-v8::Handle<v8::Value> Find(const v8::Arguments& args) {
+v8::Handle<v8::Value> Find(const v8::Arguments& args) 
+{
   v8::HandleScope scope;
 
   int vid = 0;
@@ -161,25 +177,29 @@ v8::Handle<v8::Value> Find(const v8::Arguments& args) {
   return scope.Close(v8::Undefined());
 }
 
-void EIO_AfterFind(uv_work_t* req) {
+void EIO_AfterFind(uv_work_t* req) 
+{
   ListBaton* data = static_cast<ListBaton*>(req->data);
 
   v8::Handle<v8::Value> argv[2];
-  if(data->errorString[0]) {
+  if(data->errorString[0]) 
+  {
     argv[0] = v8::Exception::Error(v8::String::New(data->errorString));
     argv[1] = v8::Undefined();
-  } else {
+  } 
+  else 
+  {
     v8::Local<v8::Array> results = v8::Array::New();
     int i = 0;
     for(std::list<ListResultItem_t*>::iterator it = data->results.begin(); it != data->results.end(); it++, i++) {
       v8::Local<v8::Object> item = v8::Object::New();
-      item->Set(v8::String::New("locationId"), v8::Number::New((*it)->locationId));
-      item->Set(v8::String::New("vendorId"), v8::Number::New((*it)->vendorId));
-      item->Set(v8::String::New("productId"), v8::Number::New((*it)->productId));
-      item->Set(v8::String::New("deviceName"), v8::String::New((*it)->deviceName.c_str()));
-      item->Set(v8::String::New("manufacturer"), v8::String::New((*it)->manufacturer.c_str()));
-      item->Set(v8::String::New("serialNumber"), v8::String::New((*it)->serialNumber.c_str()));
-      item->Set(v8::String::New("deviceAddress"), v8::Number::New((*it)->deviceAddress));
+      item->Set(v8::String::New(OBJECT_ITEM_LOCATION_ID), v8::Number::New((*it)->locationId));
+      item->Set(v8::String::New(OBJECT_ITEM_VENDOR_ID), v8::Number::New((*it)->vendorId));
+      item->Set(v8::String::New(OBJECT_ITEM_PRODUCT_ID), v8::Number::New((*it)->productId));
+      item->Set(v8::String::New(OBJECT_ITEM_DEVICE_NAME), v8::String::New((*it)->deviceName.c_str()));
+      item->Set(v8::String::New(OBJECT_ITEM_MANUFACTURER), v8::String::New((*it)->manufacturer.c_str()));
+      item->Set(v8::String::New(OBJECT_ITEM_SERIAL_NUMBER), v8::String::New((*it)->serialNumber.c_str()));
+      item->Set(v8::String::New(OBJECT_ITEM_DEVICE_ADDRESS), v8::Number::New((*it)->deviceAddress));
       results->Set(i, item);
     }
     argv[0] = v8::Undefined();
@@ -188,14 +208,16 @@ void EIO_AfterFind(uv_work_t* req) {
   v8::Function::Cast(*data->callback)->Call(v8::Context::GetCurrent()->Global(), 2, argv);
 
   data->callback.Dispose();
-  for(std::list<ListResultItem_t*>::iterator it = data->results.begin(); it != data->results.end(); it++) {
+  for(std::list<ListResultItem_t*>::iterator it = data->results.begin(); it != data->results.end(); it++) 
+  {
     delete *it;
   }
   delete data;
   delete req;
 }
 
-v8::Handle<v8::Value> StartMonitoring(const v8::Arguments& args) {
+v8::Handle<v8::Value> StartMonitoring(const v8::Arguments& args) 
+{
   v8::HandleScope scope;
 
   Start();
@@ -203,7 +225,8 @@ v8::Handle<v8::Value> StartMonitoring(const v8::Arguments& args) {
   return scope.Close(v8::Undefined());
 }
 
-v8::Handle<v8::Value> StopMonitoring(const v8::Arguments& args) {
+v8::Handle<v8::Value> StopMonitoring(const v8::Arguments& args) 
+{
   v8::HandleScope scope;
 
   Stop();

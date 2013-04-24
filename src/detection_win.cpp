@@ -287,7 +287,7 @@ DWORD WINAPI ListenerThread( LPVOID lpParam )
         DWORD le = GetLastError();
         printf("RegisterClassA() failed [Error: %x]\r\n", le);
         return 1;
-    }//if
+    }
 
     
     HWND hwnd = CreateWindowExA(WS_EX_TOPMOST, className, className, 0, 0, 0, 0, 0, NULL, 0, 0, 0);
@@ -296,7 +296,7 @@ DWORD WINAPI ListenerThread( LPVOID lpParam )
         DWORD le = GetLastError();
         printf("CreateWindowExA() failed [Error: %x]\r\n", le);
         return 1;
-    }//if
+    }
 
     DEV_BROADCAST_DEVICEINTERFACE_A notifyFilter = {0};
     notifyFilter.dbcc_size = sizeof(notifyFilter);
@@ -309,10 +309,10 @@ DWORD WINAPI ListenerThread( LPVOID lpParam )
         DWORD le = GetLastError();
         printf("RegisterDeviceNotificationA() failed [Error: %x]\r\n", le);
         return 1;
-    }//if
+    }
 
     MSG msg;
-    for (;;) // ctrl-c to exit ;)
+    while(TRUE)
     {
         BOOL bRet = GetMessage(&msg, hwnd, 0, 0);
         if ((bRet == 0) || (bRet == -1))
@@ -322,7 +322,7 @@ DWORD WINAPI ListenerThread( LPVOID lpParam )
 
         TranslateMessage(&msg);
         DispatchMessage(&msg);
-    }//while
+    }
 
     return 0;
 } 
@@ -497,44 +497,5 @@ void UpdateDevice(PDEV_BROADCAST_DEVICEINTERFACE pDevInf, WPARAM wParam, DeviceS
         DllSetupDiDestroyDeviceInfoList(hDevInfo);
     }
 
-//    if(CheckValidity(currentDevice))
-//    {
-        SetEvent(deviceChangedRegisteredEvent);
-//    }
-//    else
-//    {    
-//        SetEvent(deviceChangedSentEvent);
-//        currentDevice = NULL;
-//    }
+    SetEvent(deviceChangedRegisteredEvent);
 }
-
-//bool CheckValidity(ListResultItem_t* item)
-//{
-//    if(item == NULL)
-//    {
-//        printf("Invlaid device detected\n");
-//        return false;
-//    }
-//
-//    if(item->vendorId == 0 || item->productId == 0)
-//    {
-//        printf("Invlaid device detected\n");
-//        return false;
-//    }
-//
-//    if(item->deviceName.size() == 0  )
-//    {
-//        printf("Invlaid deviceName detected\n");
-//        return false;
-//    }
-//    if(item->manufacturer.size() == 0 )
-//    {
-//        printf("Invlaid manufacturer detected\n");
-//        return false;
-//    }
-//        printf("Valid device\n");
-//    return true;
-////  std::string deviceName;
-////  std::string manufacturer;
-////  std::string serialNumber;
-//}
