@@ -415,6 +415,9 @@ void Start()
 void Stop()
 {
     isRunning = false;
+    pthread_mutex_lock(&notify_mutex);
+    pthread_cond_signal(&notifyNewDevice);
+    pthread_mutex_unlock(&notify_mutex);
 }
 
 void InitDetection() 

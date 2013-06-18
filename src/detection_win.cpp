@@ -160,6 +160,7 @@ void Start()
 void Stop()
 {
     isRunning = false;
+    SetEvent(deviceChangedRegisteredEvent);
 }
 
 void InitDetection()
