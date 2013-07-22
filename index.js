@@ -1,42 +1,42 @@
 var index = require('./package.json');
 
 if (global[index.name] && global[index.name].version === index.version) {
-	module.exports = global[index.name];
+  module.exports = global[index.name];
 } else {
-	var detection = require('bindings')('detection.node'),
-			EventEmitter2 = require('eventemitter2').EventEmitter2;
+  var detection = require('bindings')('detection.node'),
+      EventEmitter2 = require('eventemitter2').EventEmitter2;
 
-	var detector = new EventEmitter2({
-		wildcard: true,
-		delimiter: ':',
-		maxListeners: 1000 // default would be 10!
-	});
+  var detector = new EventEmitter2({
+    wildcard: true,
+    delimiter: ':',
+    maxListeners: 1000 // default would be 10!
+  });
 
-	detector.find = detection.find;
+  detector.find = detection.find;
 
-	detection.registerAdded(function(device) {
-		detector.emit('add:' + device.vendorId + ':' + device.productId, device);
-		detector.emit('add:' + device.vendorId, device);
-		detector.emit('add', device);
-		detector.emit('change:' + device.vendorId + ':' + device.productId, device);
-		detector.emit('change:' + device.vendorId, device);
-		detector.emit('change', device);
-	});
+  detection.registerAdded(function(device) {
+    detector.emit('add:' + device.vendorId + ':' + device.productId, device);
+    detector.emit('add:' + device.vendorId, device);
+    detector.emit('add', device);
+    detector.emit('change:' + device.vendorId + ':' + device.productId, device);
+    detector.emit('change:' + device.vendorId, device);
+    detector.emit('change', device);
+  });
 
-	detection.registerRemoved(function(device) {
-		detector.emit('remove:' + device.vendorId + ':' + device.productId, device);
-		detector.emit('remove:' + device.vendorId, device);
-		detector.emit('remove', device);
-		detector.emit('change:' + device.vendorId + ':' + device.productId, device);
-		detector.emit('change:' + device.vendorId, device);
-		detector.emit('change', device);
-	});
+  detection.registerRemoved(function(device) {
+    detector.emit('remove:' + device.vendorId + ':' + device.productId, device);
+    detector.emit('remove:' + device.vendorId, device);
+    detector.emit('remove', device);
+    detector.emit('change:' + device.vendorId + ':' + device.productId, device);
+    detector.emit('change:' + device.vendorId, device);
+    detector.emit('change', device);
+  });
 
-	detector.startMonitoring = detection.startMonitoring;
-	detector.stopMonitoring = detection.stopMonitoring;
+  detector.startMonitoring = detection.startMonitoring;
+  detector.stopMonitoring = detection.stopMonitoring;
 
-	detector.version = index.version;
-	global[index.name] = detector;
+  detector.version = index.version;
+  global[index.name] = detector;
 
-	module.exports = detector;
+  module.exports = detector;
 }
