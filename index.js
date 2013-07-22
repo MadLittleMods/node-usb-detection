@@ -4,7 +4,7 @@ if (global[index.name] && global[index.name].version === index.version) {
 	module.exports = global[index.name];
 } else {
 	var detection = require('bindings')('detection.node'),
-		EventEmitter2 = require('eventemitter2').EventEmitter2;
+			EventEmitter2 = require('eventemitter2').EventEmitter2;
 
 	var detector = new EventEmitter2({
 		wildcard: true,

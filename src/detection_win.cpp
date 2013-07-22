@@ -187,13 +187,11 @@ void InitDetection()
     Start();
 }
 
-
-void EIO_Find(uv_work_t* req)
+std::list<ListResultItem_t*> EIO_Find(int vid, int pid, char errorString[1024]) 
 {
-
-    ListBaton* data = static_cast<ListBaton*>(req->data);
-
-    CreateFilteredList(&data->results, data->vid, data->pid);
+    std::list<ListResultItem_t*> results;
+    CreateFilteredList(&results, vid, pid);
+    return results;
 }
 
 

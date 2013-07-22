@@ -1,12 +1,13 @@
 {
   "name": "usb-detection",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "List USB devices in system and detect changes on them.",
   "main": "index.js",
   "dependencies": {
     "bindings": "1.1.0",
     "eventemitter2": ">=0.4.11"
   },
+  "gypfile": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "preinstall": "node-gyp rebuild"
