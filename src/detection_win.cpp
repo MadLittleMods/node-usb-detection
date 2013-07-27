@@ -122,28 +122,32 @@ void NotifyFinished(uv_work_t* req)
 void LoadFunctions()
 {
 
-    bool success = true;
+    bool success;
 
     hinstLib = LoadLibrary(LIBRARY_NAME); 
-    success = (hinstLib == NULL) ? false : true;
 
     if (hinstLib != NULL) 
-    { 
+    {
         DllSetupDiEnumDeviceInfo = (_SetupDiEnumDeviceInfo) GetProcAddress(hinstLib, "SetupDiEnumDeviceInfo"); 
-        success = (DllSetupDiEnumDeviceInfo == NULL) ? false : true;
 
         DllSetupDiGetClassDevs = (_SetupDiGetClassDevs) GetProcAddress(hinstLib, "SetupDiGetClassDevsA"); 
-        success = (DllSetupDiGetClassDevs == NULL) ? false : true;
 
         DllSetupDiDestroyDeviceInfoList = (_SetupDiDestroyDeviceInfoList) GetProcAddress(hinstLib, "SetupDiDestroyDeviceInfoList"); 
-        success = (DllSetupDiDestroyDeviceInfoList == NULL) ? false : true;
 
         DllSetupDiGetDeviceInstanceId = (_SetupDiGetDeviceInstanceId) GetProcAddress(hinstLib, "SetupDiGetDeviceInstanceIdA"); 
-        success = (DllSetupDiGetDeviceInstanceId == NULL) ? false : true;
 
         DllSetupDiGetDeviceRegistryProperty = (_SetupDiGetDeviceRegistryProperty) GetProcAddress(hinstLib, "SetupDiGetDeviceRegistryPropertyA"); 
-        success = (DllSetupDiGetDeviceRegistryProperty == NULL) ? false : true;
-    } 
+
+        success = (DllSetupDiEnumDeviceInfo != NULL &&
+                   DllSetupDiGetClassDevs != NULL &&
+                   DllSetupDiDestroyDeviceInfoList != NULL &&
+                   DllSetupDiGetDeviceInstanceId != NULL &&
+                   DllSetupDiGetDeviceRegistryProperty != NULL);
+    }
+    else
+    {
+        success = false;
+    }
 
     if(!success)
     {

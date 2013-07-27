@@ -136,7 +136,7 @@ class FindWorker : public NanAsyncWorker {
     {
       v8::Local<v8::Array> results = v8::Array::New();
       int i = 0;
-      for(std::list<ListResultItem_t*>::iterator it = list.begin(); it != list.end(); it++, i++) {
+      for(std::list<ListResultItem_t*>::iterator it = list.begin(); it != list.end(); ++it, i++) {
         v8::Local<v8::Object> item = v8::Object::New();
         item->Set(v8::String::New(OBJECT_ITEM_LOCATION_ID), v8::Number::New((*it)->locationId));
         item->Set(v8::String::New(OBJECT_ITEM_VENDOR_ID), v8::Number::New((*it)->vendorId));
@@ -153,7 +153,7 @@ class FindWorker : public NanAsyncWorker {
     
     callback->Call(2, argv);
 
-    for(std::list<ListResultItem_t*>::iterator it = list.begin(); it != list.end(); it++) 
+    for(std::list<ListResultItem_t*>::iterator it = list.begin(); it != list.end(); ++it) 
     {
       delete *it;
     }
