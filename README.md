@@ -42,6 +42,10 @@ monitor.on('change:vid:pid', function(err, devices) {});
 
 # Release Notes
 
+## v1.0.2
+
+- fixed issues found via cppcheck
+
 ## v1.0.1
 
 - ready for node >= 0.11.4
