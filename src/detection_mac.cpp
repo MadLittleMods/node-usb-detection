@@ -403,7 +403,10 @@ void NotifyFinished(uv_work_t* req)
         delete notify_item;
     }
 
-    uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);         
+    if (isRunning) 
+    {
+        uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
+    }
     SignalDeviceHandled();   
 }
 
