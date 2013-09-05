@@ -32,8 +32,21 @@ if (global[index.name] && global[index.name].version === index.version) {
     detector.emit('change', device);
   });
 
-  detector.startMonitoring = detection.startMonitoring;
-  detector.stopMonitoring = detection.stopMonitoring;
+  var started = true;
+
+  detector.startMonitoring = function() {
+    if (started) return;
+
+    started = true;
+    detection.startMonitoring();
+  };
+
+  detector.stopMonitoring = function() {
+    if (!started) return;
+
+    started = false;
+    detection.stopMonitoring();
+  };
 
   detector.version = index.version;
   global[index.name] = detector;
