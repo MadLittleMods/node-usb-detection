@@ -26,6 +26,10 @@
           {
             'sources': [
               "src/detection_mac.cpp"
+            ],
+            "libraries": [
+              "-framework",   
+              "IOKit"
             ]
           }
         ],
