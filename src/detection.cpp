@@ -10,21 +10,22 @@
 #define OBJECT_ITEM_DEVICE_ADDRESS  "deviceAddress"
 
 
-v8::Persistent<v8::Value> addedCallback;
+NanCallback* addedCallback;
 bool isAddedRegistered = false;
 
-v8::Persistent<v8::Value> removedCallback;
+NanCallback* removedCallback;
 bool isRemovedRegistered = false;
 
-v8::Handle<v8::Value> RegisterAdded(const v8::Arguments& args) 
+void RegisterAdded(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-  v8::HandleScope scope;
+  v8::Isolate* isolate = v8::Isolate::GetCurrent();
+  v8::HandleScope scope(isolate);
 
-  v8::Local<v8::Value> callback;
+  v8::Local<v8::Function> callback;
 
   if (args.Length() == 0) 
   {
-    return scope.Close(v8::ThrowException(v8::Exception::TypeError(v8::String::New("First argument must be a function"))));
+    return NanThrowTypeError("First argument must be a function");
   }
 
   if (args.Length() == 1) 
@@ -32,44 +33,52 @@ v8::Handle<v8::Value> RegisterAdded(const v8::Arguments& args)
     // callback
     if(!args[0]->IsFunction()) 
     {
-        return scope.Close(v8::ThrowException(v8::Exception::TypeError(v8::String::New("First argument must be a function"))));
+      return NanThrowTypeError("First argument must be a function");
     }
 
-    callback = args[0];
+    callback = args[0].As<v8::Function>();
   }
 
-  addedCallback = v8::Persistent<v8::Value>::New(callback);
+  addedCallback = new NanCallback(callback);
   isAddedRegistered = true;
-
-  return scope.Close(v8::Undefined());
 }
 
 void NotifyAdded(ListResultItem_t* it) 
 {
-  if (isAddedRegistered) 
+  v8::Isolate* isolate = v8::Isolate::GetCurrent();
+  v8::HandleScope scope(isolate);
+
+  if (isAddedRegistered)
   {
     v8::Handle<v8::Value> argv[1];
-    v8::Local<v8::Object> item = v8::Object::New();
-    item->Set(v8::String::New(OBJECT_ITEM_LOCATION_ID), v8::Number::New(it->locationId));
-    item->Set(v8::String::New(OBJECT_ITEM_VENDOR_ID), v8::Number::New(it->vendorId));
-    item->Set(v8::String::New(OBJECT_ITEM_PRODUCT_ID), v8::Number::New(it->productId));
-    item->Set(v8::String::New(OBJECT_ITEM_DEVICE_NAME), v8::String::New(it->deviceName.c_str()));
-    item->Set(v8::String::New(OBJECT_ITEM_MANUFACTURER), v8::String::New(it->manufacturer.c_str()));
-    item->Set(v8::String::New(OBJECT_ITEM_SERIAL_NUMBER), v8::String::New(it->serialNumber.c_str()));
-    item->Set(v8::String::New(OBJECT_ITEM_DEVICE_ADDRESS), v8::Number::New(it->deviceAddress));
+    v8::Local<v8::Object> item = v8::Object::New(isolate);
+    item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_LOCATION_ID), v8::Number::New(isolate, it->locationId));
+    item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_VENDOR_ID), v8::Number::New(isolate, it->vendorId));
+    item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_PRODUCT_ID), v8::Number::New(isolate, it->productId));
+    item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_DEVICE_NAME), v8::String::NewFromUtf8(isolate, it->deviceName.c_str()));
+    item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_MANUFACTURER), v8::String::NewFromUtf8(isolate, it->manufacturer.c_str()));
+    item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_SERIAL_NUMBER), v8::String::NewFromUtf8(isolate, it->serialNumber.c_str()));
+    item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_DEVICE_ADDRESS), v8::Number::New(isolate, it->deviceAddress));
     argv[0] = item;
-    v8::Function::Cast(*addedCallback)->Call(v8::Context::GetCurrent()->Global(), 1, argv);
+    //v8::Function::Cast(*addedCallback)->Call(isolate->GetCurrentContext()->Global(), 1, argv);
+    //v8::Local<v8::Function> cb = v8::Local<v8::Function>::New(isolate, addedCallback);
+    //NanCallback *callback = new NanCallback(cb);
+    //v8::Handle<v8::Value> nan_argv[] = {
+    //  NanNew<v8::Object>(argv[0])
+    //};
+    addedCallback->Call(1, argv);
   }
 }
 
-v8::Handle<v8::Value> RegisterRemoved(const v8::Arguments& args) {
-  v8::HandleScope scope;
+void RegisterRemoved(const v8::FunctionCallbackInfo<v8::Value>& args) {
+  v8::Isolate* isolate = v8::Isolate::GetCurrent();
+  v8::HandleScope scope(isolate);
 
-  v8::Local<v8::Value> callback;
+  v8::Local<v8::Function> callback;
 
   if (args.Length() == 0) 
   {
-    return scope.Close(v8::ThrowException(v8::Exception::TypeError(v8::String::New("First argument must be a function"))));
+    return NanThrowTypeError("First argument must be a function");
   }
 
   if (args.Length() == 1) 
@@ -77,47 +86,52 @@ v8::Handle<v8::Value> RegisterRemoved(const v8::Arguments& args) {
     // callback
     if(!args[0]->IsFunction()) 
     {
-        return scope.Close(v8::ThrowException(v8::Exception::TypeError(v8::String::New("First argument must be a function"))));
+      return NanThrowTypeError("First argument must be a function");
     }
 
-    callback = args[0];
+    callback = args[0].As<v8::Function>();
   }
 
-  removedCallback = v8::Persistent<v8::Value>::New(callback);
+  removedCallback = new NanCallback(callback);
   isRemovedRegistered = true;
-
-  return scope.Close(v8::Undefined());
 }
 
 void NotifyRemoved(ListResultItem_t* it) 
 {
+  v8::Isolate* isolate = v8::Isolate::GetCurrent();
+  v8::HandleScope scope(isolate);
+
   if (isRemovedRegistered) 
   {
     v8::Handle<v8::Value> argv[1];
-    v8::Local<v8::Object> item = v8::Object::New();
-    item->Set(v8::String::New(OBJECT_ITEM_LOCATION_ID), v8::Number::New(it->locationId));
-    item->Set(v8::String::New(OBJECT_ITEM_VENDOR_ID), v8::Number::New(it->vendorId));
-    item->Set(v8::String::New(OBJECT_ITEM_PRODUCT_ID), v8::Number::New(it->productId));
-    item->Set(v8::String::New(OBJECT_ITEM_DEVICE_NAME), v8::String::New(it->deviceName.c_str()));
-    item->Set(v8::String::New(OBJECT_ITEM_MANUFACTURER), v8::String::New(it->manufacturer.c_str()));
-    item->Set(v8::String::New(OBJECT_ITEM_SERIAL_NUMBER), v8::String::New(it->serialNumber.c_str()));
-    item->Set(v8::String::New(OBJECT_ITEM_DEVICE_ADDRESS), v8::Number::New(it->deviceAddress));
+    v8::Local<v8::Object> item = v8::Object::New(isolate);
+    item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_LOCATION_ID), v8::Number::New(isolate, it->locationId));
+    item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_VENDOR_ID), v8::Number::New(isolate, it->vendorId));
+    item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_PRODUCT_ID), v8::Number::New(isolate, it->productId));
+    item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_DEVICE_NAME), v8::String::NewFromUtf8(isolate, it->deviceName.c_str()));
+    item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_MANUFACTURER), v8::String::NewFromUtf8(isolate, it->manufacturer.c_str()));
+    item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_SERIAL_NUMBER), v8::String::NewFromUtf8(isolate, it->serialNumber.c_str()));
+    item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_DEVICE_ADDRESS), v8::Number::New(isolate, it->deviceAddress));
     argv[0] = item;
-    v8::Function::Cast(*removedCallback)->Call(v8::Context::GetCurrent()->Global(), 1, argv);
+    //v8::Function::Cast(*removedCallback)->Call(v8::Context::GetCurrent()->Global(), 1, argv);
+    //v8::Local<v8::Function> cb = v8::Local<v8::Function>::New(isolate, removedCallback);
+    //NanCallback *callback = new NanCallback(cb);
+    removedCallback->Call(1, argv);
   }
 }
 
-v8::Handle<v8::Value> Find(const v8::Arguments& args) 
+void Find(const v8::FunctionCallbackInfo<v8::Value>& args) 
 {
-  v8::HandleScope scope;
+  v8::Isolate* isolate = v8::Isolate::GetCurrent();
+  v8::HandleScope scope(isolate);
 
   int vid = 0;
   int pid = 0;
-  v8::Local<v8::Value> callback;
+  v8::Local<v8::Function> callback;
 
   if (args.Length() == 0) 
   {
-    return scope.Close(v8::ThrowException(v8::Exception::TypeError(v8::String::New("First argument must be a function"))));
+    return NanThrowTypeError("First argument must be a function");
   }
 
   if (args.Length() == 3) 
@@ -131,10 +145,10 @@ v8::Handle<v8::Value> Find(const v8::Arguments& args)
     // callback
     if(!args[2]->IsFunction()) 
     {
-        return scope.Close(v8::ThrowException(v8::Exception::TypeError(v8::String::New("Third argument must be a function"))));
+      return NanThrowTypeError("Third argument must be a function");
     }
 
-    callback = args[2];
+    callback = args[2].As<v8::Function>();
   }
 
   if (args.Length() == 2) 
@@ -147,10 +161,10 @@ v8::Handle<v8::Value> Find(const v8::Arguments& args)
     // callback
     if(!args[1]->IsFunction()) 
     {
-        return scope.Close(v8::ThrowException(v8::Exception::TypeError(v8::String::New("Second argument must be a function"))));
+      return NanThrowTypeError("Second argument must be a function");
     }
 
-    callback = args[1];
+    callback = args[1].As<v8::Function>();
   }
 
   if (args.Length() == 1) 
@@ -158,56 +172,62 @@ v8::Handle<v8::Value> Find(const v8::Arguments& args)
     // callback
     if(!args[0]->IsFunction()) 
     {
-        return scope.Close(v8::ThrowException(v8::Exception::TypeError(v8::String::New("First argument must be a function"))));
+      return NanThrowTypeError("First argument must be a function");
     }
 
-    callback = args[0];
+    callback = args[0].As<v8::Function>();
   }
 
   ListBaton* baton = new ListBaton();
   strcpy(baton->errorString, "");
-  baton->callback = v8::Persistent<v8::Value>::New(callback);
+  baton->callback = new NanCallback(callback);
+  //baton->callback = v8::Persistent<v8::Value>::New(isolate, callback);
+  //NanAssignPersistent(baton->callback, new NanCallback(callback));
   baton->vid = vid;
   baton->pid = pid;
 
   uv_work_t* req = new uv_work_t();
   req->data = baton;
   uv_queue_work(uv_default_loop(), req, EIO_Find, (uv_after_work_cb)EIO_AfterFind);
-
-  return scope.Close(v8::Undefined());
 }
 
 void EIO_AfterFind(uv_work_t* req) 
 {
+  v8::Isolate* isolate = v8::Isolate::GetCurrent();
+  v8::HandleScope scope(isolate);
+
   ListBaton* data = static_cast<ListBaton*>(req->data);
 
   v8::Handle<v8::Value> argv[2];
   if(data->errorString[0]) 
   {
-    argv[0] = v8::Exception::Error(v8::String::New(data->errorString));
-    argv[1] = v8::Undefined();
-  } 
+    argv[0] = v8::Exception::Error(v8::String::NewFromUtf8(isolate, data->errorString));
+    argv[1] = NanUndefined();
+  }
   else 
   {
-    v8::Local<v8::Array> results = v8::Array::New();
+    v8::Local<v8::Array> results = v8::Array::New(isolate);
     int i = 0;
     for(std::list<ListResultItem_t*>::iterator it = data->results.begin(); it != data->results.end(); it++, i++) {
-      v8::Local<v8::Object> item = v8::Object::New();
-      item->Set(v8::String::New(OBJECT_ITEM_LOCATION_ID), v8::Number::New((*it)->locationId));
-      item->Set(v8::String::New(OBJECT_ITEM_VENDOR_ID), v8::Number::New((*it)->vendorId));
-      item->Set(v8::String::New(OBJECT_ITEM_PRODUCT_ID), v8::Number::New((*it)->productId));
-      item->Set(v8::String::New(OBJECT_ITEM_DEVICE_NAME), v8::String::New((*it)->deviceName.c_str()));
-      item->Set(v8::String::New(OBJECT_ITEM_MANUFACTURER), v8::String::New((*it)->manufacturer.c_str()));
-      item->Set(v8::String::New(OBJECT_ITEM_SERIAL_NUMBER), v8::String::New((*it)->serialNumber.c_str()));
-      item->Set(v8::String::New(OBJECT_ITEM_DEVICE_ADDRESS), v8::Number::New((*it)->deviceAddress));
+      v8::Local<v8::Object> item = v8::Object::New(isolate);
+      item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_LOCATION_ID), v8::Number::New(isolate, (*it)->locationId));
+      item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_VENDOR_ID), v8::Number::New(isolate, (*it)->vendorId));
+      item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_PRODUCT_ID), v8::Number::New(isolate, (*it)->productId));
+      item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_DEVICE_NAME), v8::String::NewFromUtf8(isolate, (*it)->deviceName.c_str()));
+      item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_MANUFACTURER), v8::String::NewFromUtf8(isolate, (*it)->manufacturer.c_str()));
+      item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_SERIAL_NUMBER), v8::String::NewFromUtf8(isolate, (*it)->serialNumber.c_str()));
+      item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_DEVICE_ADDRESS), v8::Number::New(isolate, (*it)->deviceAddress));
       results->Set(i, item);
     }
-    argv[0] = v8::Undefined();
+    argv[0] = NanUndefined();
     argv[1] = results;
   }
-  v8::Function::Cast(*data->callback)->Call(v8::Context::GetCurrent()->Global(), 2, argv);
+  //v8::Function::Cast(*data->callback)->Call(v8::Context::GetCurrent()->Global(), 2, argv);
+  //v8::Local<v8::Function> cb = v8::Local<v8::Function>::New(isolate, data->callback.As<v8::Function>());
+  //NanCallback *callback = new NanCallback(cb);
+  data->callback->Call(2, argv);
 
-  data->callback.Dispose();
+  //data->callback.Dispose();
   for(std::list<ListResultItem_t*>::iterator it = data->results.begin(); it != data->results.end(); it++) 
   {
     delete *it;
@@ -216,28 +236,19 @@ void EIO_AfterFind(uv_work_t* req)
   delete req;
 }
 
-v8::Handle<v8::Value> StartMonitoring(const v8::Arguments& args) 
+void StartMonitoring(const v8::FunctionCallbackInfo<v8::Value>& args) 
 {
-  v8::HandleScope scope;
-
   Start();
-
-  return scope.Close(v8::Undefined());
 }
 
-v8::Handle<v8::Value> StopMonitoring(const v8::Arguments& args) 
+void StopMonitoring(const v8::FunctionCallbackInfo<v8::Value>& args) 
 {
-  v8::HandleScope scope;
-
   Stop();
-
-  return scope.Close(v8::Undefined());
 }
 
 extern "C" {
   void init (v8::Handle<v8::Object> target) 
   {
-    v8::HandleScope scope;
     NODE_SET_METHOD(target, "find", Find);
     NODE_SET_METHOD(target, "registerAdded", RegisterAdded);
     NODE_SET_METHOD(target, "registerRemoved", RegisterRemoved);

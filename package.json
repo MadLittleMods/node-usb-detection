@@ -1,16 +1,17 @@
 {
   "name": "usb-detection",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "List USB devices in system and detect changes on them.",
   "main": "index.js",
   "dependencies": {
     "bindings": "1.1.0",
-    "eventemitter2": ">=0.4.11"
+    "eventemitter2": ">=0.4.11",
+    "nan": "^1.8.4"
   },
   "gypfile": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "preinstall": "node-gyp rebuild"
+    "postinstall": "node-gyp rebuild"
   },
   "repository": {
     "type": "git",
@@ -19,6 +20,7 @@
   "keywords": [
     "usb",
     "list",
+    "insert",
     "add",
     "remove",
     "change",

@@ -42,6 +42,10 @@ monitor.on('change:vid:pid', function(err, devices) {});
 
 # Release Notes
 
+## v1.1.0
+
+ - Add support for Node v0.12.x
+
 ## v1.0.3
 
 - revert "ready for node >= 0.11.4"
