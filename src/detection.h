@@ -4,37 +4,40 @@
 
 #include <node.h>
 #include <v8.h>
+#include <uv.h>
 #include <list>
 #include <string>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <nan.h>
 
 #include "deviceList.h"
 
-v8::Handle<v8::Value> Find(const v8::Arguments& args);
+void Find(const v8::FunctionCallbackInfo<v8::Value>& args);
 void EIO_Find(uv_work_t* req);
 void EIO_AfterFind(uv_work_t* req);
 void InitDetection();
-v8::Handle<v8::Value> StartMonitoring(const v8::Arguments& args);
+void StartMonitoring(const v8::FunctionCallbackInfo<v8::Value>& args);
 void Start();
-v8::Handle<v8::Value> StopMonitoring(const v8::Arguments& args);
+void StopMonitoring(const v8::FunctionCallbackInfo<v8::Value>& args);
 void Stop();
 
 
 struct ListBaton 
 {
 public:
-  v8::Persistent<v8::Value> callback;
+  //v8::Persistent<v8::Function> callback;
+	NanCallback* callback;
   std::list<ListResultItem_t*> results;
   char errorString[1024];
   int vid;
   int pid;
 };
 
-v8::Handle<v8::Value> RegisterAdded(const v8::Arguments& args);
+void RegisterAdded(const v8::FunctionCallbackInfo<v8::Value>& args);
 void NotifyAdded(ListResultItem_t* it);
-v8::Handle<v8::Value> RegisterRemoved(const v8::Arguments& args);
+void RegisterRemoved(const v8::FunctionCallbackInfo<v8::Value>& args);
 void NotifyRemoved(ListResultItem_t* it);
 
 #endif
