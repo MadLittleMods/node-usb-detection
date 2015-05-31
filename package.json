@@ -6,8 +6,7 @@
   "dependencies": {
     "bindings": "1.1.0",
     "eventemitter2": ">=0.4.11",
-    "nan": "^1.8.4",
-    "nav": "0.0.2"
+    "nan": "^1.8.4"
   },
   "gypfile": true,
   "scripts": {
