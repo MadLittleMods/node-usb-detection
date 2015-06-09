@@ -24,15 +24,16 @@ void StopMonitoring(const v8::FunctionCallbackInfo<v8::Value>& args);
 void Stop();
 
 
-struct ListBaton 
+struct ListBaton
 {
 public:
-  //v8::Persistent<v8::Function> callback;
-	NanCallback* callback;
-  std::list<ListResultItem_t*> results;
-  char errorString[1024];
-  int vid;
-  int pid;
+    //v8::Persistent<v8::Function> callback;
+
+    NanCallback*                   callback;
+    std::list<ListResultItem_t*>   results;
+    char                           errorString[1024];
+    int                            vid;
+    int                            pid;
 };
 
 void RegisterAdded(const v8::FunctionCallbackInfo<v8::Value>& args);
