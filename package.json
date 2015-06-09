@@ -2,7 +2,7 @@
   "name": "usb-detection",
   "version": "1.1.0",
   "description": "List USB devices in system and detect changes on them.",
-  "main": "index.js",
+  "main": "usb-detection.js",
   "dependencies": {
     "bindings": "1.1.0",
     "eventemitter2": ">=0.4.11",

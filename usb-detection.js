@@ -1,10 +1,13 @@
 var index = require('./package.json');
 
-if (global[index.name] && global[index.name].version === index.version) {
+if (global[index.name] && global[index.name].version === index.version) 
+{
   module.exports = global[index.name];
-} else {
-  var detection = require('bindings')('detection.node'),
-      EventEmitter2 = require('eventemitter2').EventEmitter2;
+} 
+else 
+{
+  var detection     = require('bindings')('detection.node');
+  var EventEmitter2 = require('eventemitter2').EventEmitter2;
 
   var detector = new EventEmitter2({
     wildcard: true,
@@ -15,21 +18,29 @@ if (global[index.name] && global[index.name].version === index.version) {
   detector.find = detection.find;
 
   detection.registerAdded(function(device) {
-    detector.emit('add:' + device.vendorId + ':' + device.productId, device);
-    detector.emit('add:' + device.vendorId, device);
+    //console.log("registerAdded:", device, device.vendorId, device.productId);
+    console.log("registerAdded");
+
     detector.emit('add', device);
+    detector.emit('add:' + device.vendorId + ':' + device.productId, device);
+    detector.emit('add:vid', device, device.vendorId);
+    
+    detector.emit('change', device);
     detector.emit('change:' + device.vendorId + ':' + device.productId, device);
     detector.emit('change:' + device.vendorId, device);
-    detector.emit('change', device);
+    
   });
 
   detection.registerRemoved(function(device) {
+    console.log("registerRemoved");
+
+    detector.emit('remove', device);
     detector.emit('remove:' + device.vendorId + ':' + device.productId, device);
     detector.emit('remove:' + device.vendorId, device);
-    detector.emit('remove', device);
+    
+    detector.emit('change', device);
     detector.emit('change:' + device.vendorId + ':' + device.productId, device);
     detector.emit('change:' + device.vendorId, device);
-    detector.emit('change', device);
   });
 
   var started = true;
