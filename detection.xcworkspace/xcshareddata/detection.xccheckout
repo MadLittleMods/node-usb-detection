@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>B612A58A-0F66-4CCB-8C9A-07959623C930</string>
+	<key>IDESourceControlProjectName</key>
+	<string>detection</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>49677526EE16566AF69A2E5E5315EB116069799C</key>
+		<string>github.com:angelmic/node-usb-detection.git</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>detection.xcworkspace</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>49677526EE16566AF69A2E5E5315EB116069799C</key>
+		<string>..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>github.com:angelmic/node-usb-detection.git</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>111</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>49677526EE16566AF69A2E5E5315EB116069799C</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>49677526EE16566AF69A2E5E5315EB116069799C</string>
+			<key>IDESourceControlWCCName</key>
+			<string>node-usb-detection</string>
+		</dict>
+	</array>
+</dict>
+</plist>
