@@ -14,7 +14,8 @@ public:
     std::string    manufacturer;
     std::string    serialNumber;
     int            deviceAddress;
-
+    std::string    mountPath;
+    
 } ListResultItem_t;
 
 typedef enum  _DeviceState_t

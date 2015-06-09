@@ -8,6 +8,7 @@
 #define OBJECT_ITEM_MANUFACTURER    "manufacturer"
 #define OBJECT_ITEM_SERIAL_NUMBER   "serialNumber"
 #define OBJECT_ITEM_DEVICE_ADDRESS  "deviceAddress"
+#define OBJECT_ITEM_MOUNT_PATH      "mountPath"
 
 
 NanCallback* addedCallback;
