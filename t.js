@@ -1,5 +1,4 @@
 var monitor = require('./usb-detection');
-var usb     = require('usb');
 
 monitor.find(function(err, devices) {
 	console.log("find: some devices");
@@ -9,7 +8,7 @@ monitor.find(function(err, devices) {
 
 monitor.on('add', function(devices) { 
 	console.log("add USB:", devices); 
-	console.log(usb.findByIds(devices.vendorId, devices.productId).interfaces);
+	
 });
 
 monitor.on('add:vid', function(devices, vid) { 

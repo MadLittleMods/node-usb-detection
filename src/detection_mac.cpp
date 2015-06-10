@@ -4,15 +4,31 @@
 #include <CoreFoundation/CoreFoundation.h>
 
 #include <IOKit/IOKitLib.h>
-#include <IOKit/IOMessage.h>
 #include <IOKit/IOCFPlugIn.h>
 #include <IOKit/usb/IOUSBLib.h>
+ 
+#include <IOKit/IOBSD.h>
+#include <IOKit/storage/IOCDMedia.h>
+#include <IOKit/storage/IOMedia.h>
+#include <IOKit/storage/IOCDTypes.h>
+#include <IOKit/storage/IOMediaBSDClient.h>
+ 
+#include <IOKit/serial/IOSerialKeys.h>
+#include <IOKit/serial/ioss.h>
+#include <IOKit/IOMessage.h>
+
+#include <DiskArbitration/DiskArbitration.h>
+#include <DiskArbitration/DASession.h>
+#include <DiskArbitration/DADisk.h>
+#include <DiskArbitration/DADissenter.h>
+
 
 #include <sys/param.h>
 #include <pthread.h>
-
+#include <unistd.h>
 #include <uv.h>
 
+#define dlog(fmt, arg...) printf("%s(%d) " fmt, __func__, __LINE__, ##arg)
 
 typedef struct DeviceListItem
 {
@@ -48,6 +64,54 @@ void WaitForDeviceHandled();
 void SignalDeviceHandled();
 void WaitForNewDevice();
 void SignalDeviceAvailable();
+
+char* cfStringRefToCString( CFStringRef cfString )
+{
+    if ( !cfString ) 
+        return NULL;
+
+    static char string[2048];
+
+    string[0] = '\0';
+    CFStringGetCString(cfString,
+                       string, 
+                       MAXPATHLEN, 
+                       kCFStringEncodingASCII);
+
+    return &string[0];
+}
+
+char* cfTypeToCString( CFTypeRef cfString )
+{
+    if ( !cfString ) return NULL;
+    
+    static char deviceFilePath[2048];
+    
+    deviceFilePath[0] = '\0';
+    
+    CFStringGetCString(CFCopyDescription(cfString),
+                       deviceFilePath, MAXPATHLEN,
+                       kCFStringEncodingASCII);
+    
+    char* p = deviceFilePath;
+    
+    while (*p != '\"')
+        p++;
+    
+    p++;
+    
+    char* pp = p;
+    
+    while (*pp != '\"')
+        pp++;
+    
+    *pp = '\0';
+    
+    if (isdigit(*p))
+        *p = 'x';
+    
+    return p;
+}
 
 //================================================================================================
 //
@@ -164,10 +228,10 @@ void DeviceAdded(void *refCon, io_iterator_t iterator)
         }
 
         CFStringRef manufacturerAsCFString = (CFStringRef) IORegistryEntrySearchCFProperty(usbDevice,
-                                             kIOServicePlane,
-                                             CFSTR(kUSBVendorString),
-                                             kCFAllocatorDefault,
-                                             kIORegistryIterateRecursively);
+                                                                                           kIOServicePlane,
+                                                                                           CFSTR(kUSBVendorString),
+                                                                                           kCFAllocatorDefault,
+                                                                                           kIORegistryIterateRecursively);
 
         if (manufacturerAsCFString)
         {
@@ -189,10 +253,10 @@ void DeviceAdded(void *refCon, io_iterator_t iterator)
         }
 
         CFStringRef serialNumberAsCFString = (CFStringRef) IORegistryEntrySearchCFProperty(usbDevice,
-                                             kIOServicePlane,
-                                             CFSTR(kUSBSerialNumberString),
-                                             kCFAllocatorDefault,
-                                             kIORegistryIterateRecursively);
+                                                                                           kIOServicePlane,
+                                                                                           CFSTR(kUSBSerialNumberString),
+                                                                                           kCFAllocatorDefault,
+                                                                                           kIORegistryIterateRecursively);
 
         if (serialNumberAsCFString)
         {
@@ -213,7 +277,53 @@ void DeviceAdded(void *refCon, io_iterator_t iterator)
             CFRelease(serialNumberAsCFString);
         }
 
+        if (intialDeviceImport == false)
+            usleep(1500000); //1.5 sec
+        
+        CFStringRef bsdName = (CFStringRef) IORegistryEntrySearchCFProperty(usbDevice,
+                                                                            kIOServicePlane,
+                                                                            CFSTR(kIOBSDNameKey),
+                                                                            kCFAllocatorDefault,
+                                                                            kIORegistryIterateRecursively);
+        
+        if (bsdName)
+        {
+            char bsdNameBuf[4096];
+            sprintf( bsdNameBuf, "/dev/%ss1", cfStringRefToCString(bsdName));
+            char* bsdNameC = &bsdNameBuf[0];
+            DASessionRef daSession = DASessionCreate(kCFAllocatorDefault);
+            
+            DADiskRef disk = DADiskCreateFromBSDName(kCFAllocatorDefault, daSession, bsdNameC);
+            
+            if (disk)
+            {
+                CFDictionaryRef desc = DADiskCopyDescription(disk);
+                if (desc)
+                {
+                    //CFTypeRef str = CFDictionaryGetValue(desc, kDADiskDescriptionVolumeNameKey);
+                    CFTypeRef str = CFDictionaryGetValue(desc, kDADiskDescriptionVolumeNameKey);
+                    char* volumeName = cfTypeToCString(str);
+                    if (volumeName && strlen(volumeName))
+                    {
+                        char volumePath[MAXPATHLEN];
+                        
+                        sprintf(volumePath, "/Volumes/%s", volumeName);
+                        
+                        deviceItem->deviceParams.mountPath = volumePath;
+                        CFRelease(desc);
+                    }
+                    else
+                    {
+                        CFRelease(desc);
+                    }
+                }
+                
+                CFRelease(disk);
+            }
+            CFRelease(daSession);
+        }
 
+        
         // Now, get the locationID of this device. In order to do this, we need to create an IOUSBDeviceInterface
         // for our device. This will create the necessary connections between our userland application and the
         // kernel object for the USB Device.
