@@ -321,6 +321,7 @@ void DeviceAdded(void *refCon, io_iterator_t iterator)
                 CFRelease(disk);
             }
             CFRelease(daSession);
+            CFRelease(bsdName);
         }
 
         
