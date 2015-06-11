@@ -25,7 +25,7 @@ monitor.on('add:vid:pid', function(devices) {
 });
 
 monitor.on('remove', function(err, devices) {
-    console.log("remove USB");
+    console.log("remove USB ");
 
 });
 
