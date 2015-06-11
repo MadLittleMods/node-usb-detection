@@ -40,6 +40,9 @@ monitor.on('change:vid', function(err, devices) {});
 monitor.on('change:vid:pid', function(err, devices) {});
 ```
 
+# Diff with original
+Add an attribute 'mountPath' to show mounted point on Linux and Mac. ( Windows need someone to fix ).
+
 # Release Notes
 
 ## v1.1.0
