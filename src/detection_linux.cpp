@@ -1,5 +1,7 @@
 #include <libudev.h>
+#include <mntent.h>
 #include <pthread.h>
+#include <unistd.h>
 
 #include "detection.h"
 #include "deviceList.h"
@@ -15,6 +17,7 @@ using namespace std;
 #define DEVICE_ACTION_REMOVED           "remove"
 
 #define DEVICE_TYPE_DEVICE              "usb_device"
+#define DEVICE_TYPE_PARTITION           "partition"
 
 #define DEVICE_PROPERTY_NAME            "ID_MODEL"
 #define DEVICE_PROPERTY_SERIAL          "ID_SERIAL_SHORT"
@@ -232,9 +235,40 @@ ListResultItem_t* GetProperties(struct udev_device* dev, ListResultItem_t* item)
     return item;
 }
 
+void GetMountPath(struct udev_device* dev, ListResultItem_t* item)
+{
+    struct mntent *mnt;
+    FILE          *fp      = NULL;
+    const char    *devNode = udev_device_get_devnode(dev);
+
+    // TODO: find a better way to replace waiting for a second
+    sleep(1);
+    if ((fp = setmntent("/proc/mounts", "r")) == NULL)
+    {
+        //TODO: sent error to js layer
+        //NanThrowError("Can't open mounted filesystems\n");
+        printf("Can't open mounted filesystems\n");
+        return;
+    }
+
+    while ((mnt = getmntent(fp)))
+    {
+        if (!strcmp(mnt->mnt_fsname, devNode))
+        {
+            item->mountPath = mnt->mnt_dir;
+        }
+    }
+
+    /* close file for describing the mounted filesystems */
+    endmntent(fp);
+
+    SignalDeviceAvailable();
+}
+
 void DeviceAdded(struct udev_device* dev)
 {
     DeviceItem_t* item = new DeviceItem_t();
+
     GetProperties(dev, &item->deviceParams);
 
     AddItemToList((char *)udev_device_get_devnode(dev), item);
@@ -298,6 +332,11 @@ void* ThreadFunc(void* ptr)
                     WaitForDeviceHandled();
                     DeviceRemoved(dev);
                 }
+            }
+
+            if (udev_device_get_devtype(dev) && !strcmp(udev_device_get_devtype(dev), DEVICE_TYPE_PARTITION) && !strcmp(udev_device_get_action(dev), DEVICE_ACTION_ADDED))
+            {
+                GetMountPath(dev, currentItem);
             }
 
             udev_device_unref(dev);
