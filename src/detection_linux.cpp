@@ -1,5 +1,7 @@
 #include <libudev.h>
-#include <pthread.h> 
+#include <mntent.h>
+#include <pthread.h>
+#include <unistd.h>
 
 #include "detection.h"
 #include "deviceList.h"
@@ -15,6 +17,7 @@ using namespace std;
 #define DEVICE_ACTION_REMOVED           "remove"
 
 #define DEVICE_TYPE_DEVICE              "usb_device"
+#define DEVICE_TYPE_PARTITION           "partition"
 
 #define DEVICE_PROPERTY_NAME            "ID_MODEL"
 #define DEVICE_PROPERTY_SERIAL          "ID_SERIAL_SHORT"
@@ -30,36 +33,37 @@ using namespace std;
 /**********************************
  * Local Variables
  **********************************/
-ListResultItem_t* currentItem;
-bool isAdded;
+ListResultItem_t*             currentItem;
 
-struct udev *udev;
-struct udev_enumerate *enumerate;
-struct udev_list_entry *devices, *dev_list_entry;
-struct udev_device *dev;
+bool                         isAdded;
+struct udev*                 udev;
+struct udev_enumerate*       enumerate;
+struct udev_list_entry*      devices;
+struct udev_list_entry*      dev_list_entry;
+struct udev_device*          dev;
 
-struct udev_monitor *mon;
-int fd;
+struct udev_monitor*         mon;
+int                          fd;
 
-pthread_t thread;
+pthread_t       thread;
 pthread_mutex_t notify_mutex;
-pthread_cond_t notifyNewDevice;
-pthread_cond_t notifyDeviceHandled;
+pthread_cond_t  notifyNewDevice;
+pthread_cond_t  notifyDeviceHandled;
 
 bool newDeviceAvailable = false;
-bool deviceHandled = true;
+bool deviceHandled      = true;
 
-bool isRunning = false;
+bool isRunning          = false;
 /**********************************
  * Local Helper Functions protoypes
  **********************************/
-void BuildInitialDeviceList();
+void  BuildInitialDeviceList();
 
 void* ThreadFunc(void* ptr);
-void WaitForDeviceHandled();
-void SignalDeviceHandled();
-void WaitForNewDevice();
-void SignalDeviceAvailable();
+void  WaitForDeviceHandled();
+void  SignalDeviceHandled();
+void  WaitForNewDevice();
+void  SignalDeviceAvailable();
 
 /**********************************
  * Public Functions
@@ -72,20 +76,21 @@ void NotifyAsync(uv_work_t* req)
 
 void NotifyFinished(uv_work_t* req)
 {
-    if (isRunning) 
+    if (isRunning)
     {
-        if (isAdded) 
+        if (isAdded)
         {
             NotifyAdded(currentItem);
-        } 
-        else 
+        }
+
+        else
         {
             NotifyRemoved(currentItem);
         }
     }
 
     // Delete Item in case of removal
-    if(isAdded == false)
+    if (isAdded == false)
     {
         delete currentItem;
     }
@@ -111,7 +116,8 @@ void InitDetection()
 {
     /* Create the udev object */
     udev = udev_new();
-    if (!udev) 
+
+    if (!udev)
     {
         printf("Can't create udev\n");
         return;
@@ -131,7 +137,7 @@ void InitDetection()
     pthread_cond_init(&notifyNewDevice, NULL);
     pthread_cond_init(&notifyDeviceHandled, NULL);
 
-    uv_work_t* req = new uv_work_t();
+    uv_work_t *req = new uv_work_t();
     uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
 
     pthread_create(&thread, NULL, ThreadFunc, NULL);
@@ -153,10 +159,12 @@ void EIO_Find(uv_work_t* req)
 void WaitForDeviceHandled()
 {
     pthread_mutex_lock(&notify_mutex);
-    if(deviceHandled == false)
+
+    if (deviceHandled == false)
     {
         pthread_cond_wait(&notifyDeviceHandled, &notify_mutex);
     }
+
     deviceHandled = false;
     pthread_mutex_unlock(&notify_mutex);
 }
@@ -172,10 +180,12 @@ void SignalDeviceHandled()
 void WaitForNewDevice()
 {
     pthread_mutex_lock(&notify_mutex);
-    if(newDeviceAvailable == false)
+
+    if (newDeviceAvailable == false)
     {
         pthread_cond_wait(&notifyNewDevice, &notify_mutex);
     }
+
     newDeviceAvailable = false;
     pthread_mutex_unlock(&notify_mutex);
 }
@@ -189,74 +199,111 @@ void SignalDeviceAvailable()
 }
 
 
- ListResultItem_t* GetProperties(struct udev_device* dev, ListResultItem_t* item) 
- {
-    struct udev_list_entry* sysattrs;
-    struct udev_list_entry* entry;
+ListResultItem_t* GetProperties(struct udev_device* dev, ListResultItem_t* item)
+{
+    struct udev_list_entry*  sysattrs;
+    struct udev_list_entry*  entry;
     sysattrs = udev_device_get_properties_list_entry(dev);
-    udev_list_entry_foreach(entry, sysattrs) 
+    udev_list_entry_foreach(entry, sysattrs)
     {
-        const char *name, *value;
-        name = udev_list_entry_get_name(entry);
+        const char* name;
+        const char* value;
+
+        name  = udev_list_entry_get_name(entry);
         value = udev_list_entry_get_value(entry);
 
-        if(strcmp(name, DEVICE_PROPERTY_NAME) == 0)
+        if (strcmp(name, DEVICE_PROPERTY_NAME) == 0)
         {
             item->deviceName = value;
         }
-        else if(strcmp(name, DEVICE_PROPERTY_SERIAL) == 0)
+
+        else if (strcmp(name, DEVICE_PROPERTY_SERIAL) == 0)
         {
             item->serialNumber = value;
         }
-        else if(strcmp(name, DEVICE_PROPERTY_VENDOR) == 0)
+
+        else if (strcmp(name, DEVICE_PROPERTY_VENDOR) == 0)
         {
             item->manufacturer = value;
         }
     }
-    item->vendorId = strtol (udev_device_get_sysattr_value(dev,"idVendor"), NULL, 16);
-    item->productId = strtol (udev_device_get_sysattr_value(dev,"idProduct"), NULL, 16);
+    item->vendorId      = strtol (udev_device_get_sysattr_value(dev, "idVendor"), NULL, 16);
+    item->productId     = strtol (udev_device_get_sysattr_value(dev, "idProduct"), NULL, 16);
     item->deviceAddress = 0;
-    item->locationId = 0;
+    item->locationId    = 0;
 
     return item;
 }
 
-void DeviceAdded(struct udev_device* dev) 
+void GetMountPath(struct udev_device* dev, ListResultItem_t* item)
+{
+    struct mntent *mnt;
+    FILE          *fp      = NULL;
+    const char    *devNode = udev_device_get_devnode(dev);
+
+    // TODO: find a better way to replace waiting for a second
+    sleep(1);
+    if ((fp = setmntent("/proc/mounts", "r")) == NULL)
+    {
+        //TODO: sent error to js layer
+        //NanThrowError("Can't open mounted filesystems\n");
+        printf("Can't open mounted filesystems\n");
+        return;
+    }
+
+    while ((mnt = getmntent(fp)))
+    {
+        if (!strcmp(mnt->mnt_fsname, devNode))
+        {
+            item->mountPath = mnt->mnt_dir;
+        }
+    }
+
+    /* close file for describing the mounted filesystems */
+    endmntent(fp);
+
+    SignalDeviceAvailable();
+}
+
+void DeviceAdded(struct udev_device* dev)
 {
     DeviceItem_t* item = new DeviceItem_t();
+
     GetProperties(dev, &item->deviceParams);
 
     AddItemToList((char *)udev_device_get_devnode(dev), item);
 
     currentItem = &item->deviceParams;
-    isAdded = true;
+    isAdded     = true;
 
     SignalDeviceAvailable();
 }
 
-void DeviceRemoved(struct udev_device* dev) 
+void DeviceRemoved(struct udev_device* dev)
 {
     ListResultItem_t* item = NULL;
 
-    if(IsItemAlreadyStored((char *)udev_device_get_devnode(dev)))
+    if (IsItemAlreadyStored((char *)udev_device_get_devnode(dev)))
     {
         DeviceItem_t* deviceItem = GetItemFromList( (char *)udev_device_get_devnode(dev));
-        if(deviceItem)
+
+        if (deviceItem)
         {
             item = CopyElement(&deviceItem->deviceParams);
         }
+
         RemoveItemFromList(deviceItem);
         delete deviceItem;
     }
 
-    if(item == NULL)
+    if (item == NULL)
     {
         item = new ListResultItem_t();
         GetProperties(dev, item);
     }
-    
+
     currentItem = item;
-    isAdded = false;
+    isAdded     = false;
 
     SignalDeviceAvailable();
 }
@@ -264,26 +311,34 @@ void DeviceRemoved(struct udev_device* dev)
 
 void* ThreadFunc(void* ptr)
 {
-    while (1) 
+    while (1)
     {
         /* Make the call to receive the device.
            select() ensured that this will not block. */
         dev = udev_monitor_receive_device(mon);
-        if (dev) 
+
+        if (dev)
         {
-            if(udev_device_get_devtype(dev) && strcmp(udev_device_get_devtype(dev), DEVICE_TYPE_DEVICE) == 0)
+            if (udev_device_get_devtype(dev) && strcmp(udev_device_get_devtype(dev), DEVICE_TYPE_DEVICE) == 0)
             {
-                if(strcmp(udev_device_get_action(dev), DEVICE_ACTION_ADDED) == 0)
+                if (strcmp(udev_device_get_action(dev), DEVICE_ACTION_ADDED) == 0)
                 {
                     WaitForDeviceHandled();
                     DeviceAdded(dev);
                 }
-                else if(strcmp(udev_device_get_action(dev), DEVICE_ACTION_REMOVED) == 0)
+
+                else if (strcmp(udev_device_get_action(dev), DEVICE_ACTION_REMOVED) == 0)
                 {
                     WaitForDeviceHandled();
                     DeviceRemoved(dev);
                 }
             }
+
+            if (udev_device_get_devtype(dev) && !strcmp(udev_device_get_devtype(dev), DEVICE_TYPE_PARTITION) && !strcmp(udev_device_get_action(dev), DEVICE_ACTION_ADDED))
+            {
+                GetMountPath(dev, currentItem);
+            }
+
             udev_device_unref(dev);
         }
     }
@@ -303,10 +358,10 @@ void BuildInitialDeviceList()
        a loop. The loop will be executed for each member in
        devices, setting dev_list_entry to a list entry
        which contains the device's path in /sys. */
-    udev_list_entry_foreach(dev_list_entry, devices) 
+    udev_list_entry_foreach(dev_list_entry, devices)
     {
         const char *path;
-        
+
         /* Get the filename of the /sys entry for the device
            and create a udev_device object (dev) representing it */
         path = udev_list_entry_get_name(dev_list_entry);
@@ -314,7 +369,7 @@ void BuildInitialDeviceList()
 
         /* usb_device_get_devnode() returns the path to the device node
            itself in /dev. */
-        if(udev_device_get_devnode(dev) == NULL || udev_device_get_sysattr_value(dev,"idVendor") == NULL)
+        if (udev_device_get_devnode(dev) == NULL || udev_device_get_sysattr_value(dev, "idVendor") == NULL)
         {
             continue;
         }
@@ -328,20 +383,24 @@ void BuildInitialDeviceList()
            udev_device_get_sysattr_value() are UTF-8 encoded. */
 
         DeviceItem_t* item = new DeviceItem_t();
-        item->deviceParams.vendorId = strtol (udev_device_get_sysattr_value(dev,"idVendor"), NULL, 16);
-        item->deviceParams.productId = strtol (udev_device_get_sysattr_value(dev,"idProduct"), NULL, 16);
-        if(udev_device_get_sysattr_value(dev,"product") != NULL)
+        item->deviceParams.vendorId = strtol (udev_device_get_sysattr_value(dev, "idVendor"), NULL, 16);
+        item->deviceParams.productId = strtol (udev_device_get_sysattr_value(dev, "idProduct"), NULL, 16);
+
+        if (udev_device_get_sysattr_value(dev, "product") != NULL)
         {
-            item->deviceParams.deviceName = udev_device_get_sysattr_value(dev,"product");
+            item->deviceParams.deviceName = udev_device_get_sysattr_value(dev, "product");
         }
-        if(udev_device_get_sysattr_value(dev,"manufacturer") != NULL)
+
+        if (udev_device_get_sysattr_value(dev, "manufacturer") != NULL)
         {
-            item->deviceParams.manufacturer = udev_device_get_sysattr_value(dev,"manufacturer");
+            item->deviceParams.manufacturer = udev_device_get_sysattr_value(dev, "manufacturer");
         }
-        if(udev_device_get_sysattr_value(dev,"serial") != NULL)
+
+        if (udev_device_get_sysattr_value(dev, "serial") != NULL)
         {
             item->deviceParams.serialNumber = udev_device_get_sysattr_value(dev, "serial");
         }
+
         item->deviceParams.deviceAddress = 0;
         item->deviceParams.locationId = 0;
 

@@ -28,8 +28,12 @@
               "src/detection_mac.cpp"
             ],
             "libraries": [
-              "-framework",   
-              "IOKit"
+              "-framework",
+              "IOKit",
+            ],
+            "libraries": [
+              "-framework",
+              "DiskArbitration"
             ]
           }
         ],
