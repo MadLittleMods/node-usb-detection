@@ -3,8 +3,13 @@ var monitor = require('./usb-detection');
 monitor.find(function(err, devices) {
 	console.log("find: some devices");
 });
-//monitor.find(vid, function(err, devices) {});
-//monitor.find(vid, pid, function(err, devices) {});
+monitor.find(vid, function(err, devices) {
+
+});
+
+monitor.find(vid, pid, function(err, devices) {
+    
+});
 
 monitor.on('add', function(devices) { 
 	console.log("add USB:", devices); 
