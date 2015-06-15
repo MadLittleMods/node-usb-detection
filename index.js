@@ -1,5 +1,5 @@
-var SegfaultHandler = require('segfault-handler');
-SegfaultHandler.registerHandler();
+//var SegfaultHandler = require('segfault-handler');
+//SegfaultHandler.registerHandler();
 
 var Promise = require('bluebird');
 var index = require('./package.json');

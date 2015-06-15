@@ -33,7 +33,6 @@ DeviceItem_t* GetItemFromList(char* key) {
 bool IsItemAlreadyStored(char* key) {
 	map<string, DeviceItem_t*>::iterator it;
 
-	/* */
 	it = deviceMap.find(key);
 	if(it == deviceMap.end()) {
 		return false;
@@ -41,7 +40,6 @@ bool IsItemAlreadyStored(char* key) {
 	else {
 		return true;
 	}
-	/* */
 
 	return true;
 }

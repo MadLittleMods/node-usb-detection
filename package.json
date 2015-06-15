@@ -3,12 +3,6 @@
   "version": "1.2.0",
   "description": "Listen to USB devices and detect changes on them.",
   "main": "index.js",
-  "dependencies": {
-    "bindings": "1.1.0",
-    "bluebird": "^2.9.27",
-    "eventemitter2": ">=0.4.11",
-    "nan": "^1.8.4"
-  },
   "gypfile": true,
   "scripts": {
     "test": "mocha --timeout 10000",
@@ -38,6 +32,12 @@
   "license": {
     "type": "MIT",
     "url": "https://raw.github.com/MadLittleMods/node-usb-detection/master/licence"
+  },
+  "dependencies": {
+    "bindings": "1.1.0",
+    "bluebird": "^2.9.27",
+    "eventemitter2": ">=0.4.11",
+    "nan": "^1.8.4"
   },
   "devDependencies": {
     "chai": "^3.0.0",
