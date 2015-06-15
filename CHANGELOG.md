@@ -1,0 +1,35 @@
+# Changelog
+
+
+## v1.2.0 - 2015-6-12
+
+ - New maintainer/owner @MadLittleMods. Previously maintained by @adrai :+1:
+ - Add tests `npm test`
+ - `find` now also returns a promise
+ - Format js and c++
+ 	 - Added eslint file, linter code style guidelines
+ - Alias `insert` as the `add` event name for `.on`
+ - Update readme
+ 	 - Fix usage section `.on` callbacks which do not actually have a `err` parameter passed to the callback
+ 	 - Add API section to document clearly all of the methods and events emitted
+ 	 - Add test instructions
+
+## v1.1.0
+
+ - Add support for Node v0.12.x
+
+## v1.0.3
+
+- revert "ready for node >= 0.11.4"
+
+## v1.0.2
+
+- fixed issues found via cppcheck
+
+## v1.0.1
+
+- ready for node >= 0.11.4
+
+## v1.0.0
+
+- first release

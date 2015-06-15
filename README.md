@@ -1,86 +1,173 @@
-# Installation
+# usb-detection
 
-    npm install usb-detection
+`usb-detection` allows you to listen for insert/remove events of USB devices on your system.
 
-This assumes you have everything on your system necessary to compile ANY native module for Node.js. This may not be the case, though, so please ensure the following are true for your system before filing an issue about "Does not install". For all operatings systems, please ensure you have Python 2.x installed AND not 3.0, [node-gyp](https://github.com/TooTallNate/node-gyp) (what we use to compile) requires Python 2.x.
+
+## Latest Version: v1.2.0
+### [Changelog](https://github.com/MadLittleMods/node-usb-detection/blob/master/CHANGELOG.md)
+
+
+# Install
+
+```
+npm install usb-detection
+```
+
+This assumes you also have everything on your system necessary to compile ANY native module for Node.js. This may not be the case, though, so please ensure the following requirements are satisfied before filing an issue about "Does not install". For all operating systems, please ensure you have Python 2.x installed AND not 3.0, [node-gyp](https://github.com/TooTallNate/node-gyp) (what we use to compile) requires Python 2.x.
 
 ### Windows:
 
-Ensure you have Visual Studio 2010 installed. If you have any version OTHER THAN VS 2010, please read this: https://github.com/TooTallNate/node-gyp/issues/44 
+Visual Studio 2013 Community or Visual Studio 2010 installed. 
+
+If you are having problems building, [please read this](https://github.com/TooTallNate/node-gyp/issues/44). 
 
 ### Mac OS X:
 
-Ensure that you have at a minimum the xCode Command Line Tools installed appropriate for your system configuration. If you recently upgrade OS, it probably removed your installation of Command Line Tools, please verify before submitting a ticket.
+Ensure that you have at a minimum, the xCode Command Line Tools installed appropriate for your system configuration. If you recently upgraded your OS, it probably removed your installation of Command Line Tools, please verify before submitting a ticket.
 
 ### Linux:
 
 You know what you need for you system, basically your appropriate analog of build-essential. Keep rocking!
 
-**Make sure you've installed libudev!**
+To compile and install native addons from npm you may also need to install build tools *([source](https://github.com/joyent/node/wiki/Installing-Node.js-via-package-manager#debian-and-ubuntu-based-linux-distributions))*:
+
+```
+sudo apt-get install -y build-essential
+```
+
+**Make sure you've installed libudev!** `sudo apt-get install libudev-dev`
+
 
 # Usage
 
-```nodejs
-var monitor = require('usb-detection');
-    
-monitor.find(function(err, devices) {});
-monitor.find(vid, function(err, devices) {});
-monitor.find(vid, pid, function(err, devices) {});
+```js
+var usbDetect = require('usb-detection');
 
-monitor.on('add', function(err, devices) {});
-monitor.on('add:vid', function(err, devices) {});
-monitor.on('add:vid:pid', function(err, devices) {});
+// Detect add/insert
+usbDetect.on('add', function(device) { console.log('add', device); });
+usbDetect.on('add:vid', function(device) { console.log('add', device); });
+usbDetect.on('add:vid:pid', function(device) { console.log('add', device); });
 
-monitor.on('remove', function(err, devices) {});
-monitor.on('remove:vid', function(err, devices) {});
-monitor.on('remove:vid:pid', function(err, devices) {});
+// Detect remove
+usbDetect.on('remove', function(device) { console.log('remove', device); });
+usbDetect.on('remove:vid', function(device) { console.log('remove', device); });
+usbDetect.on('remove:vid:pid', function(device) { console.log('remove', device); });
 
-monitor.on('change', function(err, devices) {});
-monitor.on('change:vid', function(err, devices) {});
-monitor.on('change:vid:pid', function(err, devices) {});
+// Detect add or remove (change)
+usbDetect.on('change', function(device) { console.log('change', device); });
+usbDetect.on('change:vid', function(device) { console.log('change', device); });
+usbDetect.on('change:vid:pid', function(device) { console.log('change', device); });
+
+// Get a list of USB devices on your system, optionally filtered by `vid` or `pid`
+usbDetect.find(function(err, devices) { console.log('find', devices, err); });
+usbDetect.find(vid, function(err, devices) { console.log('find', devices, err); });
+usbDetect.find(vid, pid, function(err, devices) { console.log('find', devices, err); });
+// Promise version of `find`:
+usbDetect.find().then(function(devices) { console.log(devices); }).catch(function(err) { console.log(err); });
 ```
 
-# Release Notes
 
-## v1.1.0
+# API
 
- - Add support for Node v0.12.x
+## `on(eventName, callback)`
 
-## v1.0.3
-
-- revert "ready for node >= 0.11.4"
-
-## v1.0.2
-
-- fixed issues found via cppcheck
-
-## v1.0.1
-
-- ready for node >= 0.11.4
-
-## v1.0.0
-
-- first release
+- `eventName`
+ 	 - `add`: also aliased as `insert`
+ 	 	 - `add:vid`
+ 	 	 - `add:vid:pid`
+ 	 - `remove`
+ 	 	 - `remove:vid`
+ 	 	 - `remove:vid:pid`
+ 	 - `change`
+ 	 	 - `change:vid`
+ 	 	 - `change:vid:pid`
+ - `callback`: Function that is called whenever the event occurs
+ 	 - Takes a `device`
 
 
-# License
+```js
+var usbDetect = require('usb-detection');
+usbDetect.on('add', function(device) {
+	console.log(device);
+});
 
-Copyright (c) 2013 Kaba AG
+/* Console output:
+{
+	locationId: 0,
+	vendorId: 5824,
+	productId: 1155,
+	deviceName: 'Teensy USB Serial (COM3)',
+	manufacturer: 'PJRC.COM, LLC.',
+	serialNumber: '',
+	deviceAddress: 11
+}
+*/
+```
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
+## `find(vid, pid, callback)`
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
+**Note:** All `find` calls return a promise even with the node-style callback flavors.
+
+ - `find()`
+ - `find(vid)`
+ - `find(vid, pid)`
+ - `find(callback)`
+ - `find(vid, callback)`
+ - `find(vid, pid, callback)`
+
+Parameters:
+
+ - `vid`: restrict search to a certain vendor id
+ - `pid`: restrict search to s certain product id
+ - `callback`: Function that is called whenever the event occurs
+ 	 - Takes a `err` and `devices` parameter.
+
+
+```js
+var usbDetect = require('usb-detection');
+usbDetect.find(function(err, devices) {
+	console.log(devices, err);
+});
+// Equivalent to:
+//		usbDetect.find().then(function(devices) { console.log(devices); }).catch(function(err) { console.log(err); });
+
+/* Console output:
+[ 
+	{ 
+		locationId: 0,
+		vendorId: 0,
+		productId: 0,
+		deviceName: 'USB Root Hub',
+		manufacturer: '(Standard USB Host Controller)',
+		serialNumber: '',
+		deviceAddress: 2
+	},
+	{
+		locationId: 0,
+		vendorId: 5824,
+		productId: 1155,
+		deviceName: 'Teensy USB Serial (COM3)',
+		manufacturer: 'PJRC.COM, LLC.',
+		serialNumber: '',
+		deviceAddress: 11
+	}
+]
+*/
+```
+
+
+
+
+
+
+# Testing
+
+We have a suite of Mocha/Chai tests.
+
+The tests require some manual interaction of plugging/unplugging a USB device. Follow the cyan background text instructions.
+
+```
+npm test
+```
+
