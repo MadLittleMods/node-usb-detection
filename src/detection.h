@@ -27,7 +27,7 @@ void Stop();
 struct ListBaton {
 	public:
 		//v8::Persistent<v8::Function> callback;
-		NanCallback* callback;
+		Nan::Callback* callback;
 		std::list<ListResultItem_t*> results;
 		char errorString[1024];
 		int vid;
