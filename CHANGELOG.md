@@ -4,7 +4,7 @@
 ## v1.3.0 - 2015-10-11
 
  - Add compatibility for Node 4
- 	 - Upgrade `nan` dependency nav@2.x. Thank you @lorenc-tomasz!
+ 	 - Upgrade [`nan`](https://www.npmjs.com/package/nan) dependency nan@2.x. Thank you @lorenc-tomasz!
 
 ## v1.2.0 - 2015-6-12
 
