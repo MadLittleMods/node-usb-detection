@@ -3,7 +3,8 @@
 
 ## v1.3.0 - 2015-10-11
 
- - Upgrade to nan v2. Thank you @lorenc-tomasz!
+ - Add compatibility for Node 4
+ 	 - Upgrade `nan` dependency nav@2.x. Thank you @lorenc-tomasz!
 
 ## v1.2.0 - 2015-6-12
 
