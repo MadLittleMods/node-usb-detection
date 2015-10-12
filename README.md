@@ -1,3 +1,6 @@
+[![npm version](https://badge.fury.io/js/usb-detection.svg)](http://badge.fury.io/js/usb-detection)
+
+
 # usb-detection
 
 `usb-detection` allows you to listen for insert/remove events of USB devices on your system.
@@ -35,7 +38,11 @@ To compile and install native addons from npm you may also need to install build
 sudo apt-get install -y build-essential
 ```
 
-**Make sure you've installed libudev!** `sudo apt-get install libudev-dev`
+Also install libudev:
+
+```
+sudo apt-get install libudev-dev
+```
 
 
 # Usage
@@ -158,6 +165,19 @@ usbDetect.find(function(err, devices) {
 
 
 
+
+# FAQ
+
+### The script/process is not quiting
+
+```
+var usbDetect = require('usb-detection');
+
+// Do some detection
+
+// After this call, the process will be able to quit
+usbDetect.stopMonitoring();
+```
 
 
 
