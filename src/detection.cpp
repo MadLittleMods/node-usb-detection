@@ -10,10 +10,10 @@
 #define OBJECT_ITEM_DEVICE_ADDRESS "deviceAddress"
 
 
-NanCallback* addedCallback;
+Nan::Callback* addedCallback;
 bool isAddedRegistered = false;
 
-NanCallback* removedCallback;
+Nan::Callback* removedCallback;
 bool isRemovedRegistered = false;
 
 void RegisterAdded(const v8::FunctionCallbackInfo<v8::Value>& args) {
@@ -23,19 +23,19 @@ void RegisterAdded(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	v8::Local<v8::Function> callback;
 
 	if (args.Length() == 0) {
-		return NanThrowTypeError("First argument must be a function");
+		return Nan::ThrowTypeError("First argument must be a function");
 	}
 
 	if (args.Length() == 1) {
 		// callback
 		if(!args[0]->IsFunction()) {
-			return NanThrowTypeError("First argument must be a function");
+			return Nan::ThrowTypeError("First argument must be a function");
 		}
 
 		callback = args[0].As<v8::Function>();
 	}
 
-	addedCallback = new NanCallback(callback);
+	addedCallback = new Nan::Callback(callback);
 	isAddedRegistered = true;
 }
 
@@ -44,7 +44,7 @@ void NotifyAdded(ListResultItem_t* it) {
 	v8::HandleScope scope(isolate);
 
 	if (isAddedRegistered){
-		v8::Handle<v8::Value> argv[1];
+		v8::Local<v8::Value> argv[1];
 		v8::Local<v8::Object> item = v8::Object::New(isolate);
 		item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_LOCATION_ID), v8::Number::New(isolate, it->locationId));
 		item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_VENDOR_ID), v8::Number::New(isolate, it->vendorId));
@@ -66,19 +66,19 @@ void RegisterRemoved(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	v8::Local<v8::Function> callback;
 
 	if (args.Length() == 0) {
-		return NanThrowTypeError("First argument must be a function");
+		return Nan::ThrowTypeError("First argument must be a function");
 	}
 
 	if (args.Length() == 1) {
 		// callback
 		if(!args[0]->IsFunction()) {
-			return NanThrowTypeError("First argument must be a function");
+			return Nan::ThrowTypeError("First argument must be a function");
 		}
 
 		callback = args[0].As<v8::Function>();
 	}
 
-	removedCallback = new NanCallback(callback);
+	removedCallback = new Nan::Callback(callback);
 	isRemovedRegistered = true;
 }
 
@@ -87,7 +87,7 @@ void NotifyRemoved(ListResultItem_t* it) {
 	v8::HandleScope scope(isolate);
 
 	if (isRemovedRegistered) {
-		v8::Handle<v8::Value> argv[1];
+		v8::Local<v8::Value> argv[1];
 		v8::Local<v8::Object> item = v8::Object::New(isolate);
 		item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_LOCATION_ID), v8::Number::New(isolate, it->locationId));
 		item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_VENDOR_ID), v8::Number::New(isolate, it->vendorId));
@@ -111,7 +111,7 @@ void Find(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	v8::Local<v8::Function> callback;
 
 	if (args.Length() == 0) {
-		return NanThrowTypeError("First argument must be a function");
+		return Nan::ThrowTypeError("First argument must be a function");
 	}
 
 	if (args.Length() == 3) {
@@ -122,7 +122,7 @@ void Find(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 		// callback
 		if(!args[2]->IsFunction()) {
-			return NanThrowTypeError("Third argument must be a function");
+			return Nan::ThrowTypeError("Third argument must be a function");
 		}
 
 		callback = args[2].As<v8::Function>();
@@ -135,7 +135,7 @@ void Find(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 		// callback
 		if(!args[1]->IsFunction()) {
-			return NanThrowTypeError("Second argument must be a function");
+			return Nan::ThrowTypeError("Second argument must be a function");
 		}
 
 		callback = args[1].As<v8::Function>();
@@ -144,7 +144,7 @@ void Find(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	if (args.Length() == 1) {
 		// callback
 		if(!args[0]->IsFunction()) {
-			return NanThrowTypeError("First argument must be a function");
+			return Nan::ThrowTypeError("First argument must be a function");
 		}
 
 		callback = args[0].As<v8::Function>();
@@ -152,7 +152,7 @@ void Find(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 	ListBaton* baton = new ListBaton();
 	strcpy(baton->errorString, "");
-	baton->callback = new NanCallback(callback);
+	baton->callback = new Nan::Callback(callback);
 	baton->vid = vid;
 	baton->pid = pid;
 
@@ -167,10 +167,10 @@ void EIO_AfterFind(uv_work_t* req) {
 
 	ListBaton* data = static_cast<ListBaton*>(req->data);
 
-	v8::Handle<v8::Value> argv[2];
+	v8::Local<v8::Value> argv[2];
 	if(data->errorString[0]) {
 		argv[0] = v8::Exception::Error(v8::String::NewFromUtf8(isolate, data->errorString));
-		argv[1] = NanUndefined();
+		argv[1] = Nan::Undefined();
 	}
 	else {
 		v8::Local<v8::Array> results = v8::Array::New(isolate);
@@ -186,7 +186,7 @@ void EIO_AfterFind(uv_work_t* req) {
 			item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_DEVICE_ADDRESS), v8::Number::New(isolate, (*it)->deviceAddress));
 			results->Set(i, item);
 		}
-		argv[0] = NanUndefined();
+		argv[0] = Nan::Undefined();
 		argv[1] = results;
 	}
 

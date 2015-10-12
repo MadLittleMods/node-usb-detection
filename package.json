@@ -37,7 +37,7 @@
     "bindings": "1.1.0",
     "bluebird": "^2.9.27",
     "eventemitter2": ">=0.4.11",
-    "nan": "^1.8.4"
+    "nan": "^2.0.9"
   },
   "devDependencies": {
     "chai": "^3.0.0",
