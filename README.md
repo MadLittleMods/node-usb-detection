@@ -78,7 +78,7 @@ usbDetect.find().then(function(devices) { console.log(devices); }).catch(functio
 
 ## `on(eventName, callback)`
 
-- `eventName`
+ - `eventName`
  	 - `add`: also aliased as `insert`
  	 	 - `add:vid`
  	 	 - `add:vid:pid`
