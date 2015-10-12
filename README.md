@@ -3,7 +3,7 @@
 `usb-detection` allows you to listen for insert/remove events of USB devices on your system.
 
 
-## Latest Version: v1.2.0
+## Latest Version: `v1.3.0`
 ### [Changelog](https://github.com/MadLittleMods/node-usb-detection/blob/master/CHANGELOG.md)
 
 

@@ -1,6 +1,10 @@
 # Changelog
 
 
+## v1.3.0 - 2015-10-11
+
+ - Upgrade to nan v2. Thank you @lorenc-tomasz!
+
 ## v1.2.0 - 2015-6-12
 
  - New maintainer/owner @MadLittleMods. Previously maintained by @adrai :+1:
