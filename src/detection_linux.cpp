@@ -1,5 +1,6 @@
 #include <libudev.h>
 #include <pthread.h> 
+#include <fcntl.h>
 
 #include "detection.h"
 #include "deviceList.h"
@@ -115,6 +116,15 @@ void InitDetection() {
 	   This fd will get passed to select() */
 	fd = udev_monitor_get_fd(mon);
 
+	int flags = fcntl(fd, F_GETFL, 0);
+	if (flags != -1){
+		flags &= ~O_NONBLOCK;
+		fcntl(fd, F_SETFL, flags);
+		fd_set fds;
+		FD_ZERO(&fds);
+		FD_SET(fd, &fds);
+	}
+	
 	BuildInitialDeviceList();
 
 	pthread_mutex_init(&notify_mutex, NULL);
