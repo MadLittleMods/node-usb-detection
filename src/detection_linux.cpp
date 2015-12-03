@@ -100,6 +100,7 @@ void InitDetection() {
     uv_async_init(uv_default_loop(), &async_handler, cbAsync);
     uv_signal_init(uv_default_loop(), &term_signal);
     uv_signal_init(uv_default_loop(), &int_signal);
+    uv_cond_init(&notifyDeviceHandled);
 
 	uv_queue_work(uv_default_loop(), &work_req, cbWork, cbAfter);
 
@@ -226,6 +227,7 @@ static void cbAfter(uv_work_t *req, int status) {
 	uv_signal_stop(&int_signal);
 	uv_signal_stop(&term_signal);
 	uv_close((uv_handle_t *) &async_handler, NULL);
+	uv_cond_destroy(&notifyDeviceHandled);
 	uv_mutex_destroy(&notify_mutex);
 	udev_monitor_unref(mon);
 	udev_unref(udev);
