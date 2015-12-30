@@ -20,7 +20,9 @@ This assumes you also have everything on your system necessary to compile ANY na
 
 ### Windows:
 
-Visual Studio 2013 Community or Visual Studio 2010 installed. 
+ - Visual Studio 2013 Community
+ - Visual Studio 2010
+ - Visual C++ Build Tools 2015: https://github.com/nodejs/node-gyp/issues/629#issuecomment-153196245
 
 If you are having problems building, [please read this](https://github.com/TooTallNate/node-gyp/issues/44). 
 
