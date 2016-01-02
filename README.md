@@ -170,7 +170,7 @@ usbDetect.find(function(err, devices) {
 
 # FAQ
 
-### The script/process is not quiting
+### The script/process is not exiting/quiting
 
 ```
 var usbDetect = require('usb-detection');
