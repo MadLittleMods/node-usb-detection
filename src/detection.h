@@ -14,13 +14,13 @@
 
 #include "deviceList.h"
 
-void Find(const v8::FunctionCallbackInfo<v8::Value>& args);
+void Find(const Nan::FunctionCallbackInfo<v8::Value>& args);
 void EIO_Find(uv_work_t* req);
 void EIO_AfterFind(uv_work_t* req);
 void InitDetection();
-void StartMonitoring(const v8::FunctionCallbackInfo<v8::Value>& args);
+void StartMonitoring(const Nan::FunctionCallbackInfo<v8::Value>& args);
 void Start();
-void StopMonitoring(const v8::FunctionCallbackInfo<v8::Value>& args);
+void StopMonitoring(const Nan::FunctionCallbackInfo<v8::Value>& args);
 void Stop();
 
 
@@ -34,9 +34,9 @@ struct ListBaton {
 		int pid;
 };
 
-void RegisterAdded(const v8::FunctionCallbackInfo<v8::Value>& args);
+void RegisterAdded(const Nan::FunctionCallbackInfo<v8::Value>& args);
 void NotifyAdded(ListResultItem_t* it);
-void RegisterRemoved(const v8::FunctionCallbackInfo<v8::Value>& args);
+void RegisterRemoved(const Nan::FunctionCallbackInfo<v8::Value>& args);
 void NotifyRemoved(ListResultItem_t* it);
 
 #endif
