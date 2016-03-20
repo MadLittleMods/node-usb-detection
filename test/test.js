@@ -98,4 +98,10 @@ describe('usb-detection', function() {
 		});
 	});
 
+
+	after(function() {
+		// After this call, the process will be able to quit
+		usbDetect.stopMonitoring();
+	});
+
 });
