@@ -81,8 +81,8 @@
   	"quotes": [2, "single"],
   	"semi": [1, "always"], // require or disallow use of semicolons instead of ASI
   	"semi-spacing": [2, {"before": false, "after": true}],
-  	"space-infix-ops": [1, "always"], // require spaces around operators
-  	"space-return-throw-case": [1, "always"], // require a space after return, throw, and case
+  	"space-infix-ops": 1, // require spaces around operators
+  	"space-return-throw-case": 1, // require a space after return, throw, and case
   	"space-unary-ops": [1, {"words": true, "nonwords": false}], // Require or disallow spaces before/after unary operators (words on by default, nonwords off by default)
   	"wrap-regex": 2,
 
