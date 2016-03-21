@@ -171,7 +171,7 @@ usbDetect.find(function(err, devices) {
 
 ### The script/process is not exiting/quiting
 
-```
+```js
 var usbDetect = require('usb-detection');
 
 // Do some detection
@@ -188,6 +188,6 @@ We have a suite of Mocha/Chai tests.
 
 The tests require some manual interaction of plugging/unplugging a USB device. Follow the cyan background text instructions.
 
-```
+```sh
 npm test
 ```
