@@ -3,6 +3,7 @@
 ## v1.4.0 - 2016-3-20
 
  - Add compatibility for `node@0.10.x` by using more `nan` types and methods.
+    - Thanks to @apla for [this contribution](https://github.com/MadLittleMods/node-usb-detection/pull/26)!
 
 
 ## v1.3.0 - 2015-10-11
