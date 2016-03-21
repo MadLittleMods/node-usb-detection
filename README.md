@@ -6,7 +6,6 @@
 `usb-detection` allows you to listen for insert/remove events of USB devices on your system.
 
 
-## Latest Version: `v1.3.0`
 ### [Changelog](https://github.com/MadLittleMods/node-usb-detection/blob/master/CHANGELOG.md)
 
 
@@ -24,7 +23,7 @@ This assumes you also have everything on your system necessary to compile ANY na
  - Visual Studio 2010
  - Visual C++ Build Tools 2015: https://github.com/nodejs/node-gyp/issues/629#issuecomment-153196245
 
-If you are having problems building, [please read this](https://github.com/TooTallNate/node-gyp/issues/44). 
+If you are having problems building, [please read this](https://github.com/TooTallNate/node-gyp/issues/44).
 
 ### Mac OS X:
 
@@ -142,8 +141,8 @@ usbDetect.find(function(err, devices) {
 //		usbDetect.find().then(function(devices) { console.log(devices); }).catch(function(err) { console.log(err); });
 
 /* Console output:
-[ 
-	{ 
+[
+	{
 		locationId: 0,
 		vendorId: 0,
 		productId: 0,
@@ -192,4 +191,3 @@ The tests require some manual interaction of plugging/unplugging a USB device. F
 ```
 npm test
 ```
-

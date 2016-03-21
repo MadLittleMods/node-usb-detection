@@ -1,10 +1,15 @@
 # Changelog
 
+## v1.4.0 - 2016-3-20
+
+ - Add compatibility for `node@0.10.x` by using more `nan` types and methods.
+
 
 ## v1.3.0 - 2015-10-11
 
  - Add compatibility for Node 4
  	 - Upgrade [`nan`](https://www.npmjs.com/package/nan) dependency nan@2.x. Thank you @lorenc-tomasz
+
 
 ## v1.2.0 - 2015-6-12
 
@@ -19,22 +24,27 @@
  	 - Add API section to document clearly all of the methods and events emitted
  	 - Add test instructions
 
+
 ## v1.1.0
 
  - Add support for Node v0.12.x
 
+
 ## v1.0.3
 
-- revert "ready for node >= 0.11.4"
+- Revert "ready for node >= 0.11.4"
+
 
 ## v1.0.2
 
-- fixed issues found via cppcheck
+- Fix issues found via cppcheck
+
 
 ## v1.0.1
 
-- ready for node >= 0.11.4
+- Ready for node >= 0.11.4
+
 
 ## v1.0.0
 
-- first release
+- First release
