@@ -16,9 +16,8 @@ bool isAddedRegistered = false;
 Nan::Callback* removedCallback;
 bool isRemovedRegistered = false;
 
-void RegisterAdded(const v8::FunctionCallbackInfo<v8::Value>& args) {
-	v8::Isolate* isolate = v8::Isolate::GetCurrent();
-	v8::HandleScope scope(isolate);
+void RegisterAdded(const Nan::FunctionCallbackInfo<v8::Value>& args) {
+	Nan::HandleScope scope;
 
 	v8::Local<v8::Function> callback;
 
@@ -40,28 +39,26 @@ void RegisterAdded(const v8::FunctionCallbackInfo<v8::Value>& args) {
 }
 
 void NotifyAdded(ListResultItem_t* it) {
-	v8::Isolate* isolate = v8::Isolate::GetCurrent();
-	v8::HandleScope scope(isolate);
+	Nan::HandleScope scope;
 
 	if (isAddedRegistered){
 		v8::Local<v8::Value> argv[1];
-		v8::Local<v8::Object> item = v8::Object::New(isolate);
-		item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_LOCATION_ID), v8::Number::New(isolate, it->locationId));
-		item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_VENDOR_ID), v8::Number::New(isolate, it->vendorId));
-		item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_PRODUCT_ID), v8::Number::New(isolate, it->productId));
-		item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_DEVICE_NAME), v8::String::NewFromUtf8(isolate, it->deviceName.c_str()));
-		item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_MANUFACTURER), v8::String::NewFromUtf8(isolate, it->manufacturer.c_str()));
-		item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_SERIAL_NUMBER), v8::String::NewFromUtf8(isolate, it->serialNumber.c_str()));
-		item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_DEVICE_ADDRESS), v8::Number::New(isolate, it->deviceAddress));
+		v8::Local<v8::Object> item = Nan::New<v8::Object>();
+		item->Set(Nan::New<v8::String>(OBJECT_ITEM_LOCATION_ID).ToLocalChecked(), Nan::New<v8::Number>(it->locationId));
+		item->Set(Nan::New<v8::String>(OBJECT_ITEM_VENDOR_ID).ToLocalChecked(), Nan::New<v8::Number>(it->vendorId));
+		item->Set(Nan::New<v8::String>(OBJECT_ITEM_PRODUCT_ID).ToLocalChecked(), Nan::New<v8::Number>(it->productId));
+		item->Set(Nan::New<v8::String>(OBJECT_ITEM_DEVICE_NAME).ToLocalChecked(), Nan::New<v8::String>(it->deviceName.c_str()).ToLocalChecked());
+		item->Set(Nan::New<v8::String>(OBJECT_ITEM_MANUFACTURER).ToLocalChecked(), Nan::New<v8::String>(it->manufacturer.c_str()).ToLocalChecked());
+		item->Set(Nan::New<v8::String>(OBJECT_ITEM_SERIAL_NUMBER).ToLocalChecked(), Nan::New<v8::String>(it->serialNumber.c_str()).ToLocalChecked());
+		item->Set(Nan::New<v8::String>(OBJECT_ITEM_DEVICE_ADDRESS).ToLocalChecked(), Nan::New<v8::Number>(it->deviceAddress));
 		argv[0] = item;
 
 		addedCallback->Call(1, argv);
 	}
 }
 
-void RegisterRemoved(const v8::FunctionCallbackInfo<v8::Value>& args) {
-	v8::Isolate* isolate = v8::Isolate::GetCurrent();
-	v8::HandleScope scope(isolate);
+void RegisterRemoved(const Nan::FunctionCallbackInfo<v8::Value>& args) {
+	Nan::HandleScope scope;
 
 	v8::Local<v8::Function> callback;
 
@@ -83,28 +80,26 @@ void RegisterRemoved(const v8::FunctionCallbackInfo<v8::Value>& args) {
 }
 
 void NotifyRemoved(ListResultItem_t* it) {
-	v8::Isolate* isolate = v8::Isolate::GetCurrent();
-	v8::HandleScope scope(isolate);
+	Nan::HandleScope scope;
 
 	if (isRemovedRegistered) {
 		v8::Local<v8::Value> argv[1];
-		v8::Local<v8::Object> item = v8::Object::New(isolate);
-		item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_LOCATION_ID), v8::Number::New(isolate, it->locationId));
-		item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_VENDOR_ID), v8::Number::New(isolate, it->vendorId));
-		item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_PRODUCT_ID), v8::Number::New(isolate, it->productId));
-		item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_DEVICE_NAME), v8::String::NewFromUtf8(isolate, it->deviceName.c_str()));
-		item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_MANUFACTURER), v8::String::NewFromUtf8(isolate, it->manufacturer.c_str()));
-		item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_SERIAL_NUMBER), v8::String::NewFromUtf8(isolate, it->serialNumber.c_str()));
-		item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_DEVICE_ADDRESS), v8::Number::New(isolate, it->deviceAddress));
+		v8::Local<v8::Object> item = Nan::New<v8::Object>();
+		item->Set(Nan::New<v8::String>(OBJECT_ITEM_LOCATION_ID).ToLocalChecked(), Nan::New<v8::Number>(it->locationId));
+		item->Set(Nan::New<v8::String>(OBJECT_ITEM_VENDOR_ID).ToLocalChecked(), Nan::New<v8::Number>(it->vendorId));
+		item->Set(Nan::New<v8::String>(OBJECT_ITEM_PRODUCT_ID).ToLocalChecked(), Nan::New<v8::Number>(it->productId));
+		item->Set(Nan::New<v8::String>(OBJECT_ITEM_DEVICE_NAME).ToLocalChecked(), Nan::New<v8::String>(it->deviceName.c_str()).ToLocalChecked());
+		item->Set(Nan::New<v8::String>(OBJECT_ITEM_MANUFACTURER).ToLocalChecked(), Nan::New<v8::String>(it->manufacturer.c_str()).ToLocalChecked());
+		item->Set(Nan::New<v8::String>(OBJECT_ITEM_SERIAL_NUMBER).ToLocalChecked(), Nan::New<v8::String>(it->serialNumber.c_str()).ToLocalChecked());
+		item->Set(Nan::New<v8::String>(OBJECT_ITEM_DEVICE_ADDRESS).ToLocalChecked(), Nan::New<v8::Number>(it->deviceAddress));
 		argv[0] = item;
 
 		removedCallback->Call(1, argv);
 	}
 }
 
-void Find(const v8::FunctionCallbackInfo<v8::Value>& args) {
-	v8::Isolate* isolate = v8::Isolate::GetCurrent();
-	v8::HandleScope scope(isolate);
+void Find(const Nan::FunctionCallbackInfo<v8::Value>& args) {
+	Nan::HandleScope scope;
 
 	int vid = 0;
 	int pid = 0;
@@ -162,28 +157,27 @@ void Find(const v8::FunctionCallbackInfo<v8::Value>& args) {
 }
 
 void EIO_AfterFind(uv_work_t* req) {
-	v8::Isolate* isolate = v8::Isolate::GetCurrent();
-	v8::HandleScope scope(isolate);
+	Nan::HandleScope scope;
 
 	ListBaton* data = static_cast<ListBaton*>(req->data);
 
 	v8::Local<v8::Value> argv[2];
 	if(data->errorString[0]) {
-		argv[0] = v8::Exception::Error(v8::String::NewFromUtf8(isolate, data->errorString));
+		argv[0] = v8::Exception::Error(Nan::New<v8::String>(data->errorString).ToLocalChecked());
 		argv[1] = Nan::Undefined();
 	}
 	else {
-		v8::Local<v8::Array> results = v8::Array::New(isolate);
+		v8::Local<v8::Array> results = Nan::New<v8::Array>();
 		int i = 0;
 		for(std::list<ListResultItem_t*>::iterator it = data->results.begin(); it != data->results.end(); it++, i++) {
-			v8::Local<v8::Object> item = v8::Object::New(isolate);
-			item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_LOCATION_ID), v8::Number::New(isolate, (*it)->locationId));
-			item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_VENDOR_ID), v8::Number::New(isolate, (*it)->vendorId));
-			item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_PRODUCT_ID), v8::Number::New(isolate, (*it)->productId));
-			item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_DEVICE_NAME), v8::String::NewFromUtf8(isolate, (*it)->deviceName.c_str()));
-			item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_MANUFACTURER), v8::String::NewFromUtf8(isolate, (*it)->manufacturer.c_str()));
-			item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_SERIAL_NUMBER), v8::String::NewFromUtf8(isolate, (*it)->serialNumber.c_str()));
-			item->Set(v8::String::NewFromUtf8(isolate, OBJECT_ITEM_DEVICE_ADDRESS), v8::Number::New(isolate, (*it)->deviceAddress));
+			v8::Local<v8::Object> item = Nan::New<v8::Object>();
+			item->Set(Nan::New<v8::String>(OBJECT_ITEM_LOCATION_ID).ToLocalChecked(), Nan::New<v8::Number>((*it)->locationId));
+			item->Set(Nan::New<v8::String>(OBJECT_ITEM_VENDOR_ID).ToLocalChecked(), Nan::New<v8::Number>((*it)->vendorId));
+			item->Set(Nan::New<v8::String>(OBJECT_ITEM_PRODUCT_ID).ToLocalChecked(), Nan::New<v8::Number>((*it)->productId));
+			item->Set(Nan::New<v8::String>(OBJECT_ITEM_DEVICE_NAME).ToLocalChecked(), Nan::New<v8::String>((*it)->deviceName.c_str()).ToLocalChecked());
+			item->Set(Nan::New<v8::String>(OBJECT_ITEM_MANUFACTURER).ToLocalChecked(), Nan::New<v8::String>((*it)->manufacturer.c_str()).ToLocalChecked());
+			item->Set(Nan::New<v8::String>(OBJECT_ITEM_SERIAL_NUMBER).ToLocalChecked(), Nan::New<v8::String>((*it)->serialNumber.c_str()).ToLocalChecked());
+			item->Set(Nan::New<v8::String>(OBJECT_ITEM_DEVICE_ADDRESS).ToLocalChecked(), Nan::New<v8::Number>((*it)->deviceAddress));
 			results->Set(i, item);
 		}
 		argv[0] = Nan::Undefined();
@@ -199,21 +193,21 @@ void EIO_AfterFind(uv_work_t* req) {
 	delete req;
 }
 
-void StartMonitoring(const v8::FunctionCallbackInfo<v8::Value>& args) {
+void StartMonitoring(const Nan::FunctionCallbackInfo<v8::Value>& args) {
 	Start();
 }
 
-void StopMonitoring(const v8::FunctionCallbackInfo<v8::Value>& args) {
+void StopMonitoring(const Nan::FunctionCallbackInfo<v8::Value>& args) {
 	Stop();
 }
 
 extern "C" {
 	void init (v8::Handle<v8::Object> target) {
-		NODE_SET_METHOD(target, "find", Find);
-		NODE_SET_METHOD(target, "registerAdded", RegisterAdded);
-		NODE_SET_METHOD(target, "registerRemoved", RegisterRemoved);
-		NODE_SET_METHOD(target, "startMonitoring", StartMonitoring);
-		NODE_SET_METHOD(target, "stopMonitoring", StopMonitoring);
+		Nan::SetMethod(target, "find", Find);
+		Nan::SetMethod(target, "registerAdded", RegisterAdded);
+		Nan::SetMethod(target, "registerRemoved", RegisterRemoved);
+		Nan::SetMethod(target, "startMonitoring", StartMonitoring);
+		Nan::SetMethod(target, "stopMonitoring", StopMonitoring);
 		InitDetection();
 	}
 }
