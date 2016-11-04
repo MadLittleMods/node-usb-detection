@@ -1,5 +1,5 @@
 #include <libudev.h>
-#include <pthread.h> 
+#include <pthread.h>
 
 #include "detection.h"
 #include "deviceList.h"
@@ -71,10 +71,14 @@ void NotifyAsync(uv_work_t* req) {
 void NotifyFinished(uv_work_t* req) {
 	if (isRunning) {
 		if (isAdded) {
-			NotifyAdded(currentItem);
-		} 
+			if (currentItem !== NULL) {
+				NotifyAdded(currentItem);
+			}
+		}
 		else {
-			NotifyRemoved(currentItem);
+			if (currentItem !== NULL) {
+				NotifyRemoved(currentItem);
+			}
 		}
 	}
 
@@ -101,7 +105,7 @@ void Stop() {
 void InitDetection() {
 	/* Create the udev object */
 	udev = udev_new();
-	if (!udev) 
+	if (!udev)
 	{
 		printf("Can't create udev\n");
 		return;
@@ -227,7 +231,7 @@ void DeviceRemoved(struct udev_device* dev) {
 		item = new ListResultItem_t();
 		GetProperties(dev, item);
 	}
-	
+
 	currentItem = item;
 	isAdded = false;
 
@@ -271,7 +275,7 @@ void BuildInitialDeviceList() {
 	   which contains the device's path in /sys. */
 	udev_list_entry_foreach(dev_list_entry, devices) {
 		const char *path;
-		
+
 		/* Get the filename of the /sys entry for the device
 		   and create a udev_device object (dev) representing it */
 		path = udev_list_entry_get_name(dev_list_entry);

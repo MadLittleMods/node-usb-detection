@@ -60,14 +60,14 @@ void DeviceRemoved(void *refCon, io_service_t service, natural_t messageType, vo
 	kern_return_t   kr;
 	stDeviceListItem* deviceListItem = (stDeviceListItem *) refCon;
 	DeviceItem_t* deviceItem = deviceListItem->deviceItem;
-	
+
 	if(messageType == kIOMessageServiceIsTerminated) {
 		if(deviceListItem->deviceInterface) {
 			kr = (*deviceListItem->deviceInterface)->Release(deviceListItem->deviceInterface);
 		}
-		
+
 		kr = IOObjectRelease(deviceListItem->notification);
-		
+
 
 		ListResultItem_t* item = NULL;
 		if(deviceItem) {
@@ -78,12 +78,12 @@ void DeviceRemoved(void *refCon, io_service_t service, natural_t messageType, vo
 		else {
 			item = new ListResultItem_t();
 		}
-		
+
 		WaitForDeviceHandled();
 		notify_item = item;
 		isAdded = false;
 		SignalDeviceAvailable();
-		
+
 	}
 }
 
@@ -107,43 +107,43 @@ void DeviceAdded(void *refCon, io_iterator_t iterator) {
 	IOCFPlugInInterface **plugInInterface = NULL;
 	SInt32              score;
 	HRESULT             res;
-	
+
 	while((usbDevice = IOIteratorNext(iterator))) {
 		io_name_t       deviceName;
-		CFStringRef     deviceNameAsCFString;   
+		CFStringRef     deviceNameAsCFString;
 		UInt32          locationID;
 		UInt16          vendorId;
 		UInt16          productId;
 		UInt16          addr;
 
 		DeviceItem_t* deviceItem = new DeviceItem_t();
-		
+
 		// Get the USB device's name.
 		kr = IORegistryEntryGetName(usbDevice, deviceName);
 		if(KERN_SUCCESS != kr) {
 			deviceName[0] = '\0';
 		}
-		
+
 		deviceNameAsCFString = CFStringCreateWithCString(kCFAllocatorDefault, deviceName, kCFStringEncodingASCII);
-		
-		
+
+
 		if(deviceNameAsCFString) {
 			Boolean result;
 			char    deviceName[MAXPATHLEN];
-			
+
 			// Convert from a CFString to a C (NUL-terminated)
 			result = CFStringGetCString(deviceNameAsCFString,
 										deviceName,
 										sizeof(deviceName),
 										kCFStringEncodingUTF8);
-			
+
 			if(result) {
 				deviceItem->deviceParams.deviceName = deviceName;
 			}
-			
+
 			CFRelease(deviceNameAsCFString);
 		}
-		
+
 		CFStringRef manufacturerAsCFString = (CFStringRef)IORegistryEntrySearchCFProperty(
 				usbDevice,
 				kIOServicePlane,
@@ -151,11 +151,11 @@ void DeviceAdded(void *refCon, io_iterator_t iterator) {
 				kCFAllocatorDefault,
 				kIORegistryIterateRecursively
 			);
-		
+
 		if(manufacturerAsCFString) {
 			Boolean result;
 			char    manufacturer[MAXPATHLEN];
-			
+
 			// Convert from a CFString to a C (NUL-terminated)
 			result = CFStringGetCString(
 					manufacturerAsCFString,
@@ -163,14 +163,14 @@ void DeviceAdded(void *refCon, io_iterator_t iterator) {
 					sizeof(manufacturer),
 					kCFStringEncodingUTF8
 				);
-			
+
 			if(result) {
 				deviceItem->deviceParams.manufacturer = manufacturer;
 			}
-			
+
 			CFRelease(manufacturerAsCFString);
 		}
-		
+
 		CFStringRef serialNumberAsCFString = (CFStringRef) IORegistryEntrySearchCFProperty(
 				usbDevice,
 				kIOServicePlane,
@@ -178,11 +178,11 @@ void DeviceAdded(void *refCon, io_iterator_t iterator) {
 				kCFAllocatorDefault,
 				kIORegistryIterateRecursively
 			);
-		
+
 		if(serialNumberAsCFString) {
 			Boolean result;
 			char    serialNumber[MAXPATHLEN];
-			
+
 			// Convert from a CFString to a C (NUL-terminated)
 			result = CFStringGetCString(
 					serialNumberAsCFString,
@@ -190,17 +190,17 @@ void DeviceAdded(void *refCon, io_iterator_t iterator) {
 					sizeof(serialNumber),
 					kCFStringEncodingUTF8
 				);
-			
+
 			if(result) {
 				deviceItem->deviceParams.serialNumber = serialNumber;
 			}
-			
+
 			CFRelease(serialNumberAsCFString);
 		}
-		
-												
-		// Now, get the locationID of this device. In order to do this, we need to create an IOUSBDeviceInterface 
-		// for our device. This will create the necessary connections between our userland application and the 
+
+
+		// Now, get the locationID of this device. In order to do this, we need to create an IOUSBDeviceInterface
+		// for our device. This will create the necessary connections between our userland application and the
 		// kernel object for the USB Device.
 		kr = IOCreatePlugInInterfaceForService(usbDevice, kIOUSBDeviceUserClientTypeID, kIOCFPlugInInterfaceID, &plugInInterface, &score);
 
@@ -208,15 +208,15 @@ void DeviceAdded(void *refCon, io_iterator_t iterator) {
 			fprintf(stderr, "IOCreatePlugInInterfaceForService returned 0x%08x.\n", kr);
 			continue;
 		}
-		
+
 		stDeviceListItem *deviceListItem = new stDeviceListItem();
 
 		// Use the plugin interface to retrieve the device interface.
 		res = (*plugInInterface)->QueryInterface(plugInInterface, CFUUIDGetUUIDBytes(kIOUSBDeviceInterfaceID), (LPVOID*) &deviceListItem->deviceInterface);
-		
+
 		// Now done with the plugin interface.
 		(*plugInInterface)->Release(plugInInterface);
-					
+
 		if(res || deviceListItem->deviceInterface == NULL) {
 			fprintf(stderr, "QueryInterface returned %d.\n", (int) res);
 			continue;
@@ -225,7 +225,7 @@ void DeviceAdded(void *refCon, io_iterator_t iterator) {
 		// Now that we have the IOUSBDeviceInterface, we can call the routines in IOUSBLib.h.
 		// In this case, fetch the locationID. The locationID uniquely identifies the device
 		// and will remain the same, even across reboots, so long as the bus topology doesn't change.
-		
+
 		kr = (*deviceListItem->deviceInterface)->GetLocationID(deviceListItem->deviceInterface, &locationID);
 		if(KERN_SUCCESS != kr) {
 			fprintf(stderr, "GetLocationID returned 0x%08x.\n", kr);
@@ -233,7 +233,7 @@ void DeviceAdded(void *refCon, io_iterator_t iterator) {
 		}
 		deviceItem->deviceParams.locationId = locationID;
 
-		
+
 		kr = (*deviceListItem->deviceInterface)->GetDeviceAddress(deviceListItem->deviceInterface, &addr);
 		if(KERN_SUCCESS != kr) {
 			fprintf(stderr, "GetDeviceAddress returned 0x%08x.\n", kr);
@@ -241,22 +241,22 @@ void DeviceAdded(void *refCon, io_iterator_t iterator) {
 		}
 		deviceItem->deviceParams.deviceAddress = addr;
 
-		
+
 		kr = (*deviceListItem->deviceInterface)->GetDeviceVendor(deviceListItem->deviceInterface, &vendorId);
 		if(KERN_SUCCESS != kr) {
 			fprintf(stderr, "GetDeviceVendor returned 0x%08x.\n", kr);
 			continue;
 		}
 		deviceItem->deviceParams.vendorId = vendorId;
-		
+
 		kr = (*deviceListItem->deviceInterface)->GetDeviceProduct(deviceListItem->deviceInterface, &productId);
 		if(KERN_SUCCESS != kr) {
 			fprintf(stderr, "GetDeviceProduct returned 0x%08x.\n", kr);
 			continue;
 		}
 		deviceItem->deviceParams.productId = productId;
-		
-		
+
+
 		// Extract path name as unique key
 		io_string_t pathName;
 		IORegistryEntryGetPath(usbDevice, kIOServicePlane, pathName);
@@ -265,7 +265,7 @@ void DeviceAdded(void *refCon, io_iterator_t iterator) {
 
 		if(deviceNameAsCFString) {
 			Boolean result;
-			
+
 			// Convert from a CFString to a C (NUL-terminated)
 			result = CFStringGetCString(
 					deviceNameAsCFString,
@@ -273,8 +273,8 @@ void DeviceAdded(void *refCon, io_iterator_t iterator) {
 					sizeof(cPathName),
 					kCFStringEncodingUTF8
 				);
-			
-					   
+
+
 			CFRelease(deviceNameAsCFString);
 		}
 
@@ -298,11 +298,11 @@ void DeviceAdded(void *refCon, io_iterator_t iterator) {
 				deviceListItem,						// refCon
 				&(deviceListItem->notification)		// notification
 			);
-												
+
 		if(KERN_SUCCESS != kr) {
 			printf("IOServiceAddInterestNotification returned 0x%08x.\n", kr);
 		}
-		
+
 		// Done with this USB device; release the reference added by IOIteratorNext
 		kr = IOObjectRelease(usbDevice);
 	}
@@ -345,9 +345,9 @@ void SignalDeviceAvailable() {
 void *RunLoop(void * arg) {
 
 	runLoopSource = IONotificationPortGetRunLoopSource(gNotifyPort);
-	
+
 	gRunLoop = CFRunLoopGetCurrent();
-	CFRunLoopAddSource(gRunLoop, runLoopSource, kCFRunLoopDefaultMode);      
+	CFRunLoopAddSource(gRunLoop, runLoopSource, kCFRunLoopDefaultMode);
 
 	// Start the run loop. Now we'll receive notifications.
 	CFRunLoopRun();
@@ -365,10 +365,14 @@ void NotifyAsync(uv_work_t* req) {
 void NotifyFinished(uv_work_t* req) {
 	if(isRunning) {
 		if(isAdded) {
-			NotifyAdded(notify_item);
-		} 
+			if(notify_item !== NULL) {
+				NotifyAdded(notify_item);
+			}
+		}
 		else {
-			NotifyRemoved(notify_item);
+			if(notify_item !== NULL) {
+				NotifyRemoved(notify_item);
+			}
 		}
 	}
 
@@ -380,7 +384,7 @@ void NotifyFinished(uv_work_t* req) {
 	if(isRunning) {
 		uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
 	}
-	SignalDeviceHandled();   
+	SignalDeviceHandled();
 }
 
 void Start() {
@@ -400,23 +404,23 @@ void InitDetection() {
 
 	// Set up the matching criteria for the devices we're interested in. The matching criteria needs to follow
 	// the same rules as kernel drivers: mainly it needs to follow the USB Common Class Specification, pp. 6-7.
-	// See also Technical Q&A QA1076 "Tips on USB driver matching on Mac OS X" 
+	// See also Technical Q&A QA1076 "Tips on USB driver matching on Mac OS X"
 	// <http://developer.apple.com/qa/qa2001/qa1076.html>.
-	// One exception is that you can use the matching dictionary "as is", i.e. without adding any matching 
-	// criteria to it and it will match every IOUSBDevice in the system. IOServiceAddMatchingNotification will 
+	// One exception is that you can use the matching dictionary "as is", i.e. without adding any matching
+	// criteria to it and it will match every IOUSBDevice in the system. IOServiceAddMatchingNotification will
 	// consume this dictionary reference, so there is no need to release it later on.
-	
+
 	// Interested in instances of class
 	// IOUSBDevice and its subclasses
 	matchingDict = IOServiceMatching(kIOUSBDeviceClassName);
-	
+
 	if (matchingDict == NULL) {
 		fprintf(stderr, "IOServiceMatching returned NULL.\n");
 	}
 
 	// Create a notification port and add its run loop event source to our run loop
 	// This is how async notifications get set up.
-	
+
 	gNotifyPort = IONotificationPortCreate(kIOMasterPortDefault);
 
 	// Now set up a notification to be called when a device is first matched by I/O Kit.
@@ -427,8 +431,8 @@ void InitDetection() {
 			DeviceAdded,				// callback
 			NULL,						// refCon
 			&gAddedIter					// notification
-		);        
-	
+		);
+
 	if (KERN_SUCCESS != kr) {
 		printf("IOServiceAddMatchingNotification returned 0x%08x.\n", kr);
 	}
@@ -450,7 +454,7 @@ void InitDetection() {
 
 	uv_work_t* req = new uv_work_t();
 	uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
-	
+
 	Start();
 }
 
