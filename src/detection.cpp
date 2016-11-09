@@ -41,7 +41,7 @@ void RegisterAdded(const Nan::FunctionCallbackInfo<v8::Value>& args) {
 void NotifyAdded(ListResultItem_t* it) {
 	Nan::HandleScope scope;
    
-   if (it == null) {
+   if (it == NULL) {
       return;
    }
 
@@ -86,7 +86,7 @@ void RegisterRemoved(const Nan::FunctionCallbackInfo<v8::Value>& args) {
 void NotifyRemoved(ListResultItem_t* it) {
 	Nan::HandleScope scope;
    
-   if (it == null) {
+   if (it == NULL) {
       return;
    }
 
