@@ -365,14 +365,10 @@ void NotifyAsync(uv_work_t* req) {
 void NotifyFinished(uv_work_t* req) {
 	if(isRunning) {
 		if(isAdded) {
-			if(notify_item !== NULL) {
-				NotifyAdded(notify_item);
-			}
+			NotifyAdded(notify_item);
 		}
 		else {
-			if(notify_item !== NULL) {
-				NotifyRemoved(notify_item);
-			}
+			NotifyRemoved(notify_item);
 		}
 	}
 

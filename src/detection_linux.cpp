@@ -71,14 +71,10 @@ void NotifyAsync(uv_work_t* req) {
 void NotifyFinished(uv_work_t* req) {
 	if (isRunning) {
 		if (isAdded) {
-			if (currentItem !== NULL) {
-				NotifyAdded(currentItem);
-			}
+			NotifyAdded(currentItem);
 		}
 		else {
-			if (currentItem !== NULL) {
-				NotifyRemoved(currentItem);
-			}
+			NotifyRemoved(currentItem);
 		}
 	}
 

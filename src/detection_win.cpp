@@ -107,14 +107,10 @@ void NotifyAsync(uv_work_t* req) {
 void NotifyFinished(uv_work_t* req) {
 	if (isRunning) {
 		if(isAdded) {
-			if (currentDevice !== NULL) {
-				NotifyAdded(currentDevice);
-			}
+			NotifyAdded(currentDevice);
 		}
 		else {
-			if (currentDevice !== NULL) {
-				NotifyRemoved(currentDevice);
-			}
+			NotifyRemoved(currentDevice);
 		}
 	}
 
