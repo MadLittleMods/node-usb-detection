@@ -16,7 +16,7 @@
             'sources': [
               "src/detection_win.cpp"
             ],
-            'include_dirs+': 
+            'include_dirs+':
             [
               # Not needed now
             ]
@@ -28,7 +28,7 @@
               "src/detection_mac.cpp"
             ],
             "libraries": [
-              "-framework",   
+              "-framework",
               "IOKit"
             ]
           }
