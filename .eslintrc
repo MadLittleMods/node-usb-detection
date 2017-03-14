@@ -1,6 +1,6 @@
 {
 	"env": {
-		"node": 1,
+		"node": true,
 		"es6": true
 	},
 	"ecmaFeatures": {
@@ -17,12 +17,8 @@
 		"objectLiteralShorthandProperties": true,
 		"spread": true,
 		"templateStrings": true,
-		"unicodeCodePointEscapes": true,
-		"jsx": true
+		"unicodeCodePointEscapes": true
 	},
-	"plugins": [
-		"react"
-	],
 	"rules": {
 		//
 		//Possible Errors
@@ -85,20 +81,5 @@
 		"space-return-throw-case": 1, // require a space after return, throw, and case
 		"space-unary-ops": [1, {"words": true, "nonwords": false}], // Require or disallow spaces before/after unary operators (words on by default, nonwords off by default)
 		"wrap-regex": 2,
-
-
-		"react/jsx-boolean-value": 1,
-		"react/jsx-no-undef": 1,
-		"react/jsx-quotes": [2, "double", "avoid-escape"], // Enforce quote style for JSX attributes
-		"react/jsx-uses-react": 1,
-		"react/jsx-uses-vars": 1,
-		"react/no-did-mount-set-state": 1,
-		"react/no-did-update-set-state": 1,
-		"react/no-multi-comp": 1,
-		"react/no-unknown-property": 1,
-		"react/prop-types": 1,
-		"react/react-in-jsx-scope": 1,
-		"react/self-closing-comp": 1,
-		"react/wrap-multilines": 1
 	}
 }
