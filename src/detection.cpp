@@ -41,6 +41,10 @@ void RegisterAdded(const Nan::FunctionCallbackInfo<v8::Value>& args) {
 void NotifyAdded(ListResultItem_t* it) {
 	Nan::HandleScope scope;
 
+	if (it == NULL) {
+		return;
+	}
+
 	if (isAddedRegistered){
 		v8::Local<v8::Value> argv[1];
 		v8::Local<v8::Object> item = Nan::New<v8::Object>();
@@ -81,6 +85,10 @@ void RegisterRemoved(const Nan::FunctionCallbackInfo<v8::Value>& args) {
 
 void NotifyRemoved(ListResultItem_t* it) {
 	Nan::HandleScope scope;
+
+	if (it == NULL) {
+		return;
+	}
 
 	if (isRemovedRegistered) {
 		v8::Local<v8::Value> argv[1];
