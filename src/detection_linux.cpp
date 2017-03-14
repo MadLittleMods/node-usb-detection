@@ -1,5 +1,5 @@
 #include <libudev.h>
-#include <pthread.h> 
+#include <poll.h>
 
 #include "detection.h"
 #include "deviceList.h"
@@ -30,62 +30,44 @@ using namespace std;
 /**********************************
  * Local Variables
  **********************************/
-ListResultItem_t* currentItem;
-bool isAdded;
+static ListResultItem_t* currentItem;
+static bool isAdded;
 
-struct udev *udev;
-struct udev_enumerate *enumerate;
-struct udev_list_entry *devices, *dev_list_entry;
-struct udev_device *dev;
+static udev *udev;
+static udev_enumerate *enumerate;
+static udev_list_entry *devices, *dev_list_entry;
+static udev_device *dev;
 
-struct udev_monitor *mon;
-int fd;
+static udev_monitor *mon;
+static int fd;
 
-pthread_t thread;
-pthread_mutex_t notify_mutex;
-pthread_cond_t notifyNewDevice;
-pthread_cond_t notifyDeviceHandled;
+static uv_work_t work_req;
+static uv_signal_t term_signal;
+static uv_signal_t int_signal;
 
-bool newDeviceAvailable = false;
-bool deviceHandled = true;
+static uv_async_t async_handler;
+static uv_mutex_t notify_mutex;
+static uv_cond_t notifyDeviceHandled;
 
-bool isRunning = false;
+static bool deviceHandled = true;
+
+static bool isRunning = false;
+static bool quit = false;
 /**********************************
  * Local Helper Functions protoypes
  **********************************/
-void BuildInitialDeviceList();
+static void BuildInitialDeviceList();
 
-void* ThreadFunc(void* ptr);
-void WaitForDeviceHandled();
-void SignalDeviceHandled();
-void WaitForNewDevice();
-void SignalDeviceAvailable();
+static void WaitForDeviceHandled();
+static void SignalDeviceHandled();
+static void cbTerm(uv_signal_t *handle, int signum);
+static void cbWork(uv_work_t *req);
+static void cbAfter(uv_work_t *req, int status);
+static void cbAsync(uv_async_t *handle);
 
 /**********************************
  * Public Functions
  **********************************/
-void NotifyAsync(uv_work_t* req) {
-	WaitForNewDevice();
-}
-
-void NotifyFinished(uv_work_t* req) {
-	if (isRunning) {
-		if (isAdded) {
-			NotifyAdded(currentItem);
-		} 
-		else {
-			NotifyRemoved(currentItem);
-		}
-	}
-
-	// Delete Item in case of removal
-	if(isAdded == false) {
-		delete currentItem;
-	}
-
-	SignalDeviceHandled();
-	uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
-}
 
 void Start() {
 	isRunning = true;
@@ -93,9 +75,6 @@ void Start() {
 
 void Stop() {
 	isRunning = false;
-	pthread_mutex_lock(&notify_mutex);
-	pthread_cond_signal(&notifyNewDevice);
-	pthread_mutex_unlock(&notify_mutex);
 }
 
 void InitDetection() {
@@ -117,14 +96,13 @@ void InitDetection() {
 
 	BuildInitialDeviceList();
 
-	pthread_mutex_init(&notify_mutex, NULL);
-	pthread_cond_init(&notifyNewDevice, NULL);
-	pthread_cond_init(&notifyDeviceHandled, NULL);
+    uv_mutex_init(&notify_mutex);
+    uv_async_init(uv_default_loop(), &async_handler, cbAsync);
+    uv_signal_init(uv_default_loop(), &term_signal);
+    uv_signal_init(uv_default_loop(), &int_signal);
+    uv_cond_init(&notifyDeviceHandled);
 
-	uv_work_t* req = new uv_work_t();
-	uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
-
-	pthread_create(&thread, NULL, ThreadFunc, NULL);
+	uv_queue_work(uv_default_loop(), &work_req, cbWork, cbAfter);
 
 	Start();
 }
@@ -139,40 +117,23 @@ void EIO_Find(uv_work_t* req) {
 /**********************************
  * Local Functions
  **********************************/
-void WaitForDeviceHandled() {
-	pthread_mutex_lock(&notify_mutex);
+static void WaitForDeviceHandled() {
+	uv_mutex_lock(&notify_mutex);
 	if(deviceHandled == false) {
-		pthread_cond_wait(&notifyDeviceHandled, &notify_mutex);
+		uv_cond_wait(&notifyDeviceHandled, &notify_mutex);
 	}
 	deviceHandled = false;
-	pthread_mutex_unlock(&notify_mutex);
+	uv_mutex_unlock(&notify_mutex);
 }
 
-void SignalDeviceHandled() {
-	pthread_mutex_lock(&notify_mutex);
+static void SignalDeviceHandled() {
+	uv_mutex_lock(&notify_mutex);
 	deviceHandled = true;
-	pthread_cond_signal(&notifyDeviceHandled);
-	pthread_mutex_unlock(&notify_mutex);
+	uv_cond_signal(&notifyDeviceHandled);
+	uv_mutex_unlock(&notify_mutex);
 }
 
-void WaitForNewDevice() {
-	pthread_mutex_lock(&notify_mutex);
-	if(newDeviceAvailable == false){
-		pthread_cond_wait(&notifyNewDevice, &notify_mutex);
-	}
-	newDeviceAvailable = false;
-	pthread_mutex_unlock(&notify_mutex);
-}
-
-void SignalDeviceAvailable() {
-	pthread_mutex_lock(&notify_mutex);
-	newDeviceAvailable = true;
-	pthread_cond_signal(&notifyNewDevice);
-	pthread_mutex_unlock(&notify_mutex);
-}
-
-
- ListResultItem_t* GetProperties(struct udev_device* dev, ListResultItem_t* item) {
+static ListResultItem_t* GetProperties(struct udev_device* dev, ListResultItem_t* item) {
 	struct udev_list_entry* sysattrs;
 	struct udev_list_entry* entry;
 	sysattrs = udev_device_get_properties_list_entry(dev);
@@ -199,7 +160,7 @@ void SignalDeviceAvailable() {
 	return item;
 }
 
-void DeviceAdded(struct udev_device* dev) {
+static void DeviceAdded(struct udev_device* dev) {
 	DeviceItem_t* item = new DeviceItem_t();
 	GetProperties(dev, &item->deviceParams);
 
@@ -208,10 +169,10 @@ void DeviceAdded(struct udev_device* dev) {
 	currentItem = &item->deviceParams;
 	isAdded = true;
 
-	SignalDeviceAvailable();
+	uv_async_send(&async_handler);
 }
 
-void DeviceRemoved(struct udev_device* dev) {
+static void DeviceRemoved(struct udev_device* dev) {
 	ListResultItem_t* item = NULL;
 
 	if(IsItemAlreadyStored((char *)udev_device_get_devnode(dev))) {
@@ -231,14 +192,20 @@ void DeviceRemoved(struct udev_device* dev) {
 	currentItem = item;
 	isAdded = false;
 
-	SignalDeviceAvailable();
+	uv_async_send(&async_handler);
 }
 
 
-void* ThreadFunc(void* ptr) {
-	while (1) {
-		/* Make the call to receive the device.
-		   select() ensured that this will not block. */
+static void cbWork(uv_work_t *req) {
+	uv_signal_start(&int_signal, cbTerm, SIGINT);
+	uv_signal_start(&term_signal, cbTerm, SIGTERM);
+
+	pollfd fds = {fd, POLLIN, 0};
+	while (!quit) {
+		int ret = poll(&fds, 1, 100);
+		if (!ret) continue;
+		if (ret < 0) break;
+
 		dev = udev_monitor_receive_device(mon);
 		if (dev) {
 			if(udev_device_get_devtype(dev) && strcmp(udev_device_get_devtype(dev), DEVICE_TYPE_DEVICE) == 0) {
@@ -254,12 +221,43 @@ void* ThreadFunc(void* ptr) {
 			udev_device_unref(dev);
 		}
 	}
+}
 
-	return NULL;
+static void cbAfter(uv_work_t *req, int status) {
+	uv_signal_stop(&int_signal);
+	uv_signal_stop(&term_signal);
+	uv_close((uv_handle_t *) &async_handler, NULL);
+	uv_cond_destroy(&notifyDeviceHandled);
+	uv_mutex_destroy(&notify_mutex);
+	udev_monitor_unref(mon);
+	udev_unref(udev);
+}
+
+static void cbAsync(uv_async_t *handle) {
+	if (isRunning) {
+		if (isAdded) {
+			NotifyAdded(currentItem);
+		} 
+		else {
+			NotifyRemoved(currentItem);
+		}
+	}
+
+	// Delete Item in case of removal
+	if(isAdded == false) {
+		delete currentItem;
+	}
+
+	SignalDeviceHandled();
 }
 
 
-void BuildInitialDeviceList() {
+static void cbTerm(uv_signal_t *handle, int signum) {
+	quit = true;
+}
+
+
+static void BuildInitialDeviceList() {
 	/* Create a list of the devices */
 	enumerate = udev_enumerate_new(udev);
 	udev_enumerate_scan_devices(enumerate);
