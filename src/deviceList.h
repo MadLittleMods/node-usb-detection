@@ -32,7 +32,7 @@ typedef struct _DeviceItem_t {
 		_DeviceItem_t() {
 			key = NULL;
 		}
-		
+
 		~_DeviceItem_t() {
 			if(this->key != NULL) {
 				delete this->key;

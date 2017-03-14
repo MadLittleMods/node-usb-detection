@@ -60,8 +60,8 @@ ListResultItem_t* CopyElement(ListResultItem_t* item) {
 void CreateFilteredList(list<ListResultItem_t*> *filteredList, int vid, int pid) {
 	map<string, DeviceItem_t*>::iterator it;
 
-	for (it = deviceMap.begin(); it != deviceMap.end(); ++it) {    
-    	DeviceItem_t* item = it->second; 
+	for (it = deviceMap.begin(); it != deviceMap.end(); ++it) {
+    	DeviceItem_t* item = it->second;
 
         if (
         	((	vid != 0 && pid != 0) && (vid == item->deviceParams.vendorId && pid == item->deviceParams.productId))
@@ -73,4 +73,3 @@ void CreateFilteredList(list<ListResultItem_t*> *filteredList, int vid, int pid)
 
     }
 }
-
