@@ -1,20 +1,26 @@
 # Changelog
 
+## *upcoming*
+
+ - Add check for null before notifying of addition/removal
+    - Thanks to [@reidmweber](https://github.com/reidmweber) for [this contribution](https://github.com/MadLittleMods/node-usb-detection/pull/32) via [#37](https://github.com/MadLittleMods/node-usb-detection/pull/37)
+
+
 ## v1.4.0 - 2016-3-20
 
  - Add compatibility for `node@0.10.x` by using more `nan` types and methods.
-    - Thanks to @apla for [this contribution](https://github.com/MadLittleMods/node-usb-detection/pull/26)!
+    - Thanks to [@apla](https://github.com/apla) for [this contribution](https://github.com/MadLittleMods/node-usb-detection/pull/26)!
 
 
 ## v1.3.0 - 2015-10-11
 
  - Add compatibility for Node 4
- 	 - Upgrade [`nan`](https://www.npmjs.com/package/nan) dependency nan@2.x. Thank you @lorenc-tomasz
+ 	 - Upgrade [`nan`](https://www.npmjs.com/package/nan) dependency nan@2.x. Thank you [@lorenc-tomasz](https://github.com/lorenc-tomasz)
 
 
 ## v1.2.0 - 2015-6-12
 
- - New maintainer/owner @MadLittleMods. Previously maintained by @adrai :+1:
+ - New maintainer/owner [@MadLittleMods](https://github.com/MadLittleMods). Previously maintained by [@adrai](https://github.com/adrai) :+1:
  - Add tests `npm test`
  - `find` now also returns a promise
  - Format js and c++
