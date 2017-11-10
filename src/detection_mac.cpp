@@ -9,44 +9,61 @@
 #include <IOKit/usb/IOUSBLib.h>
 
 #include <sys/param.h>
-#include <pthread.h>
+#include <poll.h>
 
 #include <uv.h>
 
-
+/**********************************
+ * Local typedefs
+ **********************************/
 typedef struct DeviceListItem {
 	io_object_t notification;
 	IOUSBDeviceInterface** deviceInterface;
 	DeviceItem_t* deviceItem;
 } stDeviceListItem;
 
+/**********************************
+ * Local Variables
+ **********************************/
+static ListResultItem_t* currentItem;
+static bool isAdded = false;
+static bool initialDeviceImport = true;
+
 static IONotificationPortRef gNotifyPort;
 static io_iterator_t gAddedIter;
 static CFRunLoopRef gRunLoop;
 
+static CFMutableDictionaryRef matchingDict;
+static CFRunLoopSourceRef runLoopSource;
 
-CFMutableDictionaryRef matchingDict;
-CFRunLoopSourceRef runLoopSource;
+static uv_work_t work_req;
+static uv_signal_t term_signal;
+static uv_signal_t int_signal;
 
-static pthread_t lookupThread;
+static uv_async_t async_handler;
+static uv_mutex_t notify_mutex;
+static uv_cond_t notifyDeviceHandled;
 
-pthread_mutex_t notify_mutex;
-pthread_cond_t notifyNewDevice;
-pthread_cond_t notifyDeviceHandled;
+static bool deviceHandled = true;
 
-bool newDeviceAvailable = false;
-bool deviceHandled = true;
+static bool isRunning = false;
+static bool quit = false;
 
-ListResultItem_t* notify_item;
-bool isAdded = false;
-bool isRunning = false;
-bool intialDeviceImport = true;
+/**********************************
+ * Local Helper Functions protoypes
+ **********************************/
 
-void WaitForDeviceHandled();
-void SignalDeviceHandled();
-void WaitForNewDevice();
-void SignalDeviceAvailable();
+static void WaitForDeviceHandled();
+static void SignalDeviceHandled();
+static void cbTerm(uv_signal_t *handle, int signum);
+static void cbWork(uv_work_t *req);
+static void cbAfter(uv_work_t *req, int status);
+static void cbAsync(uv_async_t *handle);
 
+
+/**********************************
+ * Public Functions
+ **********************************/
 //================================================================================================
 //
 //  DeviceRemoved
@@ -56,8 +73,8 @@ void SignalDeviceAvailable();
 //  messages are defined in IOMessage.h.
 //
 //================================================================================================
-void DeviceRemoved(void *refCon, io_service_t service, natural_t messageType, void *messageArgument) {
-	kern_return_t   kr;
+static void DeviceRemoved(void *refCon, io_service_t service, natural_t messageType, void *messageArgument) {
+	kern_return_t kr;
 	stDeviceListItem* deviceListItem = (stDeviceListItem *) refCon;
 	DeviceItem_t* deviceItem = deviceListItem->deviceItem;
 
@@ -80,10 +97,9 @@ void DeviceRemoved(void *refCon, io_service_t service, natural_t messageType, vo
 		}
 
 		WaitForDeviceHandled();
-		notify_item = item;
+		currentItem = item;
 		isAdded = false;
-		SignalDeviceAvailable();
-
+		uv_async_send(&async_handler);
 	}
 }
 
@@ -101,20 +117,20 @@ void DeviceRemoved(void *refCon, io_service_t service, natural_t messageType, vo
 //      this interest notification, we can grab the refCon and access our private data.
 //
 //================================================================================================
-void DeviceAdded(void *refCon, io_iterator_t iterator) {
-	kern_return_t       kr;
-	io_service_t        usbDevice;
+static void DeviceAdded(void *refCon, io_iterator_t iterator) {
+	kern_return_t kr;
+	io_service_t usbDevice;
 	IOCFPlugInInterface **plugInInterface = NULL;
-	SInt32              score;
-	HRESULT             res;
+	SInt32 score;
+	HRESULT res;
 
 	while((usbDevice = IOIteratorNext(iterator))) {
-		io_name_t       deviceName;
-		CFStringRef     deviceNameAsCFString;
-		UInt32          locationID;
-		UInt16          vendorId;
-		UInt16          productId;
-		UInt16          addr;
+		io_name_t deviceName;
+		CFStringRef deviceNameAsCFString;
+		UInt32 locationID;
+		UInt16 vendorId;
+		UInt16 productId;
+		UInt16 addr;
 
 		DeviceItem_t* deviceItem = new DeviceItem_t();
 
@@ -281,22 +297,22 @@ void DeviceAdded(void *refCon, io_iterator_t iterator) {
 		AddItemToList(cPathName, deviceItem);
 		deviceListItem->deviceItem = deviceItem;
 
-		if(intialDeviceImport == false) {
+		if(initialDeviceImport == false) {
 			WaitForDeviceHandled();
-			notify_item = &deviceItem->deviceParams;
+			currentItem = &deviceItem->deviceParams;
 			isAdded = true;
-			SignalDeviceAvailable();
+			uv_async_send(&async_handler);
 		}
 
 		// Register for an interest notification of this device being removed. Use a reference to our
 		// private data as the refCon which will be passed to the notification callback.
 		kr = IOServiceAddInterestNotification(
-				gNotifyPort,						// notifyPort
-				usbDevice,							// service
-				kIOGeneralInterest,					// interestType
-				DeviceRemoved,						// callback
-				deviceListItem,						// refCon
-				&(deviceListItem->notification)		// notification
+				gNotifyPort, // notifyPort
+				usbDevice, // service
+				kIOGeneralInterest, // interestType
+				DeviceRemoved, // callback
+				deviceListItem, // refCon
+				&(deviceListItem->notification) // notification
 			);
 
 		if(KERN_SUCCESS != kr) {
@@ -308,94 +324,15 @@ void DeviceAdded(void *refCon, io_iterator_t iterator) {
 	}
 }
 
-
-void WaitForDeviceHandled() {
-	pthread_mutex_lock(&notify_mutex);
-	if(deviceHandled == false) {
-		pthread_cond_wait(&notifyDeviceHandled, &notify_mutex);
-	}
-	deviceHandled = false;
-	pthread_mutex_unlock(&notify_mutex);
-}
-
-void SignalDeviceHandled() {
-	pthread_mutex_lock(&notify_mutex);
-	deviceHandled = true;
-	pthread_cond_signal(&notifyDeviceHandled);
-	pthread_mutex_unlock(&notify_mutex);
-}
-
-void WaitForNewDevice() {
-	pthread_mutex_lock(&notify_mutex);
-	if(newDeviceAvailable == false) {
-		pthread_cond_wait(&notifyNewDevice, &notify_mutex);
-	}
-	newDeviceAvailable = false;
-	pthread_mutex_unlock(&notify_mutex);
-}
-
-void SignalDeviceAvailable() {
-	pthread_mutex_lock(&notify_mutex);
-	newDeviceAvailable = true;
-	pthread_cond_signal(&notifyNewDevice);
-	pthread_mutex_unlock(&notify_mutex);
-}
-
-
-void *RunLoop(void * arg) {
-
-	runLoopSource = IONotificationPortGetRunLoopSource(gNotifyPort);
-
-	gRunLoop = CFRunLoopGetCurrent();
-	CFRunLoopAddSource(gRunLoop, runLoopSource, kCFRunLoopDefaultMode);
-
-	// Start the run loop. Now we'll receive notifications.
-	CFRunLoopRun();
-
-	// We should never get here
-	fprintf(stderr, "Unexpectedly back from CFRunLoopRun()!\n");
-
-	return NULL;
-}
-
-void NotifyAsync(uv_work_t* req) {
-	WaitForNewDevice();
-}
-
-void NotifyFinished(uv_work_t* req) {
-	if(isRunning) {
-		if(isAdded) {
-			NotifyAdded(notify_item);
-		}
-		else {
-			NotifyRemoved(notify_item);
-		}
-	}
-
-	// Delete Item in case of removal
-	if(isAdded == false) {
-		delete notify_item;
-	}
-
-	if(isRunning) {
-		uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
-	}
-	SignalDeviceHandled();
-}
-
 void Start() {
 	isRunning = true;
 }
 
 void Stop() {
 	isRunning = false;
-	pthread_mutex_lock(&notify_mutex);
-	pthread_cond_signal(&notifyNewDevice);
-	pthread_mutex_unlock(&notify_mutex);
 }
 
 void InitDetection() {
-
 	kern_return_t kr;
 
 	// Set up the matching criteria for the devices we're interested in. The matching criteria needs to follow
@@ -421,12 +358,12 @@ void InitDetection() {
 
 	// Now set up a notification to be called when a device is first matched by I/O Kit.
 	kr = IOServiceAddMatchingNotification(
-			gNotifyPort,				// notifyPort
-			kIOFirstMatchNotification,	// notificationType
-			matchingDict,				// matching
-			DeviceAdded,				// callback
-			NULL,						// refCon
-			&gAddedIter					// notification
+			gNotifyPort, // notifyPort
+			kIOFirstMatchNotification, // notificationType
+			matchingDict, // matching
+			DeviceAdded, // callback
+			NULL, // refCon
+			&gAddedIter // notification
 		);
 
 	if (KERN_SUCCESS != kr) {
@@ -435,25 +372,83 @@ void InitDetection() {
 
 	// Iterate once to get already-present devices and arm the notification
 	DeviceAdded(NULL, gAddedIter);
-	intialDeviceImport = false;
+	initialDeviceImport = false;
 
+	uv_mutex_init(&notify_mutex);
+	uv_async_init(uv_default_loop(), &async_handler, cbAsync);
+	uv_signal_init(uv_default_loop(), &term_signal);
+	uv_signal_init(uv_default_loop(), &int_signal);
+	uv_cond_init(&notifyDeviceHandled);
 
-	pthread_mutex_init(&notify_mutex, NULL);
-	pthread_cond_init(&notifyNewDevice, NULL);
-	pthread_cond_init(&notifyDeviceHandled, NULL);
-
-	int rc = pthread_create(&lookupThread, NULL, RunLoop, NULL);
-	if (rc) {
-		 printf("ERROR; return code from pthread_create() is %d\n", rc);
-		 exit(-1);
-	}
-
-	uv_work_t* req = new uv_work_t();
-	uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
+	uv_queue_work(uv_default_loop(), &work_req, cbWork, cbAfter);
 }
 
 void EIO_Find(uv_work_t* req) {
 	ListBaton* data = static_cast<ListBaton*>(req->data);
 
 	CreateFilteredList(&data->results, data->vid, data->pid);
+}
+
+static void WaitForDeviceHandled() {
+	uv_mutex_lock(&notify_mutex);
+	if(deviceHandled == false) {
+		uv_cond_wait(&notifyDeviceHandled, &notify_mutex);
+	}
+	deviceHandled = false;
+	uv_mutex_unlock(&notify_mutex);
+}
+
+static void SignalDeviceHandled() {
+	uv_mutex_lock(&notify_mutex);
+	deviceHandled = true;
+	uv_cond_signal(&notifyDeviceHandled);
+	uv_mutex_unlock(&notify_mutex);
+}
+
+static void cbWork(uv_work_t *req) {
+	uv_signal_start(&int_signal, cbTerm, SIGINT);
+	uv_signal_start(&term_signal, cbTerm, SIGTERM);
+
+	runLoopSource = IONotificationPortGetRunLoopSource(gNotifyPort);
+
+	gRunLoop = CFRunLoopGetCurrent();
+	CFRunLoopAddSource(gRunLoop, runLoopSource, kCFRunLoopDefaultMode);
+
+	// Start the run loop. Now we'll receive notifications.
+	CFRunLoopRun();
+
+	// We should never get here
+	fprintf(stderr, "Unexpectedly back from CFRunLoopRun()!\n");
+}
+
+static void cbAfter(uv_work_t *req, int status) {
+	uv_signal_stop(&int_signal);
+	uv_signal_stop(&term_signal);
+	uv_close((uv_handle_t *) &async_handler, NULL);
+	uv_cond_destroy(&notifyDeviceHandled);
+	uv_mutex_destroy(&notify_mutex);
+	CFRunLoopStop(CFRunLoopGetCurrent());
+}
+
+static void cbAsync(uv_async_t *handle) {
+	if (isRunning) {
+		if (isAdded) {
+			NotifyAdded(currentItem);
+		}
+		else {
+			NotifyRemoved(currentItem);
+		}
+	}
+
+	// Delete Item in case of removal
+	if(isAdded == false) {
+		delete currentItem;
+	}
+
+	SignalDeviceHandled();
+}
+
+
+static void cbTerm(uv_signal_t *handle, int signum) {
+	quit = true;
 }
