@@ -1,0 +1,88 @@
+---
+notifications:
+  email: false
+language: cpp
+dist: trusty
+sudo: required
+
+# Build matrix
+os:
+- linux
+- osx
+env:
+  global:
+  - secure: "AIpbFdTVntCzsjRqdfQYog1fxoiHLHaJCLEsIKfRtP4OD9c+Abejc/TF2uRhHvwL4Qux4AVLE1DDOsElt6MRC9rooJYehlYBc8lWYz2nx92DvaivNmDHs2UG63+s3cF6vaaBKOpFuHuEUfoTjUtwZYWy+p88HT9EsU6AD3096BA="
+  matrix:
+  - TRAVIS_NODE_VERSION="4"
+  - TRAVIS_NODE_VERSION="4" ARCH="x86"
+  - TRAVIS_NODE_VERSION="6"
+  - TRAVIS_NODE_VERSION="6" ARCH="x86"
+  - BINARY_BUILDER="true" TRAVIS_NODE_VERSION="8"
+  - BINARY_BUILDER="true" TRAVIS_NODE_VERSION="8" ARCH="x86"
+matrix:
+  exclude:
+  - os: osx
+    env: TRAVIS_NODE_VERSION="4" ARCH="x86"
+  - os: osx
+    env: TRAVIS_NODE_VERSION="6" ARCH="x86"
+  - os: osx
+    env: BINARY_BUILDER="true" TRAVIS_NODE_VERSION="8" ARCH="x86"
+
+cache:
+  directories:
+    - $HOME/.npm/
+    - $HOME/.npm-cache/
+
+before_install:
+
+# download node if testing x86 architecture
+- >
+  if [[ "$ARCH" == "x86" ]]; then
+    EXPANDED_VERSION=$(curl https://semver.io/node/resolve/$TRAVIS_NODE_VERSION);
+    echo "EXPANDED_VERSION =" $EXPANDED_VERSION
+    BASE_URL=https://nodejs.org/dist/v$EXPANDED_VERSION;
+    X86_FILE=node-v$EXPANDED_VERSION-$(node -p "process.platform")-x86;
+    echo "X86_FILE =" $X86_FILE;
+    wget $BASE_URL/$X86_FILE.tar.gz;
+    tar -xf $X86_FILE.tar.gz;
+    nvm deactivate;
+    export PATH=$X86_FILE/bin:$PATH;
+    if [[ $TRAVIS_OS_NAME == "linux" ]]; then sudo apt-get install libudev-dev:i386 g++-multilib; fi
+  else
+    nvm install $TRAVIS_NODE_VERSION
+    if [[ $TRAVIS_OS_NAME == "linux" ]]; then sudo apt-get install libudev-dev; fi
+  fi;
+- $CXX --version
+
+# Cleanup the output of npm
+- npm config set progress false
+- npm config set spin false
+
+# print versions
+- uname -a
+- which node; file `which node`
+- node --version
+- node -p 'process.platform + "@" + process.arch'
+- npm --version
+
+# figure out if we should publish
+- PUBLISH_BINARY=false
+- echo $TRAVIS_BRANCH
+- echo `git describe --tags --always HEAD`
+- if [[ $TRAVIS_BRANCH == `git describe --tags --always HEAD` ]]; then PUBLISH_BINARY=$BINARY_BUILDER; fi;
+- echo "Publishing native platform Binary Package? ->" $PUBLISH_BINARY
+
+install:
+# ensure source install works
+- npm install --build-from-source
+
+script:
+# Tests are disabled until we have tests which are suitable for CI and don't require manual interaction.
+# - npm test
+- echo "Skipping tests on CI, as they currently require manual interaction."
+
+# if publishing, do it
+- >
+  if [[ $PUBLISH_BINARY == true ]]; then
+    npm run prebuild;
+  fi;
