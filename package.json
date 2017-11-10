@@ -7,12 +7,11 @@
   "scripts": {
     "test": "mocha --timeout 10000",
     "install": "prebuild-install || node-gyp rebuild",
-    "prebuild": "prebuild --all && prebuild --all --runtime electron",
-    "upload-prebuilds": "prebuild --upload-all"
+    "prebuild": "prebuild --all --strip --verbose"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/MadLittleMods/node-usb-detection.git"
+    "url": "git://github.com/lange/node-usb-detection.git"
   },
   "keywords": [
     "usb",
@@ -27,13 +26,13 @@
     "unplug",
     "notification"
   ],
-  "homepage": "https://github.com/MadLittleMods/node-usb-detection",
+  "homepage": "https://github.com/lange/node-usb-detection",
   "bugs": {
-    "url": "https://github.com/MadLittleMods/node-usb-detection/issues"
+    "url": "https://github.com/lange/node-usb-detection/issues"
   },
   "license": {
     "type": "MIT",
-    "url": "https://raw.github.com/MadLittleMods/node-usb-detection/master/licence"
+    "url": "https://raw.github.com/lange/node-usb-detection/master/licence"
   },
   "dependencies": {
     "bindings": "1.1.0",
