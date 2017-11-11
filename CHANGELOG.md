@@ -1,10 +1,11 @@
 # Changelog
 
-## *upcoming*
+## v1.4.1 - 2017-11-11
 
  - Add check for null before notifying of addition/removal
     - Thanks to [@reidmweber](https://github.com/reidmweber) for [this contribution](https://github.com/MadLittleMods/node-usb-detection/pull/32) via [#37](https://github.com/MadLittleMods/node-usb-detection/pull/37)
-
+ - Create prebuilt binaries on tagged releases
+    - Thanks to [@jayalfredprufrock](https://github.com/jayalfredprufrock) for the PoC and [@Lange](https://github.com/Lange) for [the contribution](https://github.com/MadLittleMods/node-usb-detection/pull/47)
 
 ## v1.4.0 - 2016-3-20
 
