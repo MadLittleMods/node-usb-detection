@@ -2,13 +2,6 @@
 notifications:
   email: false
 language: cpp
-addons:
-  apt:
-    sources:
-    - ubuntu-toolchain-r-test
-    packages:
-    - g++-4.8-multilib
-    - gcc-multilib
 dist: trusty
 sudo: required
 
@@ -54,17 +47,12 @@ before_install:
     tar -xf $X86_FILE.tar.gz;
     nvm deactivate;
     export PATH=$X86_FILE/bin:$PATH;
-    if [[ $TRAVIS_OS_NAME == "linux" ]]; then sudo apt-get install libudev-dev:i386; fi
+    if [[ $TRAVIS_OS_NAME == "linux" ]]; then sudo apt-get install libudev-dev:i386 g++-multilib; fi
   else
     nvm install $TRAVIS_NODE_VERSION
     if [[ $TRAVIS_OS_NAME == "linux" ]]; then sudo apt-get install libudev-dev; fi
   fi;
-# use g++-4.8 on Linux
-- if [[ $TRAVIS_OS_NAME == "linux" ]]; then export CXX=g++-4.8; fi
 - $CXX --version
-
-# upgrade npm if on node 4 as npm2 doesn't like our dev peer deps
-- if [[ $TRAVIS_NODE_VERSION == "4" ]]; then npm install -g npm; fi
 
 # Cleanup the output of npm
 - npm config set progress false
