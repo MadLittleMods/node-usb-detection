@@ -1,6 +1,6 @@
 {
   "name": "usb-detection",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Listen to USB devices and detect changes on them.",
   "main": "index.js",
   "gypfile": true,
