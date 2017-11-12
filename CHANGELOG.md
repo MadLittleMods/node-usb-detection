@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.4.2 - 2017-11-11
+
+ - Remove npm `install` hook to prevent hanging the install process caused by `prebuild-install` verify require and our side-effects.
+    - Thanks to [@Lange](https://github.com/Lange) for [figuring out the root cause](https://github.com/MadLittleMods/node-usb-detection/pull/47#issuecomment-343714022).
+
 ## v1.4.1 - 2017-11-11
 
  - Add check for null before notifying of addition/removal
