@@ -11,18 +11,8 @@ var chalk = require('chalk');
 // The plugin to test
 var usbDetect = require('../');
 
-
-function once(eventName) {
-	return new Promise(function(resolve) {
-		usbDetect.on(eventName, function(device) {
-			resolve(device);
-		});
-	});
-}
-
-
 // We just look at the keys of this device object
-var deviceObjectFixture = {
+var DEVICE_OBJECT_FIXTURE = {
 	locationId: 0,
 	vendorId: 5824,
 	productId: 1155,
@@ -32,14 +22,28 @@ var deviceObjectFixture = {
 	deviceAddress: 11
 };
 
+function once(eventName) {
+	return new Promise(function(resolve) {
+		usbDetect.on(eventName, function(device) {
+			resolve(device);
+		});
+	});
+}
 
+function testDeviceShape(device) {
+	expect(device)
+		.to.have.all.keys(DEVICE_OBJECT_FIXTURE)
+		.that.is.an('object');
+}
 
 describe('usb-detection', function() {
-	var testDeviceShape = function(device) {
-		expect(device)
-			.to.have.all.keys(deviceObjectFixture)
-			.that.is.an('object');
-	};
+	before(function() {
+		usbDetect.startMonitoring();
+	});
+
+	after(function() {
+		usbDetect.stopMonitoring();
+	});
 
 	describe('`.find`', function() {
 
@@ -97,11 +101,4 @@ describe('usb-detection', function() {
 				});
 		});
 	});
-
-
-	after(function() {
-		// After this call, the process will be able to quit
-		usbDetect.stopMonitoring();
-	});
-
 });

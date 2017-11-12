@@ -6,7 +6,9 @@
   "gypfile": true,
   "scripts": {
     "test": "mocha --timeout 10000",
-    "prebuild": "prebuild --all --strip --verbose"
+    "install": "prebuild-install || node-gyp rebuild",
+    "prebuild": "prebuild --all --strip --verbose",
+    "rebuild": "node-gyp rebuild"
   },
   "repository": {
     "type": "git",

@@ -125,8 +125,6 @@ void InitDetection() {
 	uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
 
 	pthread_create(&thread, NULL, ThreadFunc, NULL);
-
-	Start();
 }
 
 
