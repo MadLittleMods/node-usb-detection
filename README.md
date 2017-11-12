@@ -1,4 +1,4 @@
-[![npm version](https://badge.fury.io/js/usb-detection.svg)](http://badge.fury.io/js/usb-detection)
+[![npm version](https://badge.fury.io/js/usb-detection.svg)](http://badge.fury.io/js/usb-detection) [![Gitter](https://badges.gitter.im/MadLittleMods/node-usb-detection.svg)](https://gitter.im/MadLittleMods/node-usb-detection?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 
 # usb-detection
