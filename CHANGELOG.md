@@ -1,9 +1,17 @@
 # Changelog
 
+## *v2.x upcoming*
+
+ - Remove side-effects when you `require('usb-detection')` so the process won't hang from just requiring.
+   Now requires an explicit call to `usbDetect.startMonitoring()` to begin listening to USB add/remove/change events.
+ - Add npm `install` hook that will use our prebuilt binaries instead of having to compile from source with node-gyp.
+
+
 ## v1.4.2 - 2017-11-11
 
  - Remove npm `install` hook to prevent hanging the install process caused by `prebuild-install` verify require and our side-effects.
     - Thanks to [@Lange](https://github.com/Lange) for [figuring out the root cause](https://github.com/MadLittleMods/node-usb-detection/pull/47#issuecomment-343714022).
+
 
 ## v1.4.1 - 2017-11-11
 

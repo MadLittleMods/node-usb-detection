@@ -83,7 +83,7 @@ if (global[index.name] && global[index.name].version === index.version) {
 		detector.emit('change', device);
 	});
 
-	var started = true;
+	var started = false;
 
 	detector.startMonitoring = function() {
 		if(started) {

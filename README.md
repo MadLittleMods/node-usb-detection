@@ -15,41 +15,13 @@
 npm install usb-detection
 ```
 
-This assumes you also have everything on your system necessary to compile ANY native module for Node.js. This may not be the case, though, so please ensure the following requirements are satisfied before filing an issue about "Does not install". For all operating systems, please ensure you have Python 2.x installed AND not 3.0, [node-gyp](https://github.com/TooTallNate/node-gyp) (what we use to compile) requires Python 2.x.
-
-### Windows:
-
- - Visual Studio 2013/2015 Community
- - Visual Studio 2010
- - Visual C++ Build Tools 2015: https://github.com/nodejs/node-gyp/issues/629#issuecomment-153196245
-
-If you are having problems building, [please read this](https://github.com/TooTallNate/node-gyp/issues/44).
-
-### Mac OS X:
-
-Ensure that you have at a minimum, the xCode Command Line Tools installed appropriate for your system configuration. If you recently upgraded your OS, it probably removed your installation of Command Line Tools, please verify before submitting a ticket.
-
-### Linux:
-
-You know what you need for you system, basically your appropriate analog of build-essential. Keep rocking!
-
-To compile and install native addons from npm you may also need to install build tools *([source](https://github.com/joyent/node/wiki/Installing-Node.js-via-package-manager#debian-and-ubuntu-based-linux-distributions))*:
-
-```
-sudo apt-get install -y build-essential
-```
-
-Also install libudev:
-
-```
-sudo apt-get install libudev-dev
-```
-
 
 # Usage
 
 ```js
 var usbDetect = require('usb-detection');
+
+usbDetect.startMonitoring();
 
 // Detect add/insert
 usbDetect.on('add', function(device) { console.log('add', device); });
@@ -77,7 +49,17 @@ usbDetect.find().then(function(devices) { console.log(devices); }).catch(functio
 
 # API
 
-## `on(eventName, callback)`
+## `usbDetect.startMonitoring()`
+
+Start listening for USB add/remove/change events. This will cause the Node.js process to stay open until you call `usbDetect.stopMonitoring()` (see below).
+
+
+## `usbDetect.stopMonitoring()`
+
+Stop listening for USB add/remove/change events. This will also allow the Node.js process to exit.
+
+
+## `usbDetect.on(eventName, callback)`
 
  - `eventName`
  	 - `add`: also aliased as `insert`
@@ -95,6 +77,8 @@ usbDetect.find().then(function(devices) { console.log(devices); }).catch(functio
 
 ```js
 var usbDetect = require('usb-detection');
+usbDetect.startMonitoring();
+
 usbDetect.on('add', function(device) {
 	console.log(device);
 });
@@ -113,7 +97,7 @@ usbDetect.on('add', function(device) {
 ```
 
 
-## `find(vid, pid, callback)`
+## `usbDetect.find(vid, pid, callback)`
 
 **Note:** All `find` calls return a promise even with the node-style callback flavors.
 
@@ -134,6 +118,8 @@ Parameters:
 
 ```js
 var usbDetect = require('usb-detection');
+usbDetect.startMonitoring();
+
 usbDetect.find(function(err, devices) {
 	console.log(devices, err);
 });
@@ -175,11 +161,44 @@ usbDetect.find(function(err, devices) {
 var usbDetect = require('usb-detection');
 
 // Do some detection
+usbDetect.startMonitoring();
 
 // After this call, the process will be able to quit
 usbDetect.stopMonitoring();
 ```
 
+
+# Development (compile from source)
+
+This assumes you also have everything on your system necessary to compile ANY native module for Node.js. This may not be the case, though, so please ensure the following requirements are satisfied before filing an issue about "Does not install". For all operating systems, please ensure you have Python 2.x installed AND not 3.0, [node-gyp](https://github.com/TooTallNate/node-gyp) (what we use to compile) requires Python 2.x.
+
+### Windows:
+
+ - Visual Studio 2013/2015 Community
+ - Visual Studio 2010
+ - Visual C++ Build Tools 2015: https://github.com/nodejs/node-gyp/issues/629#issuecomment-153196245
+
+If you are having problems building, [please read this](https://github.com/TooTallNate/node-gyp/issues/44).
+
+### Mac OS X:
+
+Ensure that you have at a minimum, the xCode Command Line Tools installed appropriate for your system configuration. If you recently upgraded your OS, it probably removed your installation of Command Line Tools, please verify before submitting a ticket.
+
+### Linux:
+
+You know what you need for you system, basically your appropriate analog of build-essential. Keep rocking!
+
+To compile and install native addons from npm you may also need to install build tools *([source](https://github.com/joyent/node/wiki/Installing-Node.js-via-package-manager#debian-and-ubuntu-based-linux-distributions))*:
+
+```
+sudo apt-get install -y build-essential
+```
+
+Also install libudev:
+
+```
+sudo apt-get install libudev-dev
+```
 
 
 # Testing

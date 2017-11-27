@@ -450,8 +450,6 @@ void InitDetection() {
 
 	uv_work_t* req = new uv_work_t();
 	uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
-
-	Start();
 }
 
 void EIO_Find(uv_work_t* req) {
