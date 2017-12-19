@@ -1,6 +1,6 @@
 # Changelog
 
-## *v2.x upcoming*
+## v2.0.0 - 2017-12-19
 
  - Remove side-effects when you `require('usb-detection')` so the process won't hang from just requiring.
    Now requires an explicit call to `usbDetect.startMonitoring()` to begin listening to USB add/remove/change events.
