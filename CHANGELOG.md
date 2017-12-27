@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.0.1 - 2017-12-27
+
+ - Remove npm `install` hook to prevent hanging the install process caused by `prebuild-install` verify require and our side-effects.
+    - Thanks to [@Lange](https://github.com/Lange) for noticing an issue.
+
 ## v2.0.0 - 2017-12-19
 
  - Remove side-effects when you `require('usb-detection')` so the process won't hang from just requiring.
