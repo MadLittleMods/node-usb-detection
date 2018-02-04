@@ -2,8 +2,12 @@
 
 var usbDetect = require('../');
 
+/* */
+console.log('startMonitoring');
 usbDetect.startMonitoring();
+/* */
 
+/* */
 usbDetect.find()
 	.then(function(devices) {
 		console.log('find', devices);
@@ -21,3 +25,11 @@ usbDetect.on('remove', function(device) {
 usbDetect.on('change', function(device) {
 	console.log('change', device);
 });
+/* */
+
+/* * /
+setTimeout(() => {
+	console.log('stopMonitoring');
+	usbDetect.stopMonitoring();
+}, 1000);
+/* */

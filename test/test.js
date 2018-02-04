@@ -1,5 +1,3 @@
-/*eslint-env node, mocha */
-
 var Promise = require('bluebird');
 
 var chai = require('chai');

@@ -3,21 +3,23 @@
 		"node": true,
 		"es6": true
 	},
-	"ecmaFeatures": {
-		"arrowFunctions": true,
-		"blockBindings": true,
-		"classes": true,
-		"defaultParams": true,
-		"destructuring": true,
-		"forOf": true,
-		"generators": true,
-		"modules": true,
-		"objectLiteralComputedProperties": true,
-		"objectLiteralShorthandMethods": true,
-		"objectLiteralShorthandProperties": true,
-		"spread": true,
-		"templateStrings": true,
-		"unicodeCodePointEscapes": true
+	"parserOptions": {
+		"ecmaFeatures": {
+			"arrowFunctions": true,
+			"blockBindings": true,
+			"classes": true,
+			"defaultParams": true,
+			"destructuring": true,
+			"forOf": true,
+			"generators": true,
+			"modules": true,
+			"objectLiteralComputedProperties": true,
+			"objectLiteralShorthandMethods": true,
+			"objectLiteralShorthandProperties": true,
+			"spread": true,
+			"templateStrings": true,
+			"unicodeCodePointEscapes": true
+		},
 	},
 	"rules": {
 		//
@@ -32,6 +34,7 @@
 
 		// Best Practices
 		//
+		"no-console": 2,
 		"complexity": [1, 4],
 		"max-depth": [2, 3],
 		"no-extra-bind": 1, // disallow unnecessary function binding
@@ -78,7 +81,11 @@
 		"semi": [1, "always"], // require or disallow use of semicolons instead of ASI
 		"semi-spacing": [2, {"before": false, "after": true}],
 		"space-infix-ops": 1, // require spaces around operators
-		"space-return-throw-case": 1, // require a space after return, throw, and case
+		"keyword-spacing": [2, { "overrides": {
+  "if": { "after": false },
+  "for": { "after": false },
+  "while": { "after": false }
+} }], // require a space after return, throw, and case
 		"space-unary-ops": [1, {"words": true, "nonwords": false}], // Require or disallow spaces before/after unary operators (words on by default, nonwords off by default)
 		"wrap-regex": 2,
 	}
