@@ -47,7 +47,6 @@ static uv_cond_t notifyDeviceHandled;
 static bool deviceHandled = true;
 
 static bool isRunning = false;
-static bool quit = false;
 
 /**********************************
  * Local Helper Functions protoypes
@@ -55,7 +54,7 @@ static bool quit = false;
 
 static void WaitForDeviceHandled();
 static void SignalDeviceHandled();
-static void cbTerm(uv_signal_t *handle, int signum);
+static void cbTerminate(uv_signal_t *handle, int signum);
 static void cbWork(uv_work_t *req);
 static void cbAfter(uv_work_t *req, int status);
 static void cbAsync(uv_async_t *handle);
@@ -325,11 +324,35 @@ static void DeviceAdded(void *refCon, io_iterator_t iterator) {
 }
 
 void Start() {
+	if(isRunning) {
+		return;
+	}
+
 	isRunning = true;
+
+	uv_mutex_init(&notify_mutex);
+	uv_async_init(uv_default_loop(), &async_handler, cbAsync);
+	uv_signal_init(uv_default_loop(), &term_signal);
+	uv_signal_init(uv_default_loop(), &int_signal);
+	uv_cond_init(&notifyDeviceHandled);
+
+	uv_queue_work(uv_default_loop(), &work_req, cbWork, cbAfter);
 }
 
 void Stop() {
+	if(!isRunning) {
+		return;
+	}
+
 	isRunning = false;
+
+	uv_mutex_destroy(&notify_mutex);
+	uv_signal_stop(&int_signal);
+	uv_signal_stop(&term_signal);
+	uv_close((uv_handle_t *) &async_handler, NULL);
+	uv_cond_destroy(&notifyDeviceHandled);
+
+	CFRunLoopStop(gRunLoop);
 }
 
 void InitDetection() {
@@ -373,14 +396,6 @@ void InitDetection() {
 	// Iterate once to get already-present devices and arm the notification
 	DeviceAdded(NULL, gAddedIter);
 	initialDeviceImport = false;
-
-	uv_mutex_init(&notify_mutex);
-	uv_async_init(uv_default_loop(), &async_handler, cbAsync);
-	uv_signal_init(uv_default_loop(), &term_signal);
-	uv_signal_init(uv_default_loop(), &int_signal);
-	uv_cond_init(&notifyDeviceHandled);
-
-	uv_queue_work(uv_default_loop(), &work_req, cbWork, cbAfter);
 }
 
 void EIO_Find(uv_work_t* req) {
@@ -406,8 +421,8 @@ static void SignalDeviceHandled() {
 }
 
 static void cbWork(uv_work_t *req) {
-	uv_signal_start(&int_signal, cbTerm, SIGINT);
-	uv_signal_start(&term_signal, cbTerm, SIGTERM);
+	uv_signal_start(&int_signal, cbTerminate, SIGINT);
+	uv_signal_start(&term_signal, cbTerminate, SIGTERM);
 
 	runLoopSource = IONotificationPortGetRunLoopSource(gNotifyPort);
 
@@ -417,17 +432,14 @@ static void cbWork(uv_work_t *req) {
 	// Start the run loop. Now we'll receive notifications.
 	CFRunLoopRun();
 
-	// We should never get here
-	fprintf(stderr, "Unexpectedly back from CFRunLoopRun()!\n");
+	if(isRunning) {
+		// We should never get here while running
+		fprintf(stderr, "Unexpectedly back from CFRunLoopRun()!\n");
+	}
 }
 
 static void cbAfter(uv_work_t *req, int status) {
-	uv_signal_stop(&int_signal);
-	uv_signal_stop(&term_signal);
-	uv_close((uv_handle_t *) &async_handler, NULL);
-	uv_cond_destroy(&notifyDeviceHandled);
-	uv_mutex_destroy(&notify_mutex);
-	CFRunLoopStop(CFRunLoopGetCurrent());
+	Stop();
 }
 
 static void cbAsync(uv_async_t *handle) {
@@ -449,6 +461,6 @@ static void cbAsync(uv_async_t *handle) {
 }
 
 
-static void cbTerm(uv_signal_t *handle, int signum) {
-	quit = true;
+static void cbTerminate(uv_signal_t *handle, int signum) {
+	Stop();
 }

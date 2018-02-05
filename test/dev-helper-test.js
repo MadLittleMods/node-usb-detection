@@ -27,7 +27,7 @@ usbDetect.on('change', function(device) {
 });
 /* */
 
-/* * /
+/* */
 setTimeout(() => {
 	console.log('stopMonitoring');
 	usbDetect.stopMonitoring();

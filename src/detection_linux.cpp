@@ -52,7 +52,6 @@ static uv_cond_t notifyDeviceHandled;
 static bool deviceHandled = true;
 
 static bool isRunning = false;
-static bool quit = false;
 
 /**********************************
  * Local Helper Functions protoypes
@@ -61,7 +60,7 @@ static void BuildInitialDeviceList();
 
 static void WaitForDeviceHandled();
 static void SignalDeviceHandled();
-static void cbTerm(uv_signal_t *handle, int signum);
+static void cbTerminate(uv_signal_t *handle, int signum);
 static void cbWork(uv_work_t *req);
 static void cbAfter(uv_work_t *req, int status);
 static void cbAsync(uv_async_t *handle);
@@ -70,11 +69,36 @@ static void cbAsync(uv_async_t *handle);
  * Public Functions
  **********************************/
 void Start() {
+	if(isRunning) {
+		return;
+	}
+
 	isRunning = true;
+
+	uv_mutex_init(&notify_mutex);
+	uv_async_init(uv_default_loop(), &async_handler, cbAsync);
+	uv_signal_init(uv_default_loop(), &term_signal);
+	uv_signal_init(uv_default_loop(), &int_signal);
+	uv_cond_init(&notifyDeviceHandled);
+
+	uv_queue_work(uv_default_loop(), &work_req, cbWork, cbAfter);
 }
 
 void Stop() {
+	if(!isRunning) {
+		return;
+	}
+
 	isRunning = false;
+
+	uv_mutex_destroy(&notify_mutex);
+	uv_signal_stop(&int_signal);
+	uv_signal_stop(&term_signal);
+	uv_close((uv_handle_t *) &async_handler, NULL);
+	uv_cond_destroy(&notifyDeviceHandled);
+
+	udev_monitor_unref(mon);
+	udev_unref(udev);
 }
 
 void InitDetection() {
@@ -95,14 +119,6 @@ void InitDetection() {
 	fd = udev_monitor_get_fd(mon);
 
 	BuildInitialDeviceList();
-
-	uv_mutex_init(&notify_mutex);
-	uv_async_init(uv_default_loop(), &async_handler, cbAsync);
-	uv_signal_init(uv_default_loop(), &term_signal);
-	uv_signal_init(uv_default_loop(), &int_signal);
-	uv_cond_init(&notifyDeviceHandled);
-
-	uv_queue_work(uv_default_loop(), &work_req, cbWork, cbAfter);
 }
 
 
@@ -195,11 +211,11 @@ static void DeviceRemoved(struct udev_device* dev) {
 
 
 static void cbWork(uv_work_t *req) {
-	uv_signal_start(&int_signal, cbTerm, SIGINT);
-	uv_signal_start(&term_signal, cbTerm, SIGTERM);
+	uv_signal_start(&int_signal, cbTerminate, SIGINT);
+	uv_signal_start(&term_signal, cbTerminate, SIGTERM);
 
 	pollfd fds = {fd, POLLIN, 0};
-	while (!quit) {
+	while (isRunning) {
 		int ret = poll(&fds, 1, 100);
 		if (!ret) continue;
 		if (ret < 0) break;
@@ -222,13 +238,7 @@ static void cbWork(uv_work_t *req) {
 }
 
 static void cbAfter(uv_work_t *req, int status) {
-	uv_signal_stop(&int_signal);
-	uv_signal_stop(&term_signal);
-	uv_close((uv_handle_t *) &async_handler, NULL);
-	uv_cond_destroy(&notifyDeviceHandled);
-	uv_mutex_destroy(&notify_mutex);
-	udev_monitor_unref(mon);
-	udev_unref(udev);
+	Stop();
 }
 
 static void cbAsync(uv_async_t *handle) {
@@ -250,8 +260,8 @@ static void cbAsync(uv_async_t *handle) {
 }
 
 
-static void cbTerm(uv_signal_t *handle, int signum) {
-	quit = true;
+static void cbTerminate(uv_signal_t *handle, int signum) {
+	Stop();
 }
 
 
