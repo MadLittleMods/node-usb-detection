@@ -59,6 +59,9 @@ HANDLE threadHandle;
 HANDLE deviceChangedRegisteredEvent;
 HANDLE deviceChangedSentEvent;
 
+uv_signal_t term_signal;
+uv_signal_t int_signal;
+
 ListResultItem_t* currentDevice;
 bool isAdded;
 bool isRunning = false;
@@ -90,6 +93,7 @@ void BuildInitialDeviceList();
 
 void cbWork(uv_work_t* req);
 void cbAfter(uv_work_t* req);
+void cbTerminate(uv_signal_t *handle, int signum);
 
 void ExtractDeviceInfo(HDEVINFO hDevInfo, SP_DEVINFO_DATA* pspDevInfoData, TCHAR* buf, DWORD buffSize, ListResultItem_t* resultItem);
 bool CheckValidity(ListResultItem_t* item);
@@ -99,17 +103,28 @@ bool CheckValidity(ListResultItem_t* item);
  * Public Functions
  **********************************/
 void cbWork(uv_work_t* req) {
-	WaitForSingleObject(deviceChangedRegisteredEvent, INFINITE);
+	// We have this check in case we `Stop` before this thread starts,
+	// otherwise the process will hang
+	if (isRunning) {
+		uv_signal_start(&int_signal, cbTerminate, SIGINT);
+		uv_signal_start(&term_signal, cbTerminate, SIGTERM);
+
+		WaitForSingleObject(deviceChangedRegisteredEvent, INFINITE);
+	}
 }
 
 
 void cbAfter(uv_work_t* req) {
 	if (isRunning) {
-		if(isAdded == true) {
+		if(isAdded) {
 			NotifyAdded(currentDevice);
 		}
-		else if(isAdded == false) {
+		else {
 			NotifyRemoved(currentDevice);
+		}
+
+		// Delete Item in case of removal
+		if(isAdded == false) {
 			delete currentDevice;
 		}
 
@@ -119,6 +134,10 @@ void cbAfter(uv_work_t* req) {
 
 		uv_queue_work(uv_default_loop(), req, cbWork, (uv_after_work_cb)cbAfter);
 	}
+}
+
+void cbTerminate(uv_signal_t *handle, int signum) {
+	Stop();
 }
 
 void LoadFunctions() {
@@ -173,6 +192,9 @@ void Start() {
 		&threadId
 	);
 
+	uv_signal_init(uv_default_loop(), &term_signal);
+	uv_signal_init(uv_default_loop(), &int_signal);
+
 	uv_work_t* req = new uv_work_t();
 	uv_queue_work(uv_default_loop(), req, cbWork, (uv_after_work_cb)cbAfter);
 }
@@ -183,6 +205,9 @@ void Stop() {
 	}
 
 	isRunning = false;
+
+	uv_signal_stop(&int_signal);
+	uv_signal_stop(&term_signal);
 
 	SetEvent(deviceChangedRegisteredEvent);
 }
@@ -431,7 +456,6 @@ void UpdateDevice(PDEV_BROADCAST_DEVICEINTERFACE pDevInf, WPARAM wParam, DeviceS
 		}
 
 		if(szDevId == buf) {
-
 			WaitForSingleObject(deviceChangedSentEvent, INFINITE);
 
 			DWORD DataT;

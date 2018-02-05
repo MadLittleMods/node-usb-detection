@@ -352,7 +352,9 @@ void Stop() {
 	uv_close((uv_handle_t *) &async_handler, NULL);
 	uv_cond_destroy(&notifyDeviceHandled);
 
-	CFRunLoopStop(gRunLoop);
+	if (gRunLoop) {
+		CFRunLoopStop(gRunLoop);
+	}
 }
 
 void InitDetection() {
@@ -421,20 +423,30 @@ static void SignalDeviceHandled() {
 }
 
 static void cbWork(uv_work_t *req) {
-	uv_signal_start(&int_signal, cbTerminate, SIGINT);
-	uv_signal_start(&term_signal, cbTerminate, SIGTERM);
+	// We have this check in case we `Stop` before this thread starts,
+	// otherwise the process will hang
+	if (isRunning) {
+		uv_signal_start(&int_signal, cbTerminate, SIGINT);
+		uv_signal_start(&term_signal, cbTerminate, SIGTERM);
 
-	runLoopSource = IONotificationPortGetRunLoopSource(gNotifyPort);
+		runLoopSource = IONotificationPortGetRunLoopSource(gNotifyPort);
 
-	gRunLoop = CFRunLoopGetCurrent();
-	CFRunLoopAddSource(gRunLoop, runLoopSource, kCFRunLoopDefaultMode);
+		gRunLoop = CFRunLoopGetCurrent();
+		CFRunLoopAddSource(gRunLoop, runLoopSource, kCFRunLoopDefaultMode);
 
-	// Start the run loop. Now we'll receive notifications.
-	CFRunLoopRun();
+		// Creating `gRunLoop` can take some cycles so we also need this second
+		// `isRunning` check here because it happens at a future time
+		if (isRunning) {
+			// Start the run loop. Now we'll receive notifications.
+			CFRunLoopRun();
+		}
 
-	if(isRunning) {
-		// We should never get here while running
-		fprintf(stderr, "Unexpectedly back from CFRunLoopRun()!\n");
+		// The `CFRunLoopRun` is a blocking call so we also need this second
+		// `isRunning` check here because it happens at a future time
+		if(isRunning) {
+			// We should never get here while running
+			fprintf(stderr, "Unexpectedly back from CFRunLoopRun()!\n");
+		}
 	}
 }
 
@@ -450,14 +462,14 @@ static void cbAsync(uv_async_t *handle) {
 		else {
 			NotifyRemoved(currentItem);
 		}
-	}
 
-	// Delete Item in case of removal
-	if(isAdded == false) {
-		delete currentItem;
-	}
+		// Delete Item in case of removal
+		if(isAdded == false) {
+			delete currentItem;
+		}
 
-	SignalDeviceHandled();
+		SignalDeviceHandled();
+	}
 }
 
 

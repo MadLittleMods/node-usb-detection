@@ -2,7 +2,7 @@
 	"env": {
 		"node": true,
 		"es6": true,
-		"mocha": true
+		"jasmine": true
 	},
 	"rules": {
 		"no-console": 0,

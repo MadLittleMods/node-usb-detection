@@ -1,13 +1,17 @@
+var path = require('path');
 var Promise = require('bluebird');
 
 var chai = require('chai');
 var expect = require('chai').expect;
-var chaiAsPromised = require('chai-as-promised');
-chai.use(chaiAsPromised);
 var chalk = require('chalk');
+var commandRunner = require('./lib/command-runner');
+var ChildExecutor = require('./lib/child-executor');
+var getSetTimeoutPromise = require('./lib/set-timeout-promise-helper');
 
 // The plugin to test
 var usbDetect = require('../');
+
+const MANUAL_INTERACTION_TIMEOUT = 10000;
 
 // We just look at the keys of this device object
 var DEVICE_OBJECT_FIXTURE = {
@@ -35,68 +39,113 @@ function testDeviceShape(device) {
 }
 
 describe('usb-detection', function() {
-	before(function() {
-		usbDetect.startMonitoring();
-	});
-
-	after(function() {
-		usbDetect.stopMonitoring();
-	});
-
-	describe('`.find`', function() {
-
-		var testArrayOfDevicesShape = function(devices) {
-			expect(devices.length).to.be.greaterThan(0);
-			devices.forEach(function(device) {
-				testDeviceShape(device);
-			});
-		};
-
-		it('should find some usb devices', function(done) {
-			usbDetect.find(function(err, devices) {
-				testArrayOfDevicesShape(devices);
-				expect(err).to.equal(undefined);
-				done();
-			});
+	describe('API', function() {
+		beforeAll(function() {
+			usbDetect.startMonitoring();
 		});
 
-		it('should return a promise', function() {
-			return expect(usbDetect.find()
-				.then(function(devices) {
+		afterAll(function() {
+			usbDetect.stopMonitoring();
+		});
+
+		describe('`.find`', function() {
+			var testArrayOfDevicesShape = function(devices) {
+				expect(devices.length).to.be.greaterThan(0);
+				devices.forEach(function(device) {
+					testDeviceShape(device);
+				});
+			};
+
+			it('should find some usb devices', function(done) {
+				usbDetect.find(function(err, devices) {
 					testArrayOfDevicesShape(devices);
-				}))
-				.to.eventually.be.fulfilled;
+					expect(err).to.equal(undefined);
+					done();
+				});
+			});
+
+			it('should return a promise', function(done) {
+				usbDetect.find()
+					.then(function(devices) {
+						testArrayOfDevicesShape(devices);
+					})
+					.then(done)
+					.catch(done.fail);
+			});
+		});
+
+		describe('Events `.on`', function() {
+			it('should listen to device add/insert', function(done) {
+				console.log(chalk.black.bgCyan('Add/Insert a USB device'));
+				once('add')
+					.then(function(device) {
+						testDeviceShape(device);
+					})
+					.then(done)
+					.catch(done.fail);
+			}, MANUAL_INTERACTION_TIMEOUT);
+
+			it('should listen to device remove', function(done) {
+				console.log(chalk.black.bgCyan('Remove a USB device'));
+				once('remove')
+					.then(function(device) {
+						testDeviceShape(device);
+					})
+					.then(done)
+					.catch(done.fail);
+			}, MANUAL_INTERACTION_TIMEOUT);
+
+			it('should listen to device change', function(done) {
+				console.log(chalk.black.bgCyan('Add/Insert or Remove a USB device'));
+				once('change')
+					.then(function(device) {
+						testDeviceShape(device);
+					})
+					.then(done)
+					.catch(done.fail);
+			}, MANUAL_INTERACTION_TIMEOUT);
 		});
 	});
 
-
-	describe('Events `.on`', function() {
-
-		it('should listen to device add/insert', function(done) {
-			console.log(chalk.black.bgCyan('Add/Insert a USB device'));
-			once('add')
-				.then(function(device) {
-					testDeviceShape(device);
-					done();
+	describe('can exit gracefully', () => {
+		it('when requiring package (no side-effects)', (done) => {
+			commandRunner(`node ${path.join(__dirname, './fixtures/requiring-exit-gracefully.js')}`)
+				.then(done)
+				.catch((resultInfo) => {
+					done.fail(resultInfo.err);
 				});
 		});
 
-		it('should listen to device remove', function(done) {
-			console.log(chalk.black.bgCyan('Remove a USB device'));
-			once('remove')
-				.then(function(device) {
-					testDeviceShape(device);
-					done();
+		it('after `startMonitoring` then `stopMonitoring`', (done) => {
+			commandRunner(`node ${path.join(__dirname, './fixtures/start-stop-monitoring-exit-gracefully.js')}`)
+				.then(done)
+				.catch((resultInfo) => {
+					done.fail(resultInfo.err);
 				});
 		});
 
-		it('should listen to device change', function(done) {
-			console.log(chalk.black.bgCyan('Add/Insert or Remove a USB device'));
-			once('change')
-				.then(function(device) {
-					testDeviceShape(device);
-					done();
+		it('after `startMonitoring` then an async delayed `stopMonitoring`', (done) => {
+			commandRunner(`node ${path.join(__dirname, './fixtures/start-delayed-stop-monitoring-exit-gracefully.js')}`)
+				.then(done)
+				.catch((resultInfo) => {
+					done.fail(resultInfo.err);
 				});
+		});
+
+		it('when SIGINT (Ctrl + c) after `startMonitoring`', (done) => {
+			const executor = new ChildExecutor();
+
+			executor.exec(`node ${path.join(__dirname, './fixtures/sigint-after-start-monitoring-exit-gracefully.js')}`)
+				.then(done)
+				.catch((resultInfo) => {
+					done.fail(resultInfo.err);
+				});
+
+			getSetTimeoutPromise(100)
+				.then(() => {
+					executor.child.kill('SIGINT');
+				})
+				.catch(done.fail);
 		});
 	});
 });
