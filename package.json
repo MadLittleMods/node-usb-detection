@@ -5,6 +5,7 @@
   "main": "index.js",
   "gypfile": true,
   "scripts": {
+    "install": "prebuild-install || node-gyp rebuild",
     "prepublishOnly": "validate",
     "validate": "eslint **/*.js && npm test",
     "test": "jasmine ./test/test.js",
