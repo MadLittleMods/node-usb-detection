@@ -6,7 +6,7 @@
   "gypfile": true,
   "scripts": {
     "install": "prebuild-install || node-gyp rebuild",
-    "prepublishOnly": "validate",
+    "prepublishOnly": "npm run validate",
     "validate": "eslint **/*.js && npm test",
     "test": "jasmine ./test/test.js",
     "prebuild": "prebuild --all --strip --verbose",
