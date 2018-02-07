@@ -58,6 +58,8 @@ Start listening for USB add/remove/change events. This will cause the Node.js pr
 
 Stop listening for USB add/remove/change events. This will also allow the Node.js process to exit.
 
+This is really only meant to be called once on exit. No guarantees if you start/stop monitoring multiple times, see https://github.com/MadLittleMods/node-usb-detection/issues/53
+
 
 ## `usbDetect.on(eventName, callback)`
 
