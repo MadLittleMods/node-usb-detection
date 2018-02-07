@@ -64,17 +64,17 @@ This is really only meant to be called once on exit. No guarantees if you start/
 ## `usbDetect.on(eventName, callback)`
 
  - `eventName`
- 	 - `add`: also aliased as `insert`
- 	 	 - `add:vid`
- 	 	 - `add:vid:pid`
- 	 - `remove`
- 	 	 - `remove:vid`
- 	 	 - `remove:vid:pid`
- 	 - `change`
- 	 	 - `change:vid`
- 	 	 - `change:vid:pid`
+    - `add`: also aliased as `insert`
+       - `add:vid`
+       - `add:vid:pid`
+    - `remove`
+       - `remove:vid`
+       - `remove:vid:pid`
+    - `change`
+       - `change:vid`
+       - `change:vid:pid`
  - `callback`: Function that is called whenever the event occurs
- 	 - Takes a `device`
+    - Takes a `device`
 
 
 ```js
@@ -115,7 +115,7 @@ Parameters:
  - `vid`: restrict search to a certain vendor id
  - `pid`: restrict search to s certain product id
  - `callback`: Function that is called whenever the event occurs
- 	 - Takes a `err` and `devices` parameter.
+    - Takes a `err` and `devices` parameter.
 
 
 ```js
