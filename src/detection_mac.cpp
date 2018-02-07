@@ -425,28 +425,30 @@ static void SignalDeviceHandled() {
 static void cbWork(uv_work_t *req) {
 	// We have this check in case we `Stop` before this thread starts,
 	// otherwise the process will hang
-	if (isRunning) {
-		uv_signal_start(&int_signal, cbTerminate, SIGINT);
-		uv_signal_start(&term_signal, cbTerminate, SIGTERM);
+	if(!isRunning) {
+		return;
+	}
 
-		runLoopSource = IONotificationPortGetRunLoopSource(gNotifyPort);
+	uv_signal_start(&int_signal, cbTerminate, SIGINT);
+	uv_signal_start(&term_signal, cbTerminate, SIGTERM);
 
-		gRunLoop = CFRunLoopGetCurrent();
-		CFRunLoopAddSource(gRunLoop, runLoopSource, kCFRunLoopDefaultMode);
+	runLoopSource = IONotificationPortGetRunLoopSource(gNotifyPort);
 
-		// Creating `gRunLoop` can take some cycles so we also need this second
-		// `isRunning` check here because it happens at a future time
-		if (isRunning) {
-			// Start the run loop. Now we'll receive notifications.
-			CFRunLoopRun();
-		}
+	gRunLoop = CFRunLoopGetCurrent();
+	CFRunLoopAddSource(gRunLoop, runLoopSource, kCFRunLoopDefaultMode);
 
-		// The `CFRunLoopRun` is a blocking call so we also need this second
-		// `isRunning` check here because it happens at a future time
-		if(isRunning) {
-			// We should never get here while running
-			fprintf(stderr, "Unexpectedly back from CFRunLoopRun()!\n");
-		}
+	// Creating `gRunLoop` can take some cycles so we also need this second
+	// `isRunning` check here because it happens at a future time
+	if(isRunning) {
+		// Start the run loop. Now we'll receive notifications.
+		CFRunLoopRun();
+	}
+
+	// The `CFRunLoopRun` is a blocking call so we also need this second
+	// `isRunning` check here because it happens at a future time
+	if(isRunning) {
+		// We should never get here while running
+		fprintf(stderr, "Unexpectedly back from CFRunLoopRun()!\n");
 	}
 }
 
@@ -455,21 +457,23 @@ static void cbAfter(uv_work_t *req, int status) {
 }
 
 static void cbAsync(uv_async_t *handle) {
-	if (isRunning) {
-		if (isAdded) {
-			NotifyAdded(currentItem);
-		}
-		else {
-			NotifyRemoved(currentItem);
-		}
-
-		// Delete Item in case of removal
-		if(isAdded == false) {
-			delete currentItem;
-		}
-
-		SignalDeviceHandled();
+	if(!isRunning) {
+		return;
 	}
+
+	if(isAdded) {
+		NotifyAdded(currentItem);
+	}
+	else {
+		NotifyRemoved(currentItem);
+	}
+
+	// Delete Item in case of removal
+	if(isAdded == false) {
+		delete currentItem;
+	}
+
+	SignalDeviceHandled();
 }
 
 

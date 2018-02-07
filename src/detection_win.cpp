@@ -105,35 +105,39 @@ bool CheckValidity(ListResultItem_t* item);
 void cbWork(uv_work_t* req) {
 	// We have this check in case we `Stop` before this thread starts,
 	// otherwise the process will hang
-	if (isRunning) {
-		uv_signal_start(&int_signal, cbTerminate, SIGINT);
-		uv_signal_start(&term_signal, cbTerminate, SIGTERM);
-
-		WaitForSingleObject(deviceChangedRegisteredEvent, INFINITE);
+	if(!isRunning) {
+		return;
 	}
+
+	uv_signal_start(&int_signal, cbTerminate, SIGINT);
+	uv_signal_start(&term_signal, cbTerminate, SIGTERM);
+
+	WaitForSingleObject(deviceChangedRegisteredEvent, INFINITE);
 }
 
 
 void cbAfter(uv_work_t* req) {
-	if (isRunning) {
-		if(isAdded) {
-			NotifyAdded(currentDevice);
-		}
-		else {
-			NotifyRemoved(currentDevice);
-		}
-
-		// Delete Item in case of removal
-		if(isAdded == false) {
-			delete currentDevice;
-		}
-
-		SetEvent(deviceChangedSentEvent);
-
-		currentDevice = NULL;
-
-		uv_queue_work(uv_default_loop(), req, cbWork, (uv_after_work_cb)cbAfter);
+	if(!isRunning) {
+		return;
 	}
+
+	if(isAdded) {
+		NotifyAdded(currentDevice);
+	}
+	else {
+		NotifyRemoved(currentDevice);
+	}
+
+	// Delete Item in case of removal
+	if(isAdded == false) {
+		delete currentDevice;
+	}
+
+	SetEvent(deviceChangedSentEvent);
+
+	currentDevice = NULL;
+
+	uv_queue_work(uv_default_loop(), req, cbWork, (uv_after_work_cb)cbAfter);
 }
 
 void cbTerminate(uv_signal_t *handle, int signum) {

@@ -213,30 +213,32 @@ static void DeviceRemoved(struct udev_device* dev) {
 static void cbWork(uv_work_t *req) {
 	// We have this check in case we `Stop` before this thread starts,
 	// otherwise the process will hang
-	if (isRunning) {
-		uv_signal_start(&int_signal, cbTerminate, SIGINT);
-		uv_signal_start(&term_signal, cbTerminate, SIGTERM);
+	if(!isRunning) {
+		return;
+	}
 
-		pollfd fds = {fd, POLLIN, 0};
-		while (isRunning) {
-			int ret = poll(&fds, 1, 100);
-			if (!ret) continue;
-			if (ret < 0) break;
+	uv_signal_start(&int_signal, cbTerminate, SIGINT);
+	uv_signal_start(&term_signal, cbTerminate, SIGTERM);
 
-			dev = udev_monitor_receive_device(mon);
-			if (dev) {
-				if(udev_device_get_devtype(dev) && strcmp(udev_device_get_devtype(dev), DEVICE_TYPE_DEVICE) == 0) {
-					if(strcmp(udev_device_get_action(dev), DEVICE_ACTION_ADDED) == 0) {
-						WaitForDeviceHandled();
-						DeviceAdded(dev);
-					}
-					else if(strcmp(udev_device_get_action(dev), DEVICE_ACTION_REMOVED) == 0) {
-						WaitForDeviceHandled();
-						DeviceRemoved(dev);
-					}
+	pollfd fds = {fd, POLLIN, 0};
+	while (isRunning) {
+		int ret = poll(&fds, 1, 100);
+		if (!ret) continue;
+		if (ret < 0) break;
+
+		dev = udev_monitor_receive_device(mon);
+		if (dev) {
+			if(udev_device_get_devtype(dev) && strcmp(udev_device_get_devtype(dev), DEVICE_TYPE_DEVICE) == 0) {
+				if(strcmp(udev_device_get_action(dev), DEVICE_ACTION_ADDED) == 0) {
+					WaitForDeviceHandled();
+					DeviceAdded(dev);
 				}
-				udev_device_unref(dev);
+				else if(strcmp(udev_device_get_action(dev), DEVICE_ACTION_REMOVED) == 0) {
+					WaitForDeviceHandled();
+					DeviceRemoved(dev);
+				}
 			}
+			udev_device_unref(dev);
 		}
 	}
 }
@@ -246,21 +248,23 @@ static void cbAfter(uv_work_t *req, int status) {
 }
 
 static void cbAsync(uv_async_t *handle) {
-	if (isRunning) {
-		if (isAdded) {
-			NotifyAdded(currentItem);
-		}
-		else {
-			NotifyRemoved(currentItem);
-		}
-
-		// Delete Item in case of removal
-		if(isAdded == false) {
-			delete currentItem;
-		}
-
-		SignalDeviceHandled();
+	if(!isRunning) {
+		return;
 	}
+
+	if (isAdded) {
+		NotifyAdded(currentItem);
+	}
+	else {
+		NotifyRemoved(currentItem);
+	}
+
+	// Delete Item in case of removal
+	if(isAdded == false) {
+		delete currentItem;
+	}
+
+	SignalDeviceHandled();
 }
 
 
