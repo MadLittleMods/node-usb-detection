@@ -44,6 +44,9 @@ usbDetect.find(vid, function(err, devices) { console.log('find', devices, err); 
 usbDetect.find(vid, pid, function(err, devices) { console.log('find', devices, err); });
 // Promise version of `find`:
 usbDetect.find().then(function(devices) { console.log(devices); }).catch(function(err) { console.log(err); });
+
+// Allow the process to exit
+//usbDetect.stopMonitoring()
 ```
 
 
