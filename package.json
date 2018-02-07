@@ -5,7 +5,9 @@
   "main": "index.js",
   "gypfile": true,
   "scripts": {
-    "test": "mocha --timeout 10000",
+    "prepublishOnly": "validate",
+    "validate": "eslint **/*.js && npm test",
+    "test": "jasmine ./test/test.js",
     "prebuild": "prebuild --all --strip --verbose",
     "rebuild": "node-gyp rebuild"
   },
@@ -43,9 +45,9 @@
   },
   "devDependencies": {
     "chai": "^3.0.0",
-    "chai-as-promised": "^5.1.0",
     "chalk": "^1.0.0",
-    "mocha": "^2.2.5",
+    "eslint": "^4.17.0",
+    "jasmine": "^2.9.0",
     "prebuild": "^6.2.2"
   }
 }

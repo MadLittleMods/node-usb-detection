@@ -4,7 +4,7 @@
 var Promise = require('bluebird');
 var index = require('./package.json');
 
-if (global[index.name] && global[index.name].version === index.version) {
+if(global[index.name] && global[index.name].version === index.version) {
 	module.exports = global[index.name];
 } else {
 	var detection = require('bindings')('detection.node');

@@ -53,12 +53,14 @@ GUID GUID_DEVINTERFACE_USB_DEVICE = {
 	0xED
 };
 
-HWND handle;
 DWORD threadId;
 HANDLE threadHandle;
 
 HANDLE deviceChangedRegisteredEvent;
 HANDLE deviceChangedSentEvent;
+
+uv_signal_t term_signal;
+uv_signal_t int_signal;
 
 ListResultItem_t* currentDevice;
 bool isAdded;
@@ -89,8 +91,9 @@ DWORD WINAPI ListenerThread(LPVOID lpParam);
 
 void BuildInitialDeviceList();
 
-void NotifyAsync(uv_work_t* req);
-void NotifyFinished(uv_work_t* req);
+void cbWork(uv_work_t* req);
+void cbAfter(uv_work_t* req);
+void cbTerminate(uv_signal_t *handle, int signum);
 
 void ExtractDeviceInfo(HDEVINFO hDevInfo, SP_DEVINFO_DATA* pspDevInfoData, TCHAR* buf, DWORD buffSize, ListResultItem_t* resultItem);
 bool CheckValidity(ListResultItem_t* item);
@@ -99,19 +102,30 @@ bool CheckValidity(ListResultItem_t* item);
 /**********************************
  * Public Functions
  **********************************/
-void NotifyAsync(uv_work_t* req) {
+void cbWork(uv_work_t* req) {
+	// We have this check in case we `Stop` before this thread starts,
+	// otherwise the process will hang
+	if(!isRunning) {
+		return;
+	}
+
+	uv_signal_start(&int_signal, cbTerminate, SIGINT);
+	uv_signal_start(&term_signal, cbTerminate, SIGTERM);
+
 	WaitForSingleObject(deviceChangedRegisteredEvent, INFINITE);
 }
 
 
-void NotifyFinished(uv_work_t* req) {
-	if (isRunning) {
-		if(isAdded) {
-			NotifyAdded(currentDevice);
-		}
-		else {
-			NotifyRemoved(currentDevice);
-		}
+void cbAfter(uv_work_t* req) {
+	if(!isRunning) {
+		return;
+	}
+
+	if(isAdded) {
+		NotifyAdded(currentDevice);
+	}
+	else {
+		NotifyRemoved(currentDevice);
 	}
 
 	// Delete Item in case of removal
@@ -122,7 +136,12 @@ void NotifyFinished(uv_work_t* req) {
 	SetEvent(deviceChangedSentEvent);
 
 	currentDevice = NULL;
-	uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
+
+	uv_queue_work(uv_default_loop(), req, cbWork, (uv_after_work_cb)cbAfter);
+}
+
+void cbTerminate(uv_signal_t *handle, int signum) {
+	Stop();
 }
 
 void LoadFunctions() {
@@ -161,34 +180,59 @@ void LoadFunctions() {
 }
 
 void Start() {
+	if(isRunning) {
+		return;
+	}
+
 	isRunning = true;
+
+	// Start listening for the Windows API events
+	threadHandle = CreateThread(
+		NULL, // default security attributes
+		0, // use default stack size
+		ListenerThread, // thread function name
+		NULL, // argument to thread function
+		0, // use default creation flags
+		&threadId
+	);
+
+	uv_signal_init(uv_default_loop(), &term_signal);
+	uv_signal_init(uv_default_loop(), &int_signal);
+
+	uv_work_t* req = new uv_work_t();
+	uv_queue_work(uv_default_loop(), req, cbWork, (uv_after_work_cb)cbAfter);
 }
 
 void Stop() {
+	if(!isRunning) {
+		return;
+	}
+
 	isRunning = false;
+
+	uv_signal_stop(&int_signal);
+	uv_signal_stop(&term_signal);
+
 	SetEvent(deviceChangedRegisteredEvent);
 }
 
 void InitDetection() {
-
 	LoadFunctions();
 
-	deviceChangedRegisteredEvent = CreateEvent(NULL, false /* auto-reset event */, false /* non-signalled state */, "");
-	deviceChangedSentEvent = CreateEvent(NULL, false /* auto-reset event */, true /* non-signalled state */, "");
+	deviceChangedRegisteredEvent = CreateEvent(
+		NULL,
+		false, // auto-reset event
+		false, // non-signalled state
+		""
+	);
+	deviceChangedSentEvent = CreateEvent(
+		NULL,
+		false, // auto-reset event
+		true, // non-signalled state
+		""
+	);
 
 	BuildInitialDeviceList();
-
-	threadHandle = CreateThread(
-			NULL,				// default security attributes
-			0,					// use default stack size
-			ListenerThread,		// thread function name
-			NULL,				// argument to thread function
-			0,					// use default creation flags
-			&threadId
-		);
-
-	uv_work_t* req = new uv_work_t();
-	uv_queue_work(uv_default_loop(), req, NotifyAsync, (uv_after_work_cb)NotifyFinished);
 }
 
 
@@ -416,7 +460,6 @@ void UpdateDevice(PDEV_BROADCAST_DEVICEINTERFACE pDevInf, WPARAM wParam, DeviceS
 		}
 
 		if(szDevId == buf) {
-
 			WaitForSingleObject(deviceChangedSentEvent, INFINITE);
 
 			DWORD DataT;
