@@ -360,8 +360,7 @@ DWORD WINAPI ListenerThread( LPVOID lpParam ) {
 }
 
 
-void BuildInitialDeviceList() {
-	TCHAR buf[MAX_PATH];
+void BuildInitialDeviceList() {	
 	DWORD dwFlag = (DIGCF_ALLCLASSES | DIGCF_PRESENT);
 	HDEVINFO hDevInfo = DllSetupDiGetClassDevs(NULL, "USB", NULL, dwFlag);
 
@@ -373,6 +372,7 @@ void BuildInitialDeviceList() {
 	pspDevInfoData->cbSize = sizeof(SP_DEVINFO_DATA);
 	for(int i=0; DllSetupDiEnumDeviceInfo(hDevInfo, i, pspDevInfoData); i++) {
 		DWORD nSize=0 ;
+		TCHAR buf[MAX_PATH];
 
 		if (!DllSetupDiGetDeviceInstanceId(hDevInfo, pspDevInfoData, buf, sizeof(buf), &nSize)) {
 			break;
@@ -382,7 +382,8 @@ void BuildInitialDeviceList() {
 		item->deviceState = DeviceState_Connect;
 
 		DWORD DataT;
-		DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_HARDWAREID, &DataT, (PBYTE)buf, MAX_PATH, &nSize);
+		DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_LOCATION_INFORMATION, &DataT, (PBYTE)buf, MAX_PATH, &nSize);
+		DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_HARDWAREID, &DataT, (PBYTE)(buf + nSize - 1), MAX_PATH - nSize, &nSize);
 
 		AddItemToList(buf, item);
 		ExtractDeviceInfo(hDevInfo, pspDevInfoData, buf, MAX_PATH, &item->deviceParams);
@@ -464,7 +465,8 @@ void UpdateDevice(PDEV_BROADCAST_DEVICEINTERFACE pDevInf, WPARAM wParam, DeviceS
 
 			DWORD DataT;
 			DWORD nSize;
-			DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_HARDWAREID, &DataT, (PBYTE)buf, MAX_PATH, &nSize);
+			DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_LOCATION_INFORMATION, &DataT, (PBYTE)buf, MAX_PATH, &nSize);
+  		        DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_HARDWAREID, &DataT, (PBYTE)(buf + nSize - 1), MAX_PATH - nSize, &nSize);
 
 			if(state == DeviceState_Connect) {
 				DeviceItem_t* device = new DeviceItem_t();
