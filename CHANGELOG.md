@@ -4,6 +4,7 @@
 
  - Show multiple/duplicate USB devices on Windows
     - Thanks to [@doganmurat](doganmurat) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/54)
+ - Update all dependencies
 
 
 ## v2.1.0 - 2018-2-6
