@@ -1,5 +1,11 @@
 # Changelog
 
+## v3.0.0 - 2018-5-13
+
+ - Show multiple/duplicate USB devices on Windows
+    - Thanks to [@doganmurat](doganmurat) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/54)
+
+
 ## v2.1.0 - 2018-2-6
 
  - Add npm `install` hook that will use our prebuilt binaries instead of having to compile from source with node-gyp.
@@ -8,10 +14,12 @@
     - Thanks to [@sarakusha](https://github.com/sarakusha) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/21)
  - Ensure the process will exit gracefully across all platforms, https://github.com/MadLittleMods/node-usb-detection/issues/35
 
+
 ## v2.0.1 - 2017-12-27
 
  - Remove npm `install` hook to prevent hanging the install process caused by `prebuild-install` verify require and our side-effects.
     - Thanks to [@Lange](https://github.com/Lange) for noticing an issue.
+
 
 ## v2.0.0 - 2017-12-19
 

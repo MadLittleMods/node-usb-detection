@@ -7,15 +7,29 @@ console.log('startMonitoring');
 usbDetect.startMonitoring();
 /* */
 
-/* * /
+/* */
 usbDetect.find()
 	.then(function(devices) {
-		console.log('find', devices);
+		console.log('find', devices.length, devices.sort((a, b) => {
+			if(a.vendorId !== b.vendorId) {
+				return a.vendorId - b.vendorId;
+			}
+			else if(a.productId !== b.productId) {
+				return a.productId - b.productId;
+			}
+
+			return a.deviceName.localeCompare(b.deviceName);
+		}));
 	});
 
 
 usbDetect.on('add', function(device) {
 	console.log('add', device);
+
+	usbDetect.find()
+		.then(function(devices) {
+			console.log('find', devices.length, devices);
+		});
 });
 
 usbDetect.on('remove', function(device) {
@@ -34,7 +48,7 @@ setTimeout(() => {
 }, 1000);
 /* */
 
-/* */
+/* * /
 //console.log('stopMonitoring');
 usbDetect.stopMonitoring();
 /* */
