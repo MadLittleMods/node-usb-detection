@@ -7,6 +7,7 @@
 
 // Include Windows headers
 #include <windows.h>
+#include <Cfgmgr32.h>
 #include <stdio.h>
 #include <tchar.h>
 #include <strsafe.h>
@@ -422,6 +423,21 @@ void ExtractDeviceInfo(HDEVINFO hDevInfo, SP_DEVINFO_DATA* pspDevInfoData, TCHAR
 	if (DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_HARDWAREID, &DataT, (PBYTE)buf, buffSize, &nSize)) {
 		// Use this to extract VID / PID
 		extractVidPid(buf, resultItem);
+	}
+
+	DWORD dwCap = 0x0;
+	if (DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_CAPABILITIES, &DataT, (PBYTE)&dwCap, 4, &nSize)) {
+		// If device has a CM_DEVCAP_UNIQUEID capability, then we assume it has a serial number
+		if ((dwCap & CM_DEVCAP_UNIQUEID) == CM_DEVCAP_UNIQUEID) {
+			if (DllSetupDiGetDeviceInstanceId(hDevInfo, pspDevInfoData, buf, buffSize, &nSize)) {
+				// extract Serial Number
+				string str = buf;
+				size_t t = str.find_last_of("\\\\");
+				if (t != string::npos) {
+					resultItem->serialNumber = str.substr(t + 1);
+				}
+			}
+		}
 	}
 }
 
