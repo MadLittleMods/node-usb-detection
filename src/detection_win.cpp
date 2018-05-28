@@ -7,7 +7,8 @@
 
 // Include Windows headers
 #include <windows.h>
-#include <Cfgmgr32.h>		// CM_DEVCAP_UNIQUEID
+// Include `CM_DEVCAP_UNIQUEID`
+#include <Cfgmgr32.h>
 #include <stdio.h>
 #include <tchar.h>
 #include <strsafe.h>
