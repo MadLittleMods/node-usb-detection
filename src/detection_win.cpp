@@ -7,7 +7,7 @@
 
 // Include Windows headers
 #include <windows.h>
-#include <Cfgmgr32.h>
+#include <Cfgmgr32.h>		// CM_DEVCAP_UNIQUEID
 #include <stdio.h>
 #include <tchar.h>
 #include <strsafe.h>
@@ -425,16 +425,27 @@ void ExtractDeviceInfo(HDEVINFO hDevInfo, SP_DEVINFO_DATA* pspDevInfoData, TCHAR
 		extractVidPid(buf, resultItem);
 	}
 
-	DWORD dwCap = 0x0;
-	if (DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_CAPABILITIES, &DataT, (PBYTE)&dwCap, 4, &nSize)) {
-		// If device has a CM_DEVCAP_UNIQUEID capability, then we assume it has a serial number
-		if ((dwCap & CM_DEVCAP_UNIQUEID) == CM_DEVCAP_UNIQUEID) {
+	// Extract Serial Number
+	//
+	// Format: <device-ID>\<instance-specific-ID>
+	//
+	// Ex. `USB\VID_2109&PID_8110\5&376ABA2D&0&21`
+	//  - `<device-ID>`: `USB\VID_2109&PID_8110`
+	//  - `<instance-specific-ID>`: `5&376ABA2D&0&21`
+	//
+	// [Device instance IDs](https://docs.microsoft.com/en-us/windows-hardware/drivers/install/device-instance-ids) ->
+	//  - [Device IDs](https://docs.microsoft.com/en-us/windows-hardware/drivers/install/device-ids) -> [Hardware IDs](https://docs.microsoft.com/en-us/windows-hardware/drivers/install/hardware-ids) -> [Device identifier formats](https://docs.microsoft.com/en-us/windows-hardware/drivers/install/device-identifier-formats) -> [Identifiers for USB devices](https://docs.microsoft.com/en-us/windows-hardware/drivers/install/identifiers-for-usb-devices)
+	//     - [Standard USB Identifiers](https://docs.microsoft.com/en-us/windows-hardware/drivers/install/standard-usb-identifiers)
+	//     - [Special USB Identifiers](https://docs.microsoft.com/en-us/windows-hardware/drivers/install/special-usb-identifiers)
+	//  - [Instance specific ID](https://docs.microsoft.com/en-us/windows-hardware/drivers/install/instance-ids) 
+	DWORD dwCapabilities = 0x0;
+	if (DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_CAPABILITIES, &DataT, (PBYTE)&dwCapabilities, 4, &nSize)) {
+		if ((dwCapabilities & CM_DEVCAP_UNIQUEID) == CM_DEVCAP_UNIQUEID) {
 			if (DllSetupDiGetDeviceInstanceId(hDevInfo, pspDevInfoData, buf, buffSize, &nSize)) {
-				// extract Serial Number
-				string str = buf;
-				size_t t = str.find_last_of("\\\\");
-				if (t != string::npos) {
-					resultItem->serialNumber = str.substr(t + 1);
+				string deviceInstanceId = buf;
+				size_t serialNumberIndex = deviceInstanceId.find_last_of("\\");
+				if (serialNumberIndex != string::npos) {
+					resultItem->serialNumber = deviceInstanceId.substr(serialNumberIndex + 1);
 				}
 			}
 		}
