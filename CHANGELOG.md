@@ -1,5 +1,11 @@
 # Changelog
 
+## v3.1.0 - 2018-6-4
+
+ - Add serial number support to Windows
+    - Thanks to [@doganmurat](doganmurat) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/62)
+
+
 ## v3.0.0 - 2018-5-13
 
  - Show multiple/duplicate USB devices on Windows
