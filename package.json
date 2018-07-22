@@ -3,6 +3,7 @@
   "version": "3.1.0",
   "description": "Listen to USB devices and detect changes on them.",
   "main": "index.js",
+  "types": "./types/index.d.ts",
   "gypfile": true,
   "scripts": {
     "install": "prebuild-install || node-gyp rebuild",
