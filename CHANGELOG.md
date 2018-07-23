@@ -1,15 +1,21 @@
 # Changelog
 
+## v3.2.0 - 2018-7-23
+
+ - Add TypeScript declarations/definitions
+    - Thanks to [@thegecko](https://github.com/thegecko) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/66)
+
+
 ## v3.1.0 - 2018-6-4
 
  - Add serial number support to Windows
-    - Thanks to [@doganmurat](doganmurat) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/62)
+    - Thanks to [@doganmurat](https://github.com/doganmurat) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/62)
 
 
 ## v3.0.0 - 2018-5-13
 
  - Show multiple/duplicate USB devices on Windows
-    - Thanks to [@doganmurat](doganmurat) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/54)
+    - Thanks to [@doganmurat](https://github.com/doganmurat) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/54)
  - Update all dependencies
 
 
