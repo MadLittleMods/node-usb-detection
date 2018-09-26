@@ -1,4 +1,3 @@
-var Promise = require('bluebird');
 var exec = require('child_process').exec;
 
 var commandRunner = function(command) {

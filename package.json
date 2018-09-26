@@ -40,7 +40,6 @@
   },
   "dependencies": {
     "bindings": "^1.3.0",
-    "bluebird": "^3.5.1",
     "eventemitter2": "^5.0.1",
     "nan": "^2.10.0",
     "prebuild-install": "^4.0.0"

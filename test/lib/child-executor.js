@@ -1,4 +1,3 @@
-var Promise = require('bluebird');
 var spawn = require('child_process').spawn;
 
 class ChildExecutor {
