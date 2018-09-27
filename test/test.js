@@ -1,5 +1,4 @@
 var path = require('path');
-var Promise = require('bluebird');
 
 var chai = require('chai');
 var expect = require('chai').expect;
