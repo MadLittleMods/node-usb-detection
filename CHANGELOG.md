@@ -1,5 +1,12 @@
 # Changelog
 
+## v4.0.0 - 2018-9-27
+
+ - Use native Promises, https://github.com/MadLittleMods/node-usb-detection/pull/69
+    - Now requires Node.js >=4
+ - Update dependencies based on npm security audit, https://github.com/MadLittleMods/node-usb-detection/pull/70
+
+
 ## v3.2.0 - 2018-7-23
 
  - Add TypeScript declarations/definitions
