@@ -257,6 +257,14 @@ void ToUpper(char * buf) {
 	}
 }
 
+void NormalizeSlashes(char* buf) {
+	char* c = buf;
+	while (*c != '\0') {
+		if(*c == '/')
+			*c = '\\';
+		c++;
+	}
+}
 
 void extractVidPid(char * buf, ListResultItem_t * item) {
 	if(buf == NULL) {
@@ -379,6 +387,7 @@ void BuildInitialDeviceList() {
 		if (!DllSetupDiGetDeviceInstanceId(hDevInfo, pspDevInfoData, buf, sizeof(buf), &nSize)) {
 			break;
 		}
+		NormalizeSlashes(buf);
 
 		DeviceItem_t* item = new DeviceItem_t();
 		item->deviceState = DeviceState_Connect;
@@ -487,6 +496,7 @@ void UpdateDevice(PDEV_BROADCAST_DEVICEINTERFACE pDevInf, WPARAM wParam, DeviceS
 		if (!DllSetupDiGetDeviceInstanceId(hDevInfo, pspDevInfoData, buf, sizeof(buf), &nSize)) {
 			break;
 		}
+		NormalizeSlashes(buf);
 
 		if(szDevId == buf) {
 			WaitForSingleObject(deviceChangedSentEvent, INFINITE);
