@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.1.0 - 2018-11-24
+
+ - Add Windows backslash normalization for instance id's to fix certain USB devices not being detected
+    - Thanks to [@LanetheGreat](https://github.com/LanetheGreat) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/73)
+
+
 ## v4.0.0 - 2018-9-27
 
  - Use native Promises, https://github.com/MadLittleMods/node-usb-detection/pull/69
