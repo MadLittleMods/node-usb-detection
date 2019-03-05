@@ -11,12 +11,14 @@ var getSetTimeoutPromise = require('./lib/set-timeout-promise-helper');
 var usbDetect = require('../');
 
 const MANUAL_INTERACTION_TIMEOUT = 10000;
+const USB_TEST_VID = process.env.TEST_VID || 5824; // VID of the tevice used to test
+const USB_TEST_PID = process.env.TEST_PID || 1155;
 
 // We just look at the keys of this device object
 var DEVICE_OBJECT_FIXTURE = {
 	locationId: 0,
-	vendorId: 5824,
-	productId: 1155,
+	vendorId: USB_TEST_VID,
+	productId: USB_TEST_PID,
 	deviceName: 'Teensy USB Serial (COM3)',
 	manufacturer: 'PJRC.COM, LLC.',
 	serialNumber: '',
@@ -62,6 +64,25 @@ describe('usb-detection', function() {
 					done();
 				});
 			});
+
+			it('should return a promise when vid and pid are given', function(done) {
+				usbDetect.find(USB_TEST_VID, USB_TEST_PID)
+					.then(function(devices) {
+						testArrayOfDevicesShape(devices);
+					})
+					.then(done)
+					.catch(done.fail);
+			});
+
+			it('should return a promise when vid is given', function(done) {
+				usbDetect.find(USB_TEST_VID)
+					.then(function(devices) {
+						testArrayOfDevicesShape(devices);
+					})
+					.then(done)
+					.catch(done.fail);
+			});
+
 
 			it('should return a promise', function(done) {
 				usbDetect.find()

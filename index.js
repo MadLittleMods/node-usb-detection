@@ -4,7 +4,7 @@
 var index = require('./package.json');
 
 function isFunction(functionToCheck) {
-	return functionToCheck && {}.toString.call(functionToCheck) === '[object Function]';
+	return typeof functionToCheck === 'function';
 }
 
 if(global[index.name] && global[index.name].version === index.version) {
@@ -22,7 +22,7 @@ if(global[index.name] && global[index.name].version === index.version) {
 	//detector.find = detection.find;
 	detector.find = function(vid, pid, callback) {
 		// Suss out the optional parameters
-		if (isFunction(vid) && !pid && !callback) {
+		if(isFunction(vid) && !pid && !callback) {
 			callback = vid;
 			vid = undefined;
 		} else if(isFunction(pid) && !callback) {
