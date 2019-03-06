@@ -65,8 +65,9 @@ describe('usb-detection', function() {
 				});
 			});
 
-			it('should return a promise when vid and pid are given', function(done) {
-				usbDetect.find(USB_TEST_VID, USB_TEST_PID)
+			it('should return a promise when vid and pid are given', async function(done) {
+				const devices = await usbDetect.find();
+				usbDetect.find(devices[0].vendorId, devices[0].productId)
 					.then(function(devices) {
 						testArrayOfDevicesShape(devices);
 					})
@@ -74,8 +75,9 @@ describe('usb-detection', function() {
 					.catch(done.fail);
 			});
 
-			it('should return a promise when vid is given', function(done) {
-				usbDetect.find(USB_TEST_VID)
+			it('should return a promise when vid is given', async function(done) {
+				const devices = await usbDetect.find();
+				usbDetect.find(devices[0].vendorId)
 					.then(function(devices) {
 						testArrayOfDevicesShape(devices);
 					})
