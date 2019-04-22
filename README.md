@@ -172,9 +172,9 @@ usbDetect.startMonitoring();
 usbDetect.stopMonitoring();
 ```
 
-### `.find()` always returns the same list of devices, even after removal.
+### `usbDetect.find()` always returns the same list of devices, even after removal.
 
-Make sure you call `startMonitoring()` before any calls to `.find()`.
+Make sure you call `usbDetect.startMonitoring()` before any calls to `usbDetect.find()`.
 
 # Development (compile from source)
 
