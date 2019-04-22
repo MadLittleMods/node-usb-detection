@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.2.0 - *upcoming*
+
+ - Add note about `usbDetect.find()` requiring `usbDetect.startMonitoring()` for proper results after insert/remove
+    - Thanks to [@mikew](https://github.com/mikew) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/79)
+
+
 ## 4.1.0 - 2018-11-24
 
  - Add Windows backslash normalization for instance id's to fix certain USB devices not being detected
