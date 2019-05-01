@@ -20,9 +20,7 @@ env:
   - BINARY_BUILDER="true" TRAVIS_NODE_VERSION="8"
   - BINARY_BUILDER="true" TRAVIS_NODE_VERSION="8" ARCH="x86"
   - BINARY_BUILDER="true" TRAVIS_NODE_VERSION="10"
-  - BINARY_BUILDER="true" TRAVIS_NODE_VERSION="10" ARCH="x86"
   - BINARY_BUILDER="true" TRAVIS_NODE_VERSION="12"
-  - BINARY_BUILDER="true" TRAVIS_NODE_VERSION="12" ARCH="x86"
 matrix:
   exclude:
   - os: osx
@@ -31,10 +29,6 @@ matrix:
     env: TRAVIS_NODE_VERSION="6" ARCH="x86"
   - os: osx
     env: BINARY_BUILDER="true" TRAVIS_NODE_VERSION="8" ARCH="x86"
-  - os: osx
-    env: BINARY_BUILDER="true" TRAVIS_NODE_VERSION="10" ARCH="x86"
-  - os: osx
-    env: BINARY_BUILDER="true" TRAVIS_NODE_VERSION="12" ARCH="x86"
 
 cache:
   directories:
