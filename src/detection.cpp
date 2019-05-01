@@ -119,8 +119,8 @@ void Find(const Nan::FunctionCallbackInfo<v8::Value>& args) {
 
 	if (args.Length() == 3) {
 		if (args[0]->IsNumber() && args[1]->IsNumber()) {
-			vid = (int) args[0]->NumberValue(Nan::GetCurrentContext()).ToChecked();
-			pid = (int) args[1]->NumberValue(Nan::GetCurrentContext()).ToChecked();
+			vid = (int) Nan::To<int>(args[0]).ToChecked();
+			pid = (int) Nan::To<int>(args[1]).ToChecked();
 		}
 
 		// callback
@@ -133,7 +133,7 @@ void Find(const Nan::FunctionCallbackInfo<v8::Value>& args) {
 
 	if (args.Length() == 2) {
 		if (args[0]->IsNumber()) {
-			vid = (int) args[0]->NumberValue(Nan::GetCurrentContext()).ToChecked();
+			vid = (int) Nan::To<int>(args[0]).ToChecked();
 		}
 
 		// callback
