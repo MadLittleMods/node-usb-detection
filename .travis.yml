@@ -62,10 +62,6 @@ before_install:
   fi;
 - $CXX --version
 
-# Cleanup the output of npm
-- npm config set progress false
-- npm config set spin false
-
 # print versions
 - uname -a
 - which node; file `which node`
@@ -82,7 +78,7 @@ before_install:
 
 install:
 # ensure source install works
-- npm install --build-from-source
+- npm install --build-from-source --no-progress
 
 script:
 # Tests are disabled until we have tests which are suitable for CI and don't require manual interaction.
