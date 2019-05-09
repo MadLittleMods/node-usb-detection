@@ -4,6 +4,8 @@
 
  - Add note about `usbDetect.find()` requiring `usbDetect.startMonitoring()` for proper results after insert/remove
     - Thanks to [@mikew](https://github.com/mikew) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/79)
+ - Fix `usbDetect.find(...)` promise syntax/callback not working
+    - Thanks to [@erikkallen](https://github.com/erikkallen) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/74)
 
 
 ## 4.1.0 - 2018-11-24
