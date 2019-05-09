@@ -1,6 +1,6 @@
 # Changelog
 
-## 4.2.0 - *upcoming*
+## 4.2.0 - 2019-5-9
 
  - Add note about `usbDetect.find()` requiring `usbDetect.startMonitoring()` for proper results after insert/remove
     - Thanks to [@mikew](https://github.com/mikew) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/79)
