@@ -3,6 +3,10 @@
 
 var index = require('./package.json');
 
+function isFunction(functionToCheck) {
+	return typeof functionToCheck === 'function';
+}
+
 if(global[index.name] && global[index.name].version === index.version) {
 	module.exports = global[index.name];
 } else {
@@ -18,15 +22,13 @@ if(global[index.name] && global[index.name].version === index.version) {
 	//detector.find = detection.find;
 	detector.find = function(vid, pid, callback) {
 		// Suss out the optional parameters
-		if(!pid && !callback) {
+		if(isFunction(vid) && !pid && !callback) {
 			callback = vid;
 			vid = undefined;
-		}
-		else if(!callback) {
+		} else if(isFunction(pid) && !callback) {
 			callback = pid;
 			pid = undefined;
 		}
-
 
 		return new Promise(function(resolve, reject) {
 			// Assemble the optional args into something we can use with `apply`

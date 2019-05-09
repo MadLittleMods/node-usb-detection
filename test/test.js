@@ -63,6 +63,33 @@ describe('usb-detection', function() {
 				});
 			});
 
+			it('should return a promise when vid and pid are given', async function(done) {
+				const devices = await usbDetect.find();
+				usbDetect.find(devices[0].vendorId, devices[0].productId)
+					.then(function(devicesFromTestedFunction) {
+						testArrayOfDevicesShape(devicesFromTestedFunction);
+						expect(devicesFromTestedFunction.length).to.be.greaterThan(0);
+						// Should find a subset of USB devices. We assume you have many USB devices connected
+						expect(devicesFromTestedFunction.length).to.be.lessThan(devices.length);
+					})
+					.then(done)
+					.catch(done.fail);
+			});
+
+			it('should return a promise when vid is given', async function(done) {
+				const devices = await usbDetect.find();
+				usbDetect.find(devices[0].vendorId)
+					.then(function(devicesFromTestedFunction) {
+						testArrayOfDevicesShape(devicesFromTestedFunction);
+						expect(devicesFromTestedFunction.length).to.be.greaterThan(0);
+						// Should find a subset of USB devices. We assume you have many USB devices connected
+						expect(devicesFromTestedFunction.length).to.be.lessThan(devices.length);
+					})
+					.then(done)
+					.catch(done.fail);
+			});
+
+
 			it('should return a promise', function(done) {
 				usbDetect.find()
 					.then(function(devices) {
