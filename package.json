@@ -8,7 +8,8 @@
   "scripts": {
     "install": "prebuild-install || node-gyp rebuild",
     "prepublishOnly": "npm run validate",
-    "validate": "eslint **/*.js && npm test",
+    "lint": "eslint **/*.js",
+    "validate": "npm run lint && npm test",
     "test": "jasmine ./test/test.js",
     "prebuild": "prebuild --all --strip --verbose",
     "rebuild": "node-gyp rebuild"

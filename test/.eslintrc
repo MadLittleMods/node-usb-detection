@@ -4,6 +4,9 @@
 		"es6": true,
 		"jasmine": true
 	},
+	"parserOptions": {
+		"ecmaVersion": 2018
+	},
 	"rules": {
 		"no-console": 0,
 	}

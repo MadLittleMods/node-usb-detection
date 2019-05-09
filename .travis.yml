@@ -77,6 +77,8 @@ install:
 - npm install --build-from-source
 
 script:
+- npm run lint
+
 # Tests are disabled until we have tests which are suitable for CI and don't require manual interaction.
 # - npm test
 - echo "Skipping tests on CI, as they currently require manual interaction."
