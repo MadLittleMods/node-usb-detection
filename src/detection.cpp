@@ -119,8 +119,8 @@ void Find(const Nan::FunctionCallbackInfo<v8::Value>& args) {
 
 	if (args.Length() == 3) {
 		if (args[0]->IsNumber() && args[1]->IsNumber()) {
-			vid = (int) args[0]->NumberValue();
-			pid = (int) args[1]->NumberValue();
+			vid = (int) Nan::To<int>(args[0]).FromJust();
+			pid = (int) Nan::To<int>(args[1]).FromJust();
 		}
 
 		// callback
@@ -133,7 +133,7 @@ void Find(const Nan::FunctionCallbackInfo<v8::Value>& args) {
 
 	if (args.Length() == 2) {
 		if (args[0]->IsNumber()) {
-			vid = (int) args[0]->NumberValue();
+			vid = (int) Nan::To<int>(args[0]).FromJust();
 		}
 
 		// callback
@@ -210,7 +210,7 @@ void StopMonitoring(const Nan::FunctionCallbackInfo<v8::Value>& args) {
 }
 
 extern "C" {
-	void init (v8::Handle<v8::Object> target) {
+	void init (v8::Local<v8::Object> target) {
 		Nan::SetMethod(target, "find", Find);
 		Nan::SetMethod(target, "registerAdded", RegisterAdded);
 		Nan::SetMethod(target, "registerRemoved", RegisterRemoved);
