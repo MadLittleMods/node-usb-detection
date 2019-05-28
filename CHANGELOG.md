@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.3.0 - 2019-5-27
+
+ - Add support for Node.js v12
+    - Thanks to [@kryops](https://github.com/kryops) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/81)
+
+
 ## 4.2.0 - 2019-5-9
 
  - Add note about `usbDetect.find()` requiring `usbDetect.startMonitoring()` for proper results after insert/remove
