@@ -373,7 +373,7 @@ DWORD WINAPI ListenerThread( LPVOID lpParam ) {
 }
 
 
-void BuildInitialDeviceList() {	
+void BuildInitialDeviceList() {
 	DWORD dwFlag = (DIGCF_ALLCLASSES | DIGCF_PRESENT);
 	HDEVINFO hDevInfo = DllSetupDiGetClassDevs(NULL, "USB", NULL, dwFlag);
 
@@ -383,26 +383,26 @@ void BuildInitialDeviceList() {
 
 	SP_DEVINFO_DATA* pspDevInfoData = (SP_DEVINFO_DATA*) HeapAlloc(GetProcessHeap(), 0, sizeof(SP_DEVINFO_DATA));
 	if (pspDevInfoData) {
-        pspDevInfoData->cbSize = sizeof(SP_DEVINFO_DATA);
-        for(int i=0; DllSetupDiEnumDeviceInfo(hDevInfo, i, pspDevInfoData); i++) {
-            DWORD nSize=0 ;
-            TCHAR buf[MAX_PATH];
+		pspDevInfoData->cbSize = sizeof(SP_DEVINFO_DATA);
+		for(int i=0; DllSetupDiEnumDeviceInfo(hDevInfo, i, pspDevInfoData); i++) {
+			DWORD nSize=0 ;
+			TCHAR buf[MAX_PATH];
 
-            if (!DllSetupDiGetDeviceInstanceId(hDevInfo, pspDevInfoData, buf, sizeof(buf), &nSize)) {
-                break;
-            }
-            NormalizeSlashes(buf);
+			pDiGetDeviceInstanceId(hDevInfo, pspDevInfoData, buf, sizeof(buf), &nSize)) {
+				break;
+			}
+			NormalizeSlashes(buf);
 
-            DeviceItem_t* item = new DeviceItem_t();
-            item->deviceState = DeviceState_Connect;
+			DeviceItem_t* item = new DeviceItem_t();
+			item->deviceState = DeviceState_Connect;
 
-            DWORD DataT;
-            DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_LOCATION_INFORMATION, &DataT, (PBYTE)buf, MAX_PATH, &nSize);
-            DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_HARDWAREID, &DataT, (PBYTE)(buf + nSize - 1), MAX_PATH - nSize, &nSize);
+			DWORD DataT;
+			DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_LOCATION_INFORMATION, &DataT, (PBYTE)buf, MAX_PATH, &nSize);
+			DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_HARDWAREID, &DataT, (PBYTE)(buf + nSize - 1), MAX_PATH - nSize, &nSize);
 
-            AddItemToList(buf, item);
-            ExtractDeviceInfo(hDevInfo, pspDevInfoData, buf, MAX_PATH, &item->deviceParams);
-        }
+			AddItemToList(buf, item);
+			ExtractDeviceInfo(hDevInfo, pspDevInfoData, buf, MAX_PATH, &item->deviceParams);
+		}
 
 		HeapFree(GetProcessHeap(), 0, pspDevInfoData);
 	}
@@ -471,17 +471,17 @@ void UpdateDevice(PDEV_BROADCAST_DEVICEINTERFACE pDevInf, WPARAM wParam, DeviceS
 	// \\?\USB#Vid_04e8&Pid_503b#0002F9A9828E0F06#{a5dcbf10-6530-11d2-901f-00c04fb951ed}
 	// convert to
 	// USB\Vid_04e8&Pid_503b\0002F9A9828E0F06
-  	tstring szDevId = pDevInf->dbcc_name+4;
-  	auto idx = szDevId.rfind(_T('#'));
+	tstring szDevId = pDevInf->dbcc_name+4;
+	auto idx = szDevId.rfind(_T('#'));
 
 	if (idx != tstring::npos) szDevId.resize(idx);
 	std::replace(begin(szDevId), end(szDevId), _T('#'), _T('\\'));
 	auto to_upper = [] (TCHAR ch) { return std::use_facet<std::ctype<TCHAR>>(std::locale()).toupper(ch); };
 	transform(begin(szDevId), end(szDevId), begin(szDevId), to_upper);
 
-  	tstring szClass;
-  	idx = szDevId.find(_T('\\'));
-  	if (idx != tstring::npos) szClass = szDevId.substr(0, idx);
+	tstring szClass;
+	idx = szDevId.find(_T('\\'));
+	(idx != tstring::npos) szClass = szDevId.substr(0, idx);
 	// if we are adding device, we only need present devices
 	// otherwise, we need all devices
 	DWORD dwFlag = DBT_DEVICEARRIVAL != wParam ? DIGCF_ALLCLASSES : (DIGCF_ALLCLASSES | DIGCF_PRESENT);
@@ -492,57 +492,57 @@ void UpdateDevice(PDEV_BROADCAST_DEVICEINTERFACE pDevInf, WPARAM wParam, DeviceS
 
 	SP_DEVINFO_DATA* pspDevInfoData = (SP_DEVINFO_DATA*) HeapAlloc(GetProcessHeap(), 0, sizeof(SP_DEVINFO_DATA));
 	if (pspDevInfoData) {
-        pspDevInfoData->cbSize = sizeof(SP_DEVINFO_DATA);
-        for(int i=0; DllSetupDiEnumDeviceInfo(hDevInfo, i, pspDevInfoData); i++) {
-            DWORD nSize=0 ;
-            TCHAR buf[MAX_PATH];
+		pspDevInfoData->cbSize = sizeof(SP_DEVINFO_DATA);
+		for (int i = 0; DllSetupDiEnumDeviceInfo(hDevInfo, i, pspDevInfoData); i++) {
+			DWORD nSize = 0;
+			TCHAR buf[MAX_PATH];
 
-            if (!DllSetupDiGetDeviceInstanceId(hDevInfo, pspDevInfoData, buf, sizeof(buf), &nSize)) {
-                break;
-            }
-            NormalizeSlashes(buf);
+			if (!DllSetupDiGetDeviceInstanceId(hDevInfo, pspDevInfoData, buf, sizeof(buf), &nSize)) {
+				break;
+			}
+			NormalizeSlashes(buf);
 
-            if(szDevId == buf) {
-                WaitForSingleObject(deviceChangedSentEvent, INFINITE);
+			if (szDevId == buf) {
+				WaitForSingleObject(deviceChangedSentEvent, INFINITE);
 
-                DWORD DataT;
-                DWORD nSize;
-                DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_LOCATION_INFORMATION, &DataT, (PBYTE)buf, MAX_PATH, &nSize);
-                    DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_HARDWAREID, &DataT, (PBYTE)(buf + nSize - 1), MAX_PATH - nSize, &nSize);
+				DWORD DataT;
+				DWORD nSize;
+				DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_LOCATION_INFORMATION, &DataT,
+				                                    (PBYTE) buf, MAX_PATH, &nSize);
+				DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_HARDWAREID, &DataT,
+				                                    (PBYTE)(buf + nSize - 1), MAX_PATH - nSize, &nSize);
 
-                if(state == DeviceState_Connect) {
-                    DeviceItem_t* device = new DeviceItem_t();
+				if (state == DeviceState_Connect) {
+					DeviceItem_t *device = new DeviceItem_t();
 
-                    AddItemToList(buf, device);
-                    ExtractDeviceInfo(hDevInfo, pspDevInfoData, buf, MAX_PATH, &device->deviceParams);
+					AddItemToList(buf, device);
+					ExtractDeviceInfo(hDevInfo, pspDevInfoData, buf, MAX_PATH, &device->deviceParams);
 
-                    currentDevice = &device->deviceParams;
-                    isAdded = true;
-                }
-                else {
+					currentDevice = &device->deviceParams;
+					isAdded = true;
+				} else {
 
-                    ListResultItem_t* item = NULL;
-                    if(IsItemAlreadyStored(buf)) {
-                        DeviceItem_t* deviceItem = GetItemFromList(buf);
-                        if(deviceItem)
-                        {
-                            item = CopyElement(&deviceItem->deviceParams);
-                        }
-                        RemoveItemFromList(deviceItem);
-                        delete deviceItem;
-                    }
+					ListResultItem_t *item = NULL;
+					if (IsItemAlreadyStored(buf)) {
+						DeviceItem_t *deviceItem = GetItemFromList(buf);
+						if (deviceItem) {
+							item = CopyElement(&deviceItem->deviceParams);
+						}
+						RemoveItemFromList(deviceItem);
+						delete deviceItem;
+					}
 
-                    if(item == NULL) {
-                        item = new ListResultItem_t();
-                        ExtractDeviceInfo(hDevInfo, pspDevInfoData, buf, MAX_PATH, item);
-                    }
-                    currentDevice = item;
-                    isAdded = false;
-                }
+					if (item == NULL) {
+						item = new ListResultItem_t();
+						ExtractDeviceInfo(hDevInfo, pspDevInfoData, buf, MAX_PATH, item);
+					}
+					currentDevice = item;
+					isAdded = false;
+				}
 
-                break;
-            }
-        }
+				break;
+			}
+		}
 
 		HeapFree(GetProcessHeap(), 0, pspDevInfoData);
 	}
