@@ -481,7 +481,7 @@ void UpdateDevice(PDEV_BROADCAST_DEVICEINTERFACE pDevInf, WPARAM wParam, DeviceS
 
 	tstring szClass;
 	idx = szDevId.find(_T('\\'));
-	(idx != tstring::npos) szClass = szDevId.substr(0, idx);
+	if (idx != tstring::npos) szClass = szDevId.substr(0, idx);
 	// if we are adding device, we only need present devices
 	// otherwise, we need all devices
 	DWORD dwFlag = DBT_DEVICEARRIVAL != wParam ? DIGCF_ALLCLASSES : (DIGCF_ALLCLASSES | DIGCF_PRESENT);
@@ -507,10 +507,8 @@ void UpdateDevice(PDEV_BROADCAST_DEVICEINTERFACE pDevInf, WPARAM wParam, DeviceS
 
 				DWORD DataT;
 				DWORD nSize;
-				DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_LOCATION_INFORMATION, &DataT,
-				                                    (PBYTE) buf, MAX_PATH, &nSize);
-				DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_HARDWAREID, &DataT,
-				                                    (PBYTE)(buf + nSize - 1), MAX_PATH - nSize, &nSize);
+				DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_LOCATION_INFORMATION, &DataT, (PBYTE) buf, MAX_PATH, &nSize);
+				DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_HARDWAREID, &DataT, (PBYTE)(buf + nSize - 1), MAX_PATH - nSize, &nSize);
 
 				if (state == DeviceState_Connect) {
 					DeviceItem_t *device = new DeviceItem_t();
