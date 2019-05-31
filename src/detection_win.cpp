@@ -388,7 +388,7 @@ void BuildInitialDeviceList() {
 			DWORD nSize=0 ;
 			TCHAR buf[MAX_PATH];
 
-			pDiGetDeviceInstanceId(hDevInfo, pspDevInfoData, buf, sizeof(buf), &nSize)) {
+			if (!DllSetupDiGetDeviceInstanceId(hDevInfo, pspDevInfoData, buf, sizeof(buf), &nSize)) {
 				break;
 			}
 			NormalizeSlashes(buf);
