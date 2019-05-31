@@ -2,8 +2,9 @@
 #include <dbt.h>
 #include <iostream>
 #include <iomanip>
-#include <atlstr.h>
-
+#include <string>
+#include <cctype>
+#include <algorithm>
 
 // Include Windows headers
 #include <windows.h>
@@ -18,6 +19,8 @@
 #include "deviceList.h"
 
 using namespace std;
+
+typedef std::basic_string<TCHAR> tstring;
 
 /**********************************
  * Local defines
@@ -468,21 +471,21 @@ void UpdateDevice(PDEV_BROADCAST_DEVICEINTERFACE pDevInf, WPARAM wParam, DeviceS
 	// \\?\USB#Vid_04e8&Pid_503b#0002F9A9828E0F06#{a5dcbf10-6530-11d2-901f-00c04fb951ed}
 	// convert to
 	// USB\Vid_04e8&Pid_503b\0002F9A9828E0F06
-	CString szDevId = pDevInf->dbcc_name+4;
-	int idx = szDevId.ReverseFind(_T('#'));
+  	tstring szDevId = pDevInf->dbcc_name+4;
+  	auto idx = szDevId.rfind(_T('#'));
 
-	szDevId.Truncate(idx);
-	szDevId.Replace(_T('#'), _T('\\'));
-	szDevId.MakeUpper();
+	if (idx != tstring::npos) szDevId.resize(idx);
+	std::replace(begin(szDevId), end(szDevId), _T('#'), _T('\\'));
+	auto to_upper = [] (TCHAR ch) { return std::use_facet<std::ctype<TCHAR>>(std::locale()).toupper(ch); };
+	transform(begin(szDevId), end(szDevId), begin(szDevId), to_upper);
 
-	CString szClass;
-	idx = szDevId.Find(_T('\\'));
-	szClass = szDevId.Left(idx);
-
+  	tstring szClass;
+  	idx = szDevId.find(_T('\\'));
+  	if (idx != tstring::npos) szClass = szDevId.substr(0, idx);
 	// if we are adding device, we only need present devices
 	// otherwise, we need all devices
 	DWORD dwFlag = DBT_DEVICEARRIVAL != wParam ? DIGCF_ALLCLASSES : (DIGCF_ALLCLASSES | DIGCF_PRESENT);
-	HDEVINFO hDevInfo = DllSetupDiGetClassDevs(NULL, szClass, NULL, dwFlag);
+	HDEVINFO hDevInfo = DllSetupDiGetClassDevs(NULL, szClass.c_str(), NULL, dwFlag);
 	if(INVALID_HANDLE_VALUE == hDevInfo) {
 		return;
 	}
