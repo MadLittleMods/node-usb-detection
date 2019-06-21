@@ -89,6 +89,7 @@ _SetupDiGetDeviceRegistryProperty DllSetupDiGetDeviceRegistryProperty;
  * Local Helper Functions protoypes
  **********************************/
 void UpdateDevice(PDEV_BROADCAST_DEVICEINTERFACE pDevInf, WPARAM wParam, DeviceState_t state);
+std::string Utf8Encode(const std::string &str);
 DWORD WINAPI ListenerThread(LPVOID lpParam);
 
 void BuildInitialDeviceList();
@@ -421,14 +422,14 @@ void ExtractDeviceInfo(HDEVINFO hDevInfo, SP_DEVINFO_DATA* pspDevInfoData, TCHAR
 
 	// device found
 	if (DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_FRIENDLYNAME, &DataT, (PBYTE)buf, buffSize, &nSize)) {
-		resultItem->deviceName = buf;
+		resultItem->deviceName = Utf8Encode(buf);
 	}
 	else if ( DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_DEVICEDESC, &DataT, (PBYTE)buf, buffSize, &nSize))
 	{
-		resultItem->deviceName = buf;
+		resultItem->deviceName = Utf8Encode(buf);
 	}
 	if (DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_MFG, &DataT, (PBYTE)buf, buffSize, &nSize)) {
-		resultItem->manufacturer = buf;
+		resultItem->manufacturer = Utf8Encode(buf);
 	}
 	if (DllSetupDiGetDeviceRegistryProperty(hDevInfo, pspDevInfoData, SPDRP_HARDWAREID, &DataT, (PBYTE)buf, buffSize, &nSize)) {
 		// Use this to extract VID / PID
@@ -549,4 +550,23 @@ void UpdateDevice(PDEV_BROADCAST_DEVICEINTERFACE pDevInf, WPARAM wParam, DeviceS
 	}
 
 	SetEvent(deviceChangedRegisteredEvent);
+}
+
+std::string Utf8Encode(const std::string &str)
+{
+    if (str.empty()) {
+        return std::string();
+    }
+
+    //System default code page to wide character
+    int wstr_size = MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, NULL, 0);
+    std::wstring wstr_tmp(wstr_size, 0);
+    MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, &wstr_tmp[0], wstr_size);
+
+    //Wide character to Utf8
+    int str_size = WideCharToMultiByte(CP_UTF8, 0, &wstr_tmp[0], (int)wstr_tmp.size(), NULL, 0, NULL, NULL);
+    std::string str_utf8(str_size, 0);
+    WideCharToMultiByte(CP_UTF8, 0, &wstr_tmp[0], (int)wstr_tmp.size(), &str_utf8[0], str_size, NULL, NULL);
+
+    return str_utf8;
 }
