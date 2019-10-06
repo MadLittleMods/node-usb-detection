@@ -1,6 +1,6 @@
 {
   "name": "usb-detection",
-  "version": "4.4.0",
+  "version": "4.5.0",
   "description": "Listen to USB devices and detect changes on them.",
   "main": "index.js",
   "types": "index.d.ts",
