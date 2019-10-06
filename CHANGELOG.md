@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.5.0 - 2019-10-6
+
+- Unbind ATL lib on Windows (`atlstr.h`)
+  - Thanks to [@sarakusha](https://github.com/sarakusha) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/84)
+
 ## 4.4.0 - 2019-10-6
 
 - Fix `deviceName` garbled in Windows
