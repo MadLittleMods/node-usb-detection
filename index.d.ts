@@ -1,6 +1,7 @@
-// Type definitions for usb-detection 3.1.0
+// Type definitions for usb-detection 4.5.0
 // Project: https://github.com/MadLittleMods/node-usb-detection
 // Definitions by: Rob Moran <https://github.com/thegecko>
+//                 Rico Brase <https://github.com/RicoBrase>
 
 export interface Device {
     locationId: number;
@@ -13,7 +14,9 @@ export interface Device {
 }
 
 export function find(vid: number, pid: number, callback: (error: any, devices: Device[]) => any): void;
+export function find(vid: number, pid: number): Promise<Device[]>;
 export function find(vid: number, callback: (error: any, devices: Device[]) => any): void;
+export function find(vid: number): Promise<Device[]>;
 export function find(callback: (error: any, devices: Device[]) => any): void;
 export function find(): Promise<Device[]>;
 
