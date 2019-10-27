@@ -48,13 +48,13 @@ void NotifyAdded(ListResultItem_t* it) {
 	if (isAddedRegistered){
 		v8::Local<v8::Value> argv[1];
 		v8::Local<v8::Object> item = Nan::New<v8::Object>();
-		item->Set(Nan::New<v8::String>(OBJECT_ITEM_LOCATION_ID).ToLocalChecked(), Nan::New<v8::Number>(it->locationId));
-		item->Set(Nan::New<v8::String>(OBJECT_ITEM_VENDOR_ID).ToLocalChecked(), Nan::New<v8::Number>(it->vendorId));
-		item->Set(Nan::New<v8::String>(OBJECT_ITEM_PRODUCT_ID).ToLocalChecked(), Nan::New<v8::Number>(it->productId));
-		item->Set(Nan::New<v8::String>(OBJECT_ITEM_DEVICE_NAME).ToLocalChecked(), Nan::New<v8::String>(it->deviceName.c_str()).ToLocalChecked());
-		item->Set(Nan::New<v8::String>(OBJECT_ITEM_MANUFACTURER).ToLocalChecked(), Nan::New<v8::String>(it->manufacturer.c_str()).ToLocalChecked());
-		item->Set(Nan::New<v8::String>(OBJECT_ITEM_SERIAL_NUMBER).ToLocalChecked(), Nan::New<v8::String>(it->serialNumber.c_str()).ToLocalChecked());
-		item->Set(Nan::New<v8::String>(OBJECT_ITEM_DEVICE_ADDRESS).ToLocalChecked(), Nan::New<v8::Number>(it->deviceAddress));
+		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_LOCATION_ID).ToLocalChecked(), Nan::New<v8::Number>(it->locationId));
+		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_VENDOR_ID).ToLocalChecked(), Nan::New<v8::Number>(it->vendorId));
+		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_PRODUCT_ID).ToLocalChecked(), Nan::New<v8::Number>(it->productId));
+		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_DEVICE_NAME).ToLocalChecked(), Nan::New<v8::String>(it->deviceName.c_str()).ToLocalChecked());
+		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_MANUFACTURER).ToLocalChecked(), Nan::New<v8::String>(it->manufacturer.c_str()).ToLocalChecked());
+		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_SERIAL_NUMBER).ToLocalChecked(), Nan::New<v8::String>(it->serialNumber.c_str()).ToLocalChecked());
+		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_DEVICE_ADDRESS).ToLocalChecked(), Nan::New<v8::Number>(it->deviceAddress));
 		argv[0] = item;
 
 		addedCallback->Call(1, argv);
@@ -93,13 +93,13 @@ void NotifyRemoved(ListResultItem_t* it) {
 	if (isRemovedRegistered) {
 		v8::Local<v8::Value> argv[1];
 		v8::Local<v8::Object> item = Nan::New<v8::Object>();
-		item->Set(Nan::New<v8::String>(OBJECT_ITEM_LOCATION_ID).ToLocalChecked(), Nan::New<v8::Number>(it->locationId));
-		item->Set(Nan::New<v8::String>(OBJECT_ITEM_VENDOR_ID).ToLocalChecked(), Nan::New<v8::Number>(it->vendorId));
-		item->Set(Nan::New<v8::String>(OBJECT_ITEM_PRODUCT_ID).ToLocalChecked(), Nan::New<v8::Number>(it->productId));
-		item->Set(Nan::New<v8::String>(OBJECT_ITEM_DEVICE_NAME).ToLocalChecked(), Nan::New<v8::String>(it->deviceName.c_str()).ToLocalChecked());
-		item->Set(Nan::New<v8::String>(OBJECT_ITEM_MANUFACTURER).ToLocalChecked(), Nan::New<v8::String>(it->manufacturer.c_str()).ToLocalChecked());
-		item->Set(Nan::New<v8::String>(OBJECT_ITEM_SERIAL_NUMBER).ToLocalChecked(), Nan::New<v8::String>(it->serialNumber.c_str()).ToLocalChecked());
-		item->Set(Nan::New<v8::String>(OBJECT_ITEM_DEVICE_ADDRESS).ToLocalChecked(), Nan::New<v8::Number>(it->deviceAddress));
+		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_LOCATION_ID).ToLocalChecked(), Nan::New<v8::Number>(it->locationId));
+		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_VENDOR_ID).ToLocalChecked(), Nan::New<v8::Number>(it->vendorId));
+		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_PRODUCT_ID).ToLocalChecked(), Nan::New<v8::Number>(it->productId));
+		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_DEVICE_NAME).ToLocalChecked(), Nan::New<v8::String>(it->deviceName.c_str()).ToLocalChecked());
+		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_MANUFACTURER).ToLocalChecked(), Nan::New<v8::String>(it->manufacturer.c_str()).ToLocalChecked());
+		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_SERIAL_NUMBER).ToLocalChecked(), Nan::New<v8::String>(it->serialNumber.c_str()).ToLocalChecked());
+		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_DEVICE_ADDRESS).ToLocalChecked(), Nan::New<v8::Number>(it->deviceAddress));
 		argv[0] = item;
 
 		removedCallback->Call(1, argv);
@@ -179,14 +179,14 @@ void EIO_AfterFind(uv_work_t* req) {
 		int i = 0;
 		for(std::list<ListResultItem_t*>::iterator it = data->results.begin(); it != data->results.end(); it++, i++) {
 			v8::Local<v8::Object> item = Nan::New<v8::Object>();
-			item->Set(Nan::New<v8::String>(OBJECT_ITEM_LOCATION_ID).ToLocalChecked(), Nan::New<v8::Number>((*it)->locationId));
-			item->Set(Nan::New<v8::String>(OBJECT_ITEM_VENDOR_ID).ToLocalChecked(), Nan::New<v8::Number>((*it)->vendorId));
-			item->Set(Nan::New<v8::String>(OBJECT_ITEM_PRODUCT_ID).ToLocalChecked(), Nan::New<v8::Number>((*it)->productId));
-			item->Set(Nan::New<v8::String>(OBJECT_ITEM_DEVICE_NAME).ToLocalChecked(), Nan::New<v8::String>((*it)->deviceName.c_str()).ToLocalChecked());
-			item->Set(Nan::New<v8::String>(OBJECT_ITEM_MANUFACTURER).ToLocalChecked(), Nan::New<v8::String>((*it)->manufacturer.c_str()).ToLocalChecked());
-			item->Set(Nan::New<v8::String>(OBJECT_ITEM_SERIAL_NUMBER).ToLocalChecked(), Nan::New<v8::String>((*it)->serialNumber.c_str()).ToLocalChecked());
-			item->Set(Nan::New<v8::String>(OBJECT_ITEM_DEVICE_ADDRESS).ToLocalChecked(), Nan::New<v8::Number>((*it)->deviceAddress));
-			results->Set(i, item);
+			Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_LOCATION_ID).ToLocalChecked(), Nan::New<v8::Number>((*it)->locationId));
+			Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_VENDOR_ID).ToLocalChecked(), Nan::New<v8::Number>((*it)->vendorId));
+			Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_PRODUCT_ID).ToLocalChecked(), Nan::New<v8::Number>((*it)->productId));
+			Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_DEVICE_NAME).ToLocalChecked(), Nan::New<v8::String>((*it)->deviceName.c_str()).ToLocalChecked());
+			Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_MANUFACTURER).ToLocalChecked(), Nan::New<v8::String>((*it)->manufacturer.c_str()).ToLocalChecked());
+			Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_SERIAL_NUMBER).ToLocalChecked(), Nan::New<v8::String>((*it)->serialNumber.c_str()).ToLocalChecked());
+			Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_DEVICE_ADDRESS).ToLocalChecked(), Nan::New<v8::Number>((*it)->deviceAddress));
+			Nan::Set(results, i, item);
 		}
 		argv[0] = Nan::Undefined();
 		argv[1] = results;
