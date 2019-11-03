@@ -57,7 +57,8 @@ void NotifyAdded(ListResultItem_t* it) {
 		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_DEVICE_ADDRESS).ToLocalChecked(), Nan::New<v8::Number>(it->deviceAddress));
 		argv[0] = item;
 
-		addedCallback->Call(1, argv);
+		Nan::AsyncResource resource("usb-detection:NotifyAdded");
+		addedCallback->Call(1, argv, &resource);
 	}
 }
 
@@ -101,8 +102,9 @@ void NotifyRemoved(ListResultItem_t* it) {
 		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_SERIAL_NUMBER).ToLocalChecked(), Nan::New<v8::String>(it->serialNumber.c_str()).ToLocalChecked());
 		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_DEVICE_ADDRESS).ToLocalChecked(), Nan::New<v8::Number>(it->deviceAddress));
 		argv[0] = item;
-
-		removedCallback->Call(1, argv);
+		
+		Nan::AsyncResource resource("usb-detection:NotifyRemoved");
+		removedCallback->Call(1, argv, &resource);
 	}
 }
 
@@ -192,7 +194,8 @@ void EIO_AfterFind(uv_work_t* req) {
 		argv[1] = results;
 	}
 
-	data->callback->Call(2, argv);
+	Nan::AsyncResource resource("usb-detection:EIO_AfterFind");
+	data->callback->Call(2, argv, &resource);
 
 	for(std::list<ListResultItem_t*>::iterator it = data->results.begin(); it != data->results.end(); it++) {
 		delete *it;
