@@ -10,6 +10,10 @@ environment:
     nodejs_version: "8"
   - binary_builder: "true"
     nodejs_version: "10"
+  - binary_builder: "true"
+    nodejs_version: "12"
+  - binary_builder: "true"
+    nodejs_version: "13"
 
 platform:
   - x86
