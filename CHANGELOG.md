@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.7.0 - _upcoming_
+
+- Fix deprecation warnings for `Nan::Callback:Call()`
+  - Thanks to [@kryops](https://github.com/kryops) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/93)
+
 ## 4.6.0 - 2019-11-24
 
 - Add support for Node.js v13
