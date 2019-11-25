@@ -4,6 +4,8 @@
 
 - Fix deprecation warnings for `Nan::Callback:Call()`
   - Thanks to [@kryops](https://github.com/kryops) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/93)
+- Update TypeScript definitions
+  - Thanks to [@RicoBrase](https://github.com/RicoBrase) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/90)
 
 ## 4.6.0 - 2019-11-24
 
