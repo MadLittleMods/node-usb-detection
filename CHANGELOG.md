@@ -1,6 +1,6 @@
 # Changelog
 
-## 4.7.0 - _upcoming_
+## 4.7.0 - 2019-11-24
 
 - Fix deprecation warnings for `Nan::Callback:Call()`
   - Thanks to [@kryops](https://github.com/kryops) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/93)
