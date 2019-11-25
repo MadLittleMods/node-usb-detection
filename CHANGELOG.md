@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.6.0 - 2019-11-24
+
+- Add support for Node.js v13
+  - Thanks to [@kryops](https://github.com/kryops) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/92)
+
 ## 4.5.0 - 2019-10-6
 
 - Unbind ATL lib on Windows (`atlstr.h`)
