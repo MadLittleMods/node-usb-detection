@@ -118,6 +118,12 @@ void InitDetection() {
 	BuildInitialDeviceList();
 }
 
+void CleanupDetection(void*) {
+	Stop();
+
+	udev_monitor_unref(mon);
+	udev_unref(udev);
+}
 
 void EIO_Find(uv_work_t* req) {
 	ListBaton* data = static_cast<ListBaton*>(req->data);
@@ -242,8 +248,6 @@ static void cbWork(uv_work_t *req) {
 
 static void cbAfter(uv_work_t *req, int status) {
 	Stop();
-	udev_monitor_unref(mon);
-	udev_unref(udev);
 }
 
 static void cbAsync(uv_async_t *handle) {

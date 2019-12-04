@@ -18,6 +18,7 @@ void Find(const Nan::FunctionCallbackInfo<v8::Value>& args);
 void EIO_Find(uv_work_t* req);
 void EIO_AfterFind(uv_work_t* req);
 void InitDetection();
+void CleanupDetection(void*);
 void StartMonitoring(const Nan::FunctionCallbackInfo<v8::Value>& args);
 void Start();
 void StopMonitoring(const Nan::FunctionCallbackInfo<v8::Value>& args);

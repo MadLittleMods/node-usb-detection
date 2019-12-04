@@ -241,6 +241,9 @@ void InitDetection() {
 	BuildInitialDeviceList();
 }
 
+void CleanupDetection(void*) {
+	Stop();
+}
 
 void EIO_Find(uv_work_t* req) {
 

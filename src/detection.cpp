@@ -220,6 +220,9 @@ extern "C" {
 		Nan::SetMethod(target, "startMonitoring", StartMonitoring);
 		Nan::SetMethod(target, "stopMonitoring", StopMonitoring);
 		InitDetection();
+
+		v8::Isolate *isolate =  target->GetIsolate();
+		node::AddEnvironmentCleanupHook(isolate, CleanupDetection, nullptr);
 	}
 }
 

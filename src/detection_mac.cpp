@@ -400,6 +400,10 @@ void InitDetection() {
 	initialDeviceImport = false;
 }
 
+void CleanupDetection(void*) {
+	Stop();
+}
+
 void EIO_Find(uv_work_t* req) {
 	ListBaton* data = static_cast<ListBaton*>(req->data);
 
