@@ -221,8 +221,7 @@ extern "C" {
 		Nan::SetMethod(target, "stopMonitoring", StopMonitoring);
 		InitDetection();
 
-		v8::Isolate *isolate =  target->GetIsolate();
-		node::AddEnvironmentCleanupHook(isolate, CleanupDetection, nullptr);
+		node::AtExit(CleanupDetection);
 	}
 }
 
