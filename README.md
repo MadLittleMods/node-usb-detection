@@ -212,6 +212,12 @@ and add the directory to your path.
 
 Ensure that you have at a minimum, the xCode Command Line Tools installed appropriate for your system configuration. If you recently upgraded your OS, it probably removed your installation of Command Line Tools, please verify before submitting a ticket.
 
+# To build a debug version with error outputs use:
+
+```sh
+$ npm run rebuild --debug
+```
+
 ### Linux:
 
 You know what you need for you system, basically your appropriate analog of build-essential. Keep rocking!

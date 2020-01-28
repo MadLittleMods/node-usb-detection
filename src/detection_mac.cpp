@@ -220,7 +220,7 @@ static void DeviceAdded(void *refCon, io_iterator_t iterator) {
 		kr = IOCreatePlugInInterfaceForService(usbDevice, kIOUSBDeviceUserClientTypeID, kIOCFPlugInInterfaceID, &plugInInterface, &score);
 
 		if((kIOReturnSuccess != kr) || !plugInInterface) {
-			fprintf(stderr, "IOCreatePlugInInterfaceForService returned 0x%08x.\n", kr);
+			DEBUG_LOG("IOCreatePlugInInterfaceForService returned 0x%08x.\n", kr);
 			continue;
 		}
 
@@ -233,7 +233,7 @@ static void DeviceAdded(void *refCon, io_iterator_t iterator) {
 		(*plugInInterface)->Release(plugInInterface);
 
 		if(res || deviceListItem->deviceInterface == NULL) {
-			fprintf(stderr, "QueryInterface returned %d.\n", (int) res);
+			DEBUG_LOG("QueryInterface returned %d.\n", (int) res);
 			continue;
 		}
 
@@ -243,7 +243,7 @@ static void DeviceAdded(void *refCon, io_iterator_t iterator) {
 
 		kr = (*deviceListItem->deviceInterface)->GetLocationID(deviceListItem->deviceInterface, &locationID);
 		if(KERN_SUCCESS != kr) {
-			fprintf(stderr, "GetLocationID returned 0x%08x.\n", kr);
+			DEBUG_LOG("GetLocationID returned 0x%08x.\n", kr);
 			continue;
 		}
 		deviceItem->deviceParams.locationId = locationID;
@@ -251,7 +251,7 @@ static void DeviceAdded(void *refCon, io_iterator_t iterator) {
 
 		kr = (*deviceListItem->deviceInterface)->GetDeviceAddress(deviceListItem->deviceInterface, &addr);
 		if(KERN_SUCCESS != kr) {
-			fprintf(stderr, "GetDeviceAddress returned 0x%08x.\n", kr);
+			DEBUG_LOG("GetDeviceAddress returned 0x%08x.\n", kr);
 			continue;
 		}
 		deviceItem->deviceParams.deviceAddress = addr;
@@ -259,14 +259,14 @@ static void DeviceAdded(void *refCon, io_iterator_t iterator) {
 
 		kr = (*deviceListItem->deviceInterface)->GetDeviceVendor(deviceListItem->deviceInterface, &vendorId);
 		if(KERN_SUCCESS != kr) {
-			fprintf(stderr, "GetDeviceVendor returned 0x%08x.\n", kr);
+			DEBUG_LOG("GetDeviceVendor returned 0x%08x.\n", kr);
 			continue;
 		}
 		deviceItem->deviceParams.vendorId = vendorId;
 
 		kr = (*deviceListItem->deviceInterface)->GetDeviceProduct(deviceListItem->deviceInterface, &productId);
 		if(KERN_SUCCESS != kr) {
-			fprintf(stderr, "GetDeviceProduct returned 0x%08x.\n", kr);
+			DEBUG_LOG("GetDeviceProduct returned 0x%08x.\n", kr);
 			continue;
 		}
 		deviceItem->deviceParams.productId = productId;
@@ -373,7 +373,7 @@ void InitDetection() {
 	matchingDict = IOServiceMatching(kIOUSBDeviceClassName);
 
 	if (matchingDict == NULL) {
-		fprintf(stderr, "IOServiceMatching returned NULL.\n");
+		DEBUG_LOG("IOServiceMatching returned NULL.\n");
 	}
 
 	// Create a notification port and add its run loop event source to our run loop
@@ -448,7 +448,7 @@ static void cbWork(uv_work_t *req) {
 	// `isRunning` check here because it happens at a future time
 	if(isRunning) {
 		// We should never get here while running
-		fprintf(stderr, "Unexpectedly back from CFRunLoopRun()!\n");
+		DEBUG_LOG("Unexpectedly back from CFRunLoopRun()!\n");
 	}
 }
 
