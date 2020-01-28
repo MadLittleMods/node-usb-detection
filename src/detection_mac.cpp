@@ -315,7 +315,7 @@ static void DeviceAdded(void *refCon, io_iterator_t iterator) {
 			);
 
 		if(KERN_SUCCESS != kr) {
-			printf("IOServiceAddInterestNotification returned 0x%08x.\n", kr);
+			DEBUG_LOG("IOServiceAddInterestNotification returned 0x%08x.\n", kr);
 		}
 
 		// Done with this USB device; release the reference added by IOIteratorNext
@@ -392,7 +392,7 @@ void InitDetection() {
 		);
 
 	if (KERN_SUCCESS != kr) {
-		printf("IOServiceAddMatchingNotification returned 0x%08x.\n", kr);
+		DEBUG_LOG("IOServiceAddMatchingNotification returned 0x%08x.\n", kr);
 	}
 
 	// Iterate once to get already-present devices and arm the notification
