@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.8.0 - 2020-4-23
+
+- Update `prebuild` dependencies to latest
+  - Thanks to [@mcous](https://github.com/mcous) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/106)
+
 ## 4.7.0 - 2019-11-24
 
 - Fix deprecation warnings for `Nan::Callback:Call()`
