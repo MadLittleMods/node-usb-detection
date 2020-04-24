@@ -1,6 +1,6 @@
 # Changelog
 
-## 4.9.0 - _upcoming_
+## 4.9.0 - 2020-4-23
 
 - Update dependencies (`npm audit fix`), https://github.com/MadLittleMods/node-usb-detection/pull/108
 - Remove `fprintf` logging from macOS and add conditional `--debug` flag when building if you want logs
