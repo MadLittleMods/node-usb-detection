@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.10.0 - _upcoming_
+
+- Update `node-gyp@6.1.0`, https://github.com/MadLittleMods/node-usb-detection/pull/109
+
 ## 4.9.0 - 2020-4-23
 
 - Update dependencies (`npm audit fix`), https://github.com/MadLittleMods/node-usb-detection/pull/108
