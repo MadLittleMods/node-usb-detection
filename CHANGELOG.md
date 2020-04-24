@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.9.0 - _upcoming_
+
+- Update dependencies (`npm audit fix`), https://github.com/MadLittleMods/node-usb-detection/pull/108
+
 ## 4.8.0 - 2020-4-23
 
 - Update `prebuild` dependencies to latest
