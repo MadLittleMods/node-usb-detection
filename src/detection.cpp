@@ -213,7 +213,7 @@ void StopMonitoring(const Nan::FunctionCallbackInfo<v8::Value>& args) {
 }
 
 extern "C" {
-	void init (v8::Local<v8::Object> target) {
+	NAN_MODULE_INIT(Init) {
 		Nan::SetMethod(target, "find", Find);
 		Nan::SetMethod(target, "registerAdded", RegisterAdded);
 		Nan::SetMethod(target, "registerRemoved", RegisterRemoved);
@@ -223,4 +223,8 @@ extern "C" {
 	}
 }
 
-NODE_MODULE(detection, init);
+#if NODE_MAJOR_VERSION >= 10
+NAN_MODULE_WORKER_ENABLED(detection, Init)
+#else
+NODE_MODULE(detection, Init)
+#endif
