@@ -1,6 +1,6 @@
 # Changelog
 
-## 4.10.0 - _upcoming_
+## 4.10.0 - 2020-7-21
 
 - Update `node-gyp@6.1.0`, https://github.com/MadLittleMods/node-usb-detection/pull/109
 - Update `prebuild-install@5.3.5` and `node-abi@2.18.0` to support Electron 9
