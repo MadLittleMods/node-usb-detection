@@ -176,6 +176,25 @@ usbDetect.stopMonitoring();
 
 Make sure you call `usbDetect.startMonitoring()` before any calls to `usbDetect.find()`.
 
+# Known problems:
+
+### If you are using this dependency with electron.js is posible that you see an error similar to: *detection.node was compiled against a different Node.js version using NODE_MODULE_VERSION 72. This version of Node.js requires NODE_MODULE_VERSION 80. Please try re-compiling or re-installing*
+
+You can solve this problem using the command below:
+```shell
+./node_modules/.bin/electron-rebuild
+```
+
+Steps:
+
+- If you have not installed electron-rebuild just install it with the command: `npm i -D electron-rebuild`
+- Remove from the `node-modules` folder the `usb-detection` folder.
+- Remove the file `packages-lock.json`
+- Run `npm i` to install non-installed modules
+- And finally run `./node_modules/.bin/electron-rebuild`
+
+It is very important to run `./node_modules/.bin/electron-rebuild` directly after `npm i`.
+
 # Development (compile from source)
 
 This assumes you also have everything on your system necessary to compile ANY native module for Node.js. This may not be the case, though, so please ensure the following requirements are satisfied before filing an issue about "Does not install". For all operating systems, please ensure you have Python 2.x installed AND not 3.0, [node-gyp](https://github.com/TooTallNate/node-gyp) (what we use to compile) requires Python 2.x.
