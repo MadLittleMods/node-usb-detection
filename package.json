@@ -35,10 +35,7 @@
   "bugs": {
     "url": "https://github.com/MadLittleMods/node-usb-detection/issues"
   },
-  "license": {
-    "type": "MIT",
-    "url": "https://raw.github.com/MadLittleMods/node-usb-detection/master/licence"
-  },
+  "license": "MIT",
   "engines": {
     "node": ">=4"
   },
