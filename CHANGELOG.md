@@ -4,6 +4,8 @@
 
 - Use SPDX identifier for MIT in `package.json` license field
   - Thanks to [@mcous](https://github.com/mcous) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/121)
+- Add install for Electron instructions to readme
+  - Thanks to [@mcous](https://github.com/mcous) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/120)
 
 ## 4.10.0 - 2020-7-21
 
