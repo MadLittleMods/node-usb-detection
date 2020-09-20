@@ -25,6 +25,23 @@ See the [Electron docs for using native modules][electron-native-modules] to ens
 [electron-rebuild]: https://github.com/electron/electron-rebuild
 [electron-native-modules]: https://www.electronjs.org/docs/tutorial/using-native-node-modules
 
+### Known problems using with electron:
+
+### If you try to use `usb-detection` with [electron](https://www.electronjs.org/), you run into the following error. You can follow the steps below to resolve the problem.
+```
+detection.node was compiled against a different Node.js version using NODE_MODULE_VERSION 72. This version of Node.js requires NODE_MODULE_VERSION 80. Please try re-compiling or re-installing
+```
+
+You can solve this problem following next steps:
+
+1. If you have not installed electron-rebuild just install it with the command: `npm i -D electron-rebuild`
+1. Remove from the `node_modules` folder the `usb-detection` folder.
+1. Remove the file `package-lock.json`, this is suggested for ensure a clean installation, but you can try first without remove it.
+1. Run `npm i` to install non-installed modules.
+1. And finally run `./node_modules/.bin/electron-rebuild`
+
+It is very important to run `./node_modules/.bin/electron-rebuild` directly after `npm i`. This is important because `usb-detection` must be installed to be rebuilt for electron target version.
+
 # Usage
 
 ```js
@@ -184,23 +201,6 @@ usbDetect.stopMonitoring();
 ### `usbDetect.find()` always returns the same list of devices, even after removal.
 
 Make sure you call `usbDetect.startMonitoring()` before any calls to `usbDetect.find()`.
-
-# Known problems:
-
-### If you try to use `usb-detection` with [electron](https://www.electronjs.org/), you run into the following error. You can follow the steps below to resolve the problem.
-```
-detection.node was compiled against a different Node.js version using NODE_MODULE_VERSION 72. This version of Node.js requires NODE_MODULE_VERSION 80. Please try re-compiling or re-installing
-```
-
-You can solve this problem following next steps:
-
-1. If you have not installed electron-rebuild just install it with the command: `npm i -D electron-rebuild`
-1. Remove from the `node_modules` folder the `usb-detection` folder.
-1. Remove the file `package-lock.json`, this is suggested for ensure a clean installation, but you can try first without remove it.
-1. Run `npm i` to install non-installed modules.
-1. And finally run `./node_modules/.bin/electron-rebuild`
-
-It is very important to run `./node_modules/.bin/electron-rebuild` directly after `npm i`. This is important because `usb-detection` must be installed to be rebuilt for electron target version.
 
 # Development (compile from source)
 
