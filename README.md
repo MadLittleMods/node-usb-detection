@@ -11,10 +11,19 @@
 
 # Install
 
-```
+```sh
 npm install usb-detection
 ```
 
+## Install for Electron
+
+This module uses native extensions and needs to be compiled for your target version of Electron. Precompiled binaries for recent Node.js and Electron versions are built and published using [prebuild][] and can be installed automatically using [electron-rebuild][].
+
+See the [Electron docs for using native modules][electron-native-modules] to ensure your project is set up to correctly use the prebuilt binaries for your version of Electron.
+
+[prebuild]: https://github.com/prebuild/prebuild
+[electron-rebuild]: https://github.com/electron/electron-rebuild
+[electron-native-modules]: https://www.electronjs.org/docs/tutorial/using-native-node-modules
 
 # Usage
 
@@ -241,13 +250,13 @@ You know what you need for you system, basically your appropriate analog of buil
 
 To compile and install native addons from npm you may also need to install build tools *([source](https://github.com/joyent/node/wiki/Installing-Node.js-via-package-manager#debian-and-ubuntu-based-linux-distributions))*:
 
-```
+```sh
 sudo apt-get install -y build-essential
 ```
 
 Also install libudev:
 
-```
+```sh
 sudo apt-get install libudev-dev
 ```
 
