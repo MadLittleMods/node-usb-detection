@@ -27,12 +27,6 @@ std::shared_ptr<ListResultItem_t> PopItemFromList(char *key)
 	}
 }
 
-bool IsItemAlreadyStored(char *key)
-{
-	auto it = deviceMap.find(key);
-	return it != deviceMap.end();
-}
-
 // ListResultItem_t *CopyElement(ListResultItem_t *item)
 // {
 // 	ListResultItem_t *dst = new ListResultItem_t();

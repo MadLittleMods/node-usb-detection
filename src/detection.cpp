@@ -8,77 +8,6 @@
 #define OBJECT_ITEM_SERIAL_NUMBER "serialNumber"
 #define OBJECT_ITEM_DEVICE_ADDRESS "deviceAddress"
 
-Napi::FunctionReference addedCallback;
-bool isAddedRegistered = false;
-
-Napi::FunctionReference removedCallback;
-bool isRemovedRegistered = false;
-
-Napi::Value RegisterAdded(const Napi::CallbackInfo &args)
-{
-	Napi::Env env = args.Env();
-
-	if (args.Length() == 0)
-	{
-		Napi::TypeError::New(env, "First argument must be a function").ThrowAsJavaScriptException();
-		return env.Null();
-	}
-
-	// callback
-	if (!args[0].IsFunction())
-	{
-		Napi::TypeError::New(env, "First argument must be a function").ThrowAsJavaScriptException();
-		return env.Null();
-	}
-
-	addedCallback = Napi::Persistent(args[0].As<Napi::Function>());
-	isAddedRegistered = true;
-
-	return env.Null();
-}
-
-void NotifyAdded(ListResultItem_t *it)
-{
-	if (it != nullptr && isAddedRegistered)
-	{
-		Napi::Env env = addedCallback.Env();
-
-		Napi::Object item = Napi::Object::New(env);
-		item.Set(Napi::String::New(env, OBJECT_ITEM_LOCATION_ID), Napi::Number::New(env, it->locationId));
-		item.Set(Napi::String::New(env, OBJECT_ITEM_VENDOR_ID), Napi::Number::New(env, it->vendorId));
-		item.Set(Napi::String::New(env, OBJECT_ITEM_PRODUCT_ID), Napi::Number::New(env, it->productId));
-		item.Set(Napi::String::New(env, OBJECT_ITEM_DEVICE_NAME), Napi::String::New(env, it->deviceName.c_str()));
-		item.Set(Napi::String::New(env, OBJECT_ITEM_MANUFACTURER), Napi::String::New(env, it->manufacturer.c_str()));
-		item.Set(Napi::String::New(env, OBJECT_ITEM_SERIAL_NUMBER), Napi::String::New(env, it->serialNumber.c_str()));
-		item.Set(Napi::String::New(env, OBJECT_ITEM_DEVICE_ADDRESS), Napi::Number::New(env, it->deviceAddress));
-
-		addedCallback.Call({item});
-	}
-}
-
-Napi::Value RegisterRemoved(const Napi::CallbackInfo &args)
-{
-	Napi::Env env = args.Env();
-
-	if (args.Length() == 0)
-	{
-		Napi::TypeError::New(env, "First argument must be a function").ThrowAsJavaScriptException();
-		return env.Null();
-	}
-
-	// callback
-	if (!args[0].IsFunction())
-	{
-		Napi::TypeError::New(env, "First argument must be a function").ThrowAsJavaScriptException();
-		return env.Null();
-	}
-
-	removedCallback = Napi::Persistent(args[0].As<Napi::Function>());
-	isRemovedRegistered = true;
-
-	return env.Null();
-}
-
 Napi::Value DeviceItemToObject(const Napi::Env &env, std::shared_ptr<ListResultItem_t> it)
 {
 	Napi::Object item = Napi::Object::New(env);
@@ -90,25 +19,6 @@ Napi::Value DeviceItemToObject(const Napi::Env &env, std::shared_ptr<ListResultI
 	item.Set(Napi::String::New(env, OBJECT_ITEM_SERIAL_NUMBER), Napi::String::New(env, it->serialNumber.c_str()));
 	item.Set(Napi::String::New(env, OBJECT_ITEM_DEVICE_ADDRESS), Napi::Number::New(env, it->deviceAddress));
 	return item;
-}
-
-void NotifyRemoved(ListResultItem_t *it)
-{
-	if (it != nullptr && isRemovedRegistered)
-	{
-		Napi::Env env = removedCallback.Env();
-
-		Napi::Object item = Napi::Object::New(env);
-		item.Set(Napi::String::New(env, OBJECT_ITEM_LOCATION_ID), Napi::Number::New(env, it->locationId));
-		item.Set(Napi::String::New(env, OBJECT_ITEM_VENDOR_ID), Napi::Number::New(env, it->vendorId));
-		item.Set(Napi::String::New(env, OBJECT_ITEM_PRODUCT_ID), Napi::Number::New(env, it->productId));
-		item.Set(Napi::String::New(env, OBJECT_ITEM_DEVICE_NAME), Napi::String::New(env, it->deviceName.c_str()));
-		item.Set(Napi::String::New(env, OBJECT_ITEM_MANUFACTURER), Napi::String::New(env, it->manufacturer.c_str()));
-		item.Set(Napi::String::New(env, OBJECT_ITEM_SERIAL_NUMBER), Napi::String::New(env, it->serialNumber.c_str()));
-		item.Set(Napi::String::New(env, OBJECT_ITEM_DEVICE_ADDRESS), Napi::Number::New(env, it->deviceAddress));
-
-		removedCallback.Call({item});
-	}
 }
 
 // class FindWorker : public Napi::AsyncWorker
@@ -316,8 +226,6 @@ Napi::Value IsMonitoring(const Napi::CallbackInfo &args)
 Napi::Object init(Napi::Env env, Napi::Object exports)
 {
 	// exports.Set(Napi::String::New(env, "find"), Napi::Function::New(env, Find));
-	exports.Set(Napi::String::New(env, "registerAdded"), Napi::Function::New(env, RegisterAdded));
-	exports.Set(Napi::String::New(env, "registerRemoved"), Napi::Function::New(env, RegisterRemoved));
 	exports.Set(Napi::String::New(env, "startMonitoring"), Napi::Function::New(env, StartMonitoring));
 	exports.Set(Napi::String::New(env, "stopMonitoring"), Napi::Function::New(env, StopMonitoring));
 	exports.Set(Napi::String::New(env, "isMonitoring"), Napi::Function::New(env, IsMonitoring));

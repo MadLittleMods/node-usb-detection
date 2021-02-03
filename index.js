@@ -98,23 +98,15 @@ if(global[index.name] && global[index.name].version === index.version) {
 		}
 	}
 
-	var started = false;
+	detector.isMonitoring = function() {
+		return detection.isMonitoring();
+	}
 
 	detector.startMonitoring = function() {
-		if(started) {
-			return;
-		}
-
-		started = true;
 		detection.startMonitoring(fireEvent);
 	};
 
 	detector.stopMonitoring = function() {
-		if(!started) {
-			return;
-		}
-
-		started = false;
 		detection.stopMonitoring();
 	};
 
