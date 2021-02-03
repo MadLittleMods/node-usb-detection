@@ -29,9 +29,6 @@ public:
 	int pid;
 };
 
-void NotifyAdded(ListResultItem_t *it);
-void NotifyRemoved(ListResultItem_t *it);
-
 #endif
 
 #ifdef DEBUG

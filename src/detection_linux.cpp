@@ -27,16 +27,14 @@ using namespace std;
  * Local Variables
  **********************************/
 
-static udev *udev;
-static udev_enumerate *enumerate;
-static udev_list_entry *devices, *dev_list_entry;
-
 std::thread poll_thread;
 Napi::ThreadSafeFunction notify_func;
 
+static udev *udev;
 static udev_monitor *mon;
 static int fd;
 
+static DeviceMap deviceMap;
 static bool isRunning = false;
 
 /**********************************
@@ -44,7 +42,8 @@ static bool isRunning = false;
  **********************************/
 static void BuildInitialDeviceList();
 
-static void cbWork();
+static void DeviceAdded(struct udev_device *dev);
+static void DeviceRemoved(struct udev_device *dev);
 
 /**********************************
  * Public Functions
@@ -89,6 +88,9 @@ bool Start(const Napi::Env &env, const Napi::Function &callback)
 	   This fd will get passed to select() */
 	fd = udev_monitor_get_fd(mon);
 
+	// Do initial scan
+	BuildInitialDeviceList();
+
 	notify_func = Napi::ThreadSafeFunction::New(
 		env,
 		callback,		 // JavaScript function called asynchronously
@@ -99,9 +101,49 @@ bool Start(const Napi::Env &env, const Napi::Function &callback)
 			poll_thread.join();
 		});
 
-	poll_thread = std::thread(cbWork);
+	poll_thread = std::thread([]() {
+		// We have this check in case we `Stop` before this thread starts,
+		// otherwise the process will hang
+		if (!isRunning)
+		{
+			return;
+		}
 
-	BuildInitialDeviceList();
+		// uv_signal_start(&int_signal, cbTerminate, SIGINT);
+		// uv_signal_start(&term_signal, cbTerminate, SIGTERM);
+
+		udev_device *dev;
+
+		pollfd fds = {fd, POLLIN, 0};
+		while (isRunning)
+		{
+			int ret = poll(&fds, 1, 100);
+			if (!ret)
+				continue;
+			if (ret < 0)
+				break;
+
+			dev = udev_monitor_receive_device(mon);
+			if (dev)
+			{
+				if (udev_device_get_devtype(dev) && strcmp(udev_device_get_devtype(dev), DEVICE_TYPE_DEVICE) == 0)
+				{
+					if (strcmp(udev_device_get_action(dev), DEVICE_ACTION_ADDED) == 0)
+					{
+						DeviceAdded(dev);
+					}
+					else if (strcmp(udev_device_get_action(dev), DEVICE_ACTION_REMOVED) == 0)
+					{
+						DeviceRemoved(dev);
+					}
+				}
+				udev_device_unref(dev);
+			}
+		}
+
+		notify_func.Release();
+		Stop();
+	});
 
 	return true;
 }
@@ -183,7 +225,7 @@ static void DeviceAdded(struct udev_device *dev)
 {
 	std::shared_ptr<ListResultItem_t> item = GetProperties(dev);
 
-	AddItemToList((char *)udev_device_get_devnode(dev), item);
+	deviceMap.addItem(udev_device_get_devnode(dev), item);
 
 	DeviceCallbackItem *data = new DeviceCallbackItem;
 	data->item = item;
@@ -193,12 +235,13 @@ static void DeviceAdded(struct udev_device *dev)
 	if (status != napi_ok)
 	{
 		// Handle error
+		// TODO
 	}
 }
 
 static void DeviceRemoved(struct udev_device *dev)
 {
-	std::shared_ptr<ListResultItem_t> item = PopItemFromList((char *)udev_device_get_devnode(dev));
+	std::shared_ptr<ListResultItem_t> item = deviceMap.popItem(udev_device_get_devnode(dev));
 
 	if (item == nullptr)
 	{
@@ -213,54 +256,8 @@ static void DeviceRemoved(struct udev_device *dev)
 	if (status != napi_ok)
 	{
 		// Handle error
+		// TODO
 	}
-}
-
-static void cbWork()
-{
-	// We have this check in case we `Stop` before this thread starts,
-	// otherwise the process will hang
-	if (!isRunning)
-	{
-		return;
-	}
-
-	// uv_signal_start(&int_signal, cbTerminate, SIGINT);
-	// uv_signal_start(&term_signal, cbTerminate, SIGTERM);
-
-	udev_device *dev;
-
-	pollfd fds = {fd, POLLIN, 0};
-	while (isRunning)
-	{
-		int ret = poll(&fds, 1, 100);
-		if (!ret)
-			continue;
-		if (ret < 0)
-			break;
-
-		dev = udev_monitor_receive_device(mon);
-		if (dev)
-		{
-			if (udev_device_get_devtype(dev) && strcmp(udev_device_get_devtype(dev), DEVICE_TYPE_DEVICE) == 0)
-			{
-				if (strcmp(udev_device_get_action(dev), DEVICE_ACTION_ADDED) == 0)
-				{
-					// WaitForDeviceHandled();
-					DeviceAdded(dev);
-				}
-				else if (strcmp(udev_device_get_action(dev), DEVICE_ACTION_REMOVED) == 0)
-				{
-					// WaitForDeviceHandled();
-					DeviceRemoved(dev);
-				}
-			}
-			udev_device_unref(dev);
-		}
-	}
-
-	notify_func.Release();
-	Stop();
 }
 
 static void BuildInitialDeviceList()
@@ -268,14 +265,15 @@ static void BuildInitialDeviceList()
 	udev_device *dev;
 
 	/* Create a list of the devices */
-	enumerate = udev_enumerate_new(udev);
+	auto enumerate = udev_enumerate_new(udev);
 	udev_enumerate_scan_devices(enumerate);
-	devices = udev_enumerate_get_list_entry(enumerate);
+	auto devices = udev_enumerate_get_list_entry(enumerate);
 	/* For each item enumerated, print out its information.
 	   udev_list_entry_foreach is a macro which expands to
 	   a loop. The loop will be executed for each member in
 	   devices, setting dev_list_entry to a list entry
 	   which contains the device's path in /sys. */
+	static udev_list_entry *dev_list_entry;
 	udev_list_entry_foreach(dev_list_entry, devices)
 	{
 		const char *path;
@@ -319,7 +317,7 @@ static void BuildInitialDeviceList()
 		// item->locationId = 0;
 		auto item = GetProperties(dev);
 
-		AddItemToList((char *)udev_device_get_devnode(dev), item);
+		deviceMap.addItem(udev_device_get_devnode(dev), item);
 
 		udev_device_unref(dev);
 	}

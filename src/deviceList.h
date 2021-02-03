@@ -3,7 +3,8 @@
 
 #include <string>
 #include <list>
-
+#include <map>
+#include <memory>
 typedef struct
 {
 public:
@@ -22,9 +23,16 @@ typedef enum _DeviceState_t
 	DeviceState_Disconnect,
 } DeviceState_t;
 
-void AddItemToList(char *key, std::shared_ptr<ListResultItem_t> item);
-std::shared_ptr<ListResultItem_t> PopItemFromList(char *key);
-// ListResultItem_t *CopyElement(ListResultItem_t *item);
-void CreateFilteredList(std::list<ListResultItem_t *> *filteredList, int vid, int pid);
+class DeviceMap
+{
+public:
+	void addItem(std::string key, std::shared_ptr<ListResultItem_t> item);
+	std::shared_ptr<ListResultItem_t> popItem(std::string key);
+
+	std::list<std::shared_ptr<ListResultItem_t>> filterItems(int vid, int pid);
+
+private:
+	std::map<std::string, std::shared_ptr<ListResultItem_t>> deviceMap;
+};
 
 #endif
