@@ -26,27 +26,16 @@ using namespace std;
 /**********************************
  * Local Variables
  **********************************/
-static ListResultItem_t *currentItem;
-static bool isAdded;
 
 static udev *udev;
 static udev_enumerate *enumerate;
 static udev_list_entry *devices, *dev_list_entry;
 
 std::thread poll_thread;
+Napi::ThreadSafeFunction notify_func;
 
 static udev_monitor *mon;
 static int fd;
-
-// static uv_work_t work_req;
-// static uv_signal_t term_signal;
-// static uv_signal_t int_signal;
-
-// static uv_async_t async_handler;
-// static uv_mutex_t notify_mutex;
-// static uv_cond_t notifyDeviceHandled;
-
-static bool deviceHandled = true;
 
 static bool isRunning = false;
 
@@ -55,12 +44,7 @@ static bool isRunning = false;
  **********************************/
 static void BuildInitialDeviceList();
 
-static void WaitForDeviceHandled();
-static void SignalDeviceHandled();
-// static void cbTerminate(uv_signal_t *handle, int signum);
 static void cbWork();
-// static void cbAfter(uv_work_t *req, int status);
-// static void cbAsync(uv_async_t *handle);
 
 /**********************************
  * Public Functions
@@ -71,7 +55,7 @@ bool IsRunning()
 	return isRunning;
 }
 
-bool Start()
+bool Start(const Napi::Env &env, const Napi::Function &callback)
 {
 	if (isRunning)
 	{
@@ -105,13 +89,15 @@ bool Start()
 	   This fd will get passed to select() */
 	fd = udev_monitor_get_fd(mon);
 
-	// uv_mutex_init(&notify_mutex);
-	// uv_async_init(uv_default_loop(), &async_handler, cbAsync);
-	// uv_signal_init(uv_default_loop(), &term_signal);
-	// uv_signal_init(uv_default_loop(), &int_signal);
-	// uv_cond_init(&notifyDeviceHandled);
-
-	// uv_queue_work(uv_default_loop(), &work_req, cbWork, cbAfter);
+	notify_func = Napi::ThreadSafeFunction::New(
+		env,
+		callback,		 // JavaScript function called asynchronously
+		"Resource Name", // Name
+		0,				 // Unlimited queue
+		1,				 // Only one thread will use this initially
+		[](Napi::Env) {	 // Finalizer used to clean threads up
+			poll_thread.join();
+		});
 
 	poll_thread = std::thread(cbWork);
 
@@ -129,75 +115,23 @@ void Stop()
 
 	isRunning = false;
 
-	// uv_mutex_destroy(&notify_mutex);
-	// uv_signal_stop(&int_signal);
-	// uv_signal_stop(&term_signal);
-	// uv_close((uv_handle_t *)&async_handler, NULL);
-	// uv_cond_destroy(&notifyDeviceHandled);
-
 	udev_monitor_unref(mon);
 	udev_unref(udev);
 }
 
-// void InitDetection()
-// {
-// 	/* Create the udev object */
-// 	udev = udev_new();
-// 	if (!udev)
-// 	{
-// 		printf("Can't create udev\n");
-// 		return;
-// 	}
-
-// 	/* Set up a monitor to monitor devices */
-// 	mon = udev_monitor_new_from_netlink(udev, "udev");
-// 	udev_monitor_enable_receiving(mon);
-
-// 	/* Get the file descriptor (fd) for the monitor.
-// 	   This fd will get passed to select() */
-// 	fd = udev_monitor_get_fd(mon);
-
-// 	BuildInitialDeviceList();
-// }
-
-// void EIO_Find(uv_work_t* req) {
-// 	ListBaton* data = static_cast<ListBaton*>(req->data);
-
-// 	CreateFilteredList(&data->results, data->vid, data->pid);
-// }
-
 /**********************************
  * Local Functions
  **********************************/
-static void WaitForDeviceHandled()
+static std::shared_ptr<ListResultItem_t> GetProperties(struct udev_device *dev)
 {
-	// uv_mutex_lock(&notify_mutex);
-	// if (deviceHandled == false)
-	// {
-	// 	uv_cond_wait(&notifyDeviceHandled, &notify_mutex);
-	// }
-	// deviceHandled = false;
-	// uv_mutex_unlock(&notify_mutex);
-}
+	std::shared_ptr<ListResultItem_t> item(new ListResultItem_t);
 
-static void SignalDeviceHandled()
-{
-	// uv_mutex_lock(&notify_mutex);
-	// deviceHandled = true;
-	// uv_cond_signal(&notifyDeviceHandled);
-	// uv_mutex_unlock(&notify_mutex);
-}
-
-static ListResultItem_t *GetProperties(struct udev_device *dev, ListResultItem_t *item)
-{
-	struct udev_list_entry *sysattrs;
+	auto sysattrs = udev_device_get_properties_list_entry(dev);
 	struct udev_list_entry *entry;
-	sysattrs = udev_device_get_properties_list_entry(dev);
 	udev_list_entry_foreach(entry, sysattrs)
 	{
-		const char *name, *value;
-		name = udev_list_entry_get_name(entry);
-		value = udev_list_entry_get_value(entry);
+		const char *name = udev_list_entry_get_name(entry);
+		const char *value = udev_list_entry_get_value(entry);
 
 		if (strcmp(name, DEVICE_PROPERTY_NAME) == 0)
 		{
@@ -212,51 +146,74 @@ static ListResultItem_t *GetProperties(struct udev_device *dev, ListResultItem_t
 			item->manufacturer = value;
 		}
 	}
-	item->vendorId = strtol(udev_device_get_sysattr_value(dev, "idVendor"), NULL, 16);
-	item->productId = strtol(udev_device_get_sysattr_value(dev, "idProduct"), NULL, 16);
+
+	const char *vendor = udev_device_get_sysattr_value(dev, "idVendor");
+	if (vendor)
+	{
+		item->vendorId = strtol(vendor, NULL, 16);
+	}
+	const char *product = udev_device_get_sysattr_value(dev, "idVendor");
+	if (product)
+	{
+		item->productId = strtol(product, NULL, 16);
+	}
 	item->deviceAddress = 0;
 	item->locationId = 0;
 
 	return item;
 }
 
+struct DeviceCallbackItem
+{
+	std::string type;
+	std::shared_ptr<ListResultItem_t> item;
+};
+
+static void DeviceItemChangeCallback(Napi::Env env, Napi::Function jsCallback, DeviceCallbackItem *data)
+{
+	Napi::Value type = Napi::String::From(env, data->type);
+	Napi::Value value = DeviceItemToObject(env, data->item);
+	jsCallback.Call({type, value});
+
+	// We're finished with the data.
+	delete data;
+};
+
 static void DeviceAdded(struct udev_device *dev)
 {
-	ListResultItem_t *item = new ListResultItem_t();
-	GetProperties(dev, item);
+	std::shared_ptr<ListResultItem_t> item = GetProperties(dev);
 
 	AddItemToList((char *)udev_device_get_devnode(dev), item);
 
-	currentItem = item;
-	isAdded = true;
+	DeviceCallbackItem *data = new DeviceCallbackItem;
+	data->item = item;
+	data->type = "add";
 
-	// uv_async_send(&async_handler);
+	napi_status status = notify_func.BlockingCall(data, DeviceItemChangeCallback);
+	if (status != napi_ok)
+	{
+		// Handle error
+	}
 }
 
 static void DeviceRemoved(struct udev_device *dev)
 {
-	ListResultItem_t *item = NULL;
+	std::shared_ptr<ListResultItem_t> item = PopItemFromList((char *)udev_device_get_devnode(dev));
 
-	if (IsItemAlreadyStored((char *)udev_device_get_devnode(dev)))
+	if (item == nullptr)
 	{
-		ListResultItem_t *deviceItem = PopItemFromList((char *)udev_device_get_devnode(dev));
-		if (deviceItem)
-		{
-			item = CopyElement(deviceItem);
-		}
-		delete deviceItem;
+		item = GetProperties(dev);
 	}
 
-	if (item == NULL)
+	DeviceCallbackItem *data = new DeviceCallbackItem;
+	data->item = item;
+	data->type = "remove";
+
+	napi_status status = notify_func.BlockingCall(data, DeviceItemChangeCallback);
+	if (status != napi_ok)
 	{
-		item = new ListResultItem_t();
-		GetProperties(dev, item);
+		// Handle error
 	}
-
-	currentItem = item;
-	isAdded = false;
-
-	// uv_async_send(&async_handler);
 }
 
 static void cbWork()
@@ -289,12 +246,12 @@ static void cbWork()
 			{
 				if (strcmp(udev_device_get_action(dev), DEVICE_ACTION_ADDED) == 0)
 				{
-					WaitForDeviceHandled();
+					// WaitForDeviceHandled();
 					DeviceAdded(dev);
 				}
 				else if (strcmp(udev_device_get_action(dev), DEVICE_ACTION_REMOVED) == 0)
 				{
-					WaitForDeviceHandled();
+					// WaitForDeviceHandled();
 					DeviceRemoved(dev);
 				}
 			}
@@ -302,43 +259,9 @@ static void cbWork()
 		}
 	}
 
+	notify_func.Release();
 	Stop();
 }
-
-// static void cbAfter(uv_work_t *req, int status)
-// {
-// 	Stop();
-// }
-
-// static void cbAsync(uv_async_t *handle)
-// {
-// 	if (!isRunning)
-// 	{
-// 		return;
-// 	}
-
-// 	if (isAdded)
-// 	{
-// 		NotifyAdded(currentItem);
-// 	}
-// 	else
-// 	{
-// 		NotifyRemoved(currentItem);
-// 	}
-
-// 	// Delete Item in case of removal
-// 	if (isAdded == false)
-// 	{
-// 		delete currentItem;
-// 	}
-
-// 	SignalDeviceHandled();
-// }
-
-// static void cbTerminate(uv_signal_t *handle, int signum)
-// {
-// 	Stop();
-// }
 
 static void BuildInitialDeviceList()
 {
@@ -377,23 +300,24 @@ static void BuildInitialDeviceList()
 		   Unicode, UCS2 encoded, but the strings returned from
 		   udev_device_get_sysattr_value() are UTF-8 encoded. */
 
-		ListResultItem_t *item = new ListResultItem_t();
-		item->vendorId = strtol(udev_device_get_sysattr_value(dev, "idVendor"), NULL, 16);
-		item->productId = strtol(udev_device_get_sysattr_value(dev, "idProduct"), NULL, 16);
-		if (udev_device_get_sysattr_value(dev, "product") != NULL)
-		{
-			item->deviceName = udev_device_get_sysattr_value(dev, "product");
-		}
-		if (udev_device_get_sysattr_value(dev, "manufacturer") != NULL)
-		{
-			item->manufacturer = udev_device_get_sysattr_value(dev, "manufacturer");
-		}
-		if (udev_device_get_sysattr_value(dev, "serial") != NULL)
-		{
-			item->serialNumber = udev_device_get_sysattr_value(dev, "serial");
-		}
-		item->deviceAddress = 0;
-		item->locationId = 0;
+		// ListResultItem_t *item = new ListResultItem_t();
+		// item->vendorId = strtol(udev_device_get_sysattr_value(dev, "idVendor"), NULL, 16);
+		// item->productId = strtol(udev_device_get_sysattr_value(dev, "idProduct"), NULL, 16);
+		// if (udev_device_get_sysattr_value(dev, "product") != NULL)
+		// {
+		// 	item->deviceName = udev_device_get_sysattr_value(dev, "product");
+		// }
+		// if (udev_device_get_sysattr_value(dev, "manufacturer") != NULL)
+		// {
+		// 	item->manufacturer = udev_device_get_sysattr_value(dev, "manufacturer");
+		// }
+		// if (udev_device_get_sysattr_value(dev, "serial") != NULL)
+		// {
+		// 	item->serialNumber = udev_device_get_sysattr_value(dev, "serial");
+		// }
+		// item->deviceAddress = 0;
+		// item->locationId = 0;
+		auto item = GetProperties(dev);
 
 		AddItemToList((char *)udev_device_get_devnode(dev), item);
 

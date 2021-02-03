@@ -79,6 +79,19 @@ Napi::Value RegisterRemoved(const Napi::CallbackInfo &args)
 	return env.Null();
 }
 
+Napi::Value DeviceItemToObject(const Napi::Env &env, std::shared_ptr<ListResultItem_t> it)
+{
+	Napi::Object item = Napi::Object::New(env);
+	item.Set(Napi::String::New(env, OBJECT_ITEM_LOCATION_ID), Napi::Number::New(env, it->locationId));
+	item.Set(Napi::String::New(env, OBJECT_ITEM_VENDOR_ID), Napi::Number::New(env, it->vendorId));
+	item.Set(Napi::String::New(env, OBJECT_ITEM_PRODUCT_ID), Napi::Number::New(env, it->productId));
+	item.Set(Napi::String::New(env, OBJECT_ITEM_DEVICE_NAME), Napi::String::New(env, it->deviceName.c_str()));
+	item.Set(Napi::String::New(env, OBJECT_ITEM_MANUFACTURER), Napi::String::New(env, it->manufacturer.c_str()));
+	item.Set(Napi::String::New(env, OBJECT_ITEM_SERIAL_NUMBER), Napi::String::New(env, it->serialNumber.c_str()));
+	item.Set(Napi::String::New(env, OBJECT_ITEM_DEVICE_ADDRESS), Napi::Number::New(env, it->deviceAddress));
+	return item;
+}
+
 void NotifyRemoved(ListResultItem_t *it)
 {
 	if (it != nullptr && isRemovedRegistered)
@@ -261,12 +274,30 @@ void NotifyRemoved(ListResultItem_t *it)
 // 	delete req;
 // }
 
-void StartMonitoring(const Napi::CallbackInfo &args)
+Napi::Value StartMonitoring(const Napi::CallbackInfo &args)
 {
-	if (!Start())
+	Napi::Env env = args.Env();
+
+	if (args.Length() == 0)
+	{
+		Napi::TypeError::New(env, "First argument must be a function").ThrowAsJavaScriptException();
+		return env.Null();
+	}
+
+	// callback
+	if (!args[0].IsFunction())
+	{
+		Napi::TypeError::New(env, "First argument must be a function").ThrowAsJavaScriptException();
+		return env.Null();
+	}
+
+	if (!Start(env, args[0].As<Napi::Function>()))
 	{
 		Napi::Error::New(args.Env(), "Failed to start monitoring").ThrowAsJavaScriptException();
+		return env.Null();
 	}
+
+	return env.Null();
 }
 
 void StopMonitoring(const Napi::CallbackInfo &args)

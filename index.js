@@ -1,5 +1,5 @@
-//var SegfaultHandler = require('segfault-handler');
-//SegfaultHandler.registerHandler();
+var SegfaultHandler = require('segfault-handler');
+SegfaultHandler.registerHandler();
 
 var index = require('./package.json');
 
@@ -34,14 +34,14 @@ if(global[index.name] && global[index.name].version === index.version) {
 			// Assemble the optional args into something we can use with `apply`
 			var args = [];
 			if(vid) {
-				args = args.concat(vid);
+				args.push(vid);
 			}
 			if(pid) {
-				args = args.concat(pid);
+				args.push(pid);
 			}
 
 			// Tack on our own callback that takes care of things
-			args = args.concat(function(err, devices) {
+			args.push(function(err, devices) {
 
 				// We call the callback if they passed one
 				if(callback) {
@@ -61,7 +61,7 @@ if(global[index.name] && global[index.name].version === index.version) {
 		});
 	};
 
-	detection.registerAdded(function(device) {
+	function fireAdded(device) {
 		detector.emit('add:' + device.vendorId + ':' + device.productId, device);
 		detector.emit('insert:' + device.vendorId + ':' + device.productId, device);
 		detector.emit('add:' + device.vendorId, device);
@@ -72,9 +72,9 @@ if(global[index.name] && global[index.name].version === index.version) {
 		detector.emit('change:' + device.vendorId + ':' + device.productId, device);
 		detector.emit('change:' + device.vendorId, device);
 		detector.emit('change', device);
-	});
+	}
 
-	detection.registerRemoved(function(device) {
+	function fireRemoved(device) {
 		detector.emit('remove:' + device.vendorId + ':' + device.productId, device);
 		detector.emit('remove:' + device.vendorId, device);
 		detector.emit('remove', device);
@@ -82,7 +82,21 @@ if(global[index.name] && global[index.name].version === index.version) {
 		detector.emit('change:' + device.vendorId + ':' + device.productId, device);
 		detector.emit('change:' + device.vendorId, device);
 		detector.emit('change', device);
-	});
+	}
+
+	function fireEvent(type, device) {
+		switch (type) {
+		case 'add':
+			fireAdded(device);
+			break;
+		case 'remove':
+			fireRemoved(device);
+			break;
+		default:
+			// Ignore
+			break;
+		}
+	}
 
 	var started = false;
 
@@ -92,7 +106,7 @@ if(global[index.name] && global[index.name].version === index.version) {
 		}
 
 		started = true;
-		detection.startMonitoring();
+		detection.startMonitoring(fireEvent);
 	};
 
 	detector.stopMonitoring = function() {

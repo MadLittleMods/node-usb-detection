@@ -22,10 +22,10 @@ typedef enum _DeviceState_t
 	DeviceState_Disconnect,
 } DeviceState_t;
 
-void AddItemToList(char *key, ListResultItem_t *item);
+void AddItemToList(char *key, std::shared_ptr<ListResultItem_t> item);
 bool IsItemAlreadyStored(char *identifier);
-ListResultItem_t *PopItemFromList(char *key);
-ListResultItem_t *CopyElement(ListResultItem_t *item);
+std::shared_ptr<ListResultItem_t> PopItemFromList(char *key);
+// ListResultItem_t *CopyElement(ListResultItem_t *item);
 void CreateFilteredList(std::list<ListResultItem_t *> *filteredList, int vid, int pid);
 
 #endif
