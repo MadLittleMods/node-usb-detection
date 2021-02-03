@@ -3,7 +3,7 @@
 #define _USB_DETECTION_H
 
 #include <napi.h>
-#include <uv.h> // TODO - this NEEDS to be removed for napi to work..
+// #include <uv.h> // TODO - this NEEDS to be removed for napi to work..
 #include <list>
 #include <string>
 #include <stdio.h>
@@ -12,9 +12,10 @@
 
 #include "deviceList.h"
 
-void EIO_Find(uv_work_t *req);
-void InitDetection();
-void Start();
+// void EIO_Find(uv_work_t *req);
+// void InitDetection();
+bool IsRunning();
+bool Start();
 void Stop();
 
 struct ListBaton

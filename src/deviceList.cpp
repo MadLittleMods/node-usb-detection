@@ -4,72 +4,62 @@
 
 #include "deviceList.h"
 
-
 using namespace std;
 
-map<string, DeviceItem_t*> deviceMap;
+std::map<string, ListResultItem_t *> deviceMap;
 
-void AddItemToList(char* key, DeviceItem_t * item) {
-	item->SetKey(key);
-	deviceMap.insert(pair<string, DeviceItem_t*>(item->GetKey(), item));
+void AddItemToList(char *key, ListResultItem_t *item)
+{
+	deviceMap.insert(std::pair<string, ListResultItem_t *>(key, item));
 }
 
-void RemoveItemFromList(DeviceItem_t* item) {
-	deviceMap.erase(item->GetKey());
-}
-
-DeviceItem_t* GetItemFromList(char* key) {
-	map<string, DeviceItem_t*>::iterator it;
-
-	it = deviceMap.find(key);
-	if(it == deviceMap.end()) {
+ListResultItem_t *PopItemFromList(char *key)
+{
+	auto it = deviceMap.find(key);
+	if (it == deviceMap.end())
+	{
 		return NULL;
 	}
-	else {
-		return it->second;
+	else
+	{
+		ListResultItem_t *item = it->second;
+		deviceMap.erase(it);
+		return item;
 	}
 }
 
-bool IsItemAlreadyStored(char* key) {
-	map<string, DeviceItem_t*>::iterator it;
-
-	it = deviceMap.find(key);
-	if(it == deviceMap.end()) {
-		return false;
-	}
-	else {
-		return true;
-	}
-
-	return true;
+bool IsItemAlreadyStored(char *key)
+{
+	auto it = deviceMap.find(key);
+	return it != deviceMap.end();
 }
 
-ListResultItem_t* CopyElement(ListResultItem_t* item) {
-    ListResultItem_t* dst = new ListResultItem_t();
-    dst->locationId     =   item->locationId;
-    dst->vendorId       =   item->vendorId;
-    dst->productId      =   item->productId;
-    dst->deviceName     =   item->deviceName;
-    dst->manufacturer   =   item->manufacturer;
-    dst->serialNumber   =   item->serialNumber;
-    dst->deviceAddress  =   item->deviceAddress;
+ListResultItem_t *CopyElement(ListResultItem_t *item)
+{
+	ListResultItem_t *dst = new ListResultItem_t();
+	dst->locationId = item->locationId;
+	dst->vendorId = item->vendorId;
+	dst->productId = item->productId;
+	dst->deviceName = item->deviceName;
+	dst->manufacturer = item->manufacturer;
+	dst->serialNumber = item->serialNumber;
+	dst->deviceAddress = item->deviceAddress;
 
-    return dst;
+	return dst;
 }
 
-void CreateFilteredList(list<ListResultItem_t*> *filteredList, int vid, int pid) {
-	map<string, DeviceItem_t*>::iterator it;
+void CreateFilteredList(list<ListResultItem_t *> *filteredList, int vid, int pid)
+{
+	map<string, ListResultItem_t *>::iterator it;
 
-	for (it = deviceMap.begin(); it != deviceMap.end(); ++it) {
-    	DeviceItem_t* item = it->second;
+	for (it = deviceMap.begin(); it != deviceMap.end(); ++it)
+	{
+		ListResultItem_t *item = it->second;
 
-        if (
-        	((	vid != 0 && pid != 0) && (vid == item->deviceParams.vendorId && pid == item->deviceParams.productId))
-        	|| 	((vid != 0 && pid == 0) && vid == item->deviceParams.vendorId)
-        	||	(vid == 0 && pid == 0)
-    	) {
-        	(*filteredList).push_back(CopyElement(&item->deviceParams));
-        }
-
-    }
+		if (
+			((vid != 0 && pid != 0) && (vid == item->vendorId && pid == item->productId)) || ((vid != 0 && pid == 0) && vid == item->vendorId) || (vid == 0 && pid == 0))
+		{
+			(*filteredList).push_back(CopyElement(item));
+		}
+	}
 }

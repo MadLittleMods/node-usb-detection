@@ -16,16 +16,17 @@
 /**********************************
  * Local typedefs
  **********************************/
-typedef struct DeviceListItem {
+typedef struct DeviceListItem
+{
 	io_object_t notification;
-	IOUSBDeviceInterface** deviceInterface;
-	DeviceItem_t* deviceItem;
+	IOUSBDeviceInterface **deviceInterface;
+	ListResultItem_t *deviceItem;
 } stDeviceListItem;
 
 /**********************************
  * Local Variables
  **********************************/
-static ListResultItem_t* currentItem;
+static ListResultItem_t *currentItem;
 static bool isAdded = false;
 static bool initialDeviceImport = true;
 
@@ -59,7 +60,6 @@ static void cbWork(uv_work_t *req);
 static void cbAfter(uv_work_t *req, int status);
 static void cbAsync(uv_async_t *handle);
 
-
 /**********************************
  * Public Functions
  **********************************/
@@ -72,26 +72,30 @@ static void cbAsync(uv_async_t *handle);
 //  messages are defined in IOMessage.h.
 //
 //================================================================================================
-static void DeviceRemoved(void *refCon, io_service_t service, natural_t messageType, void *messageArgument) {
+static void DeviceRemoved(void *refCon, io_service_t service, natural_t messageType, void *messageArgument)
+{
 	kern_return_t kr;
-	stDeviceListItem* deviceListItem = (stDeviceListItem *) refCon;
-	DeviceItem_t* deviceItem = deviceListItem->deviceItem;
+	stDeviceListItem *deviceListItem = (stDeviceListItem *)refCon;
+	ListResultItem_t *deviceItem = deviceListItem->deviceItem;
 
-	if(messageType == kIOMessageServiceIsTerminated) {
-		if(deviceListItem->deviceInterface) {
+	if (messageType == kIOMessageServiceIsTerminated)
+	{
+		if (deviceListItem->deviceInterface)
+		{
 			kr = (*deviceListItem->deviceInterface)->Release(deviceListItem->deviceInterface);
 		}
 
 		kr = IOObjectRelease(deviceListItem->notification);
 
-
-		ListResultItem_t* item = NULL;
-		if(deviceItem) {
-			item = CopyElement(&deviceItem->deviceParams);
-			RemoveItemFromList(deviceItem);
+		ListResultItem_t *item = NULL;
+		if (deviceItem)
+		{
+			item = CopyElement(deviceItem);
+			PopItemFromList(deviceItem);
 			delete deviceItem;
 		}
-		else {
+		else
+		{
 			item = new ListResultItem_t();
 		}
 
@@ -116,14 +120,16 @@ static void DeviceRemoved(void *refCon, io_service_t service, natural_t messageT
 //      this interest notification, we can grab the refCon and access our private data.
 //
 //================================================================================================
-static void DeviceAdded(void *refCon, io_iterator_t iterator) {
+static void DeviceAdded(void *refCon, io_iterator_t iterator)
+{
 	kern_return_t kr;
 	io_service_t usbDevice;
 	IOCFPlugInInterface **plugInInterface = NULL;
 	SInt32 score;
 	HRESULT res;
 
-	while((usbDevice = IOIteratorNext(iterator))) {
+	while ((usbDevice = IOIteratorNext(iterator)))
+	{
 		io_name_t deviceName;
 		CFStringRef deviceNameAsCFString;
 		UInt32 locationID;
@@ -131,20 +137,21 @@ static void DeviceAdded(void *refCon, io_iterator_t iterator) {
 		UInt16 productId;
 		UInt16 addr;
 
-		DeviceItem_t* deviceItem = new DeviceItem_t();
+		ListResultItem_t *deviceItem = new ListResultItem_t();
 
 		// Get the USB device's name.
 		kr = IORegistryEntryGetName(usbDevice, deviceName);
-		if(KERN_SUCCESS != kr) {
+		if (KERN_SUCCESS != kr)
+		{
 			deviceName[0] = '\0';
 		}
 
 		deviceNameAsCFString = CFStringCreateWithCString(kCFAllocatorDefault, deviceName, kCFStringEncodingASCII);
 
-
-		if(deviceNameAsCFString) {
+		if (deviceNameAsCFString)
+		{
 			Boolean result;
-			char    deviceName[MAXPATHLEN];
+			char deviceName[MAXPATHLEN];
 
 			// Convert from a CFString to a C (NUL-terminated)
 			result = CFStringGetCString(deviceNameAsCFString,
@@ -152,74 +159,75 @@ static void DeviceAdded(void *refCon, io_iterator_t iterator) {
 										sizeof(deviceName),
 										kCFStringEncodingUTF8);
 
-			if(result) {
-				deviceItem->deviceParams.deviceName = deviceName;
+			if (result)
+			{
+				deviceItem->deviceName = deviceName;
 			}
 
 			CFRelease(deviceNameAsCFString);
 		}
 
 		CFStringRef manufacturerAsCFString = (CFStringRef)IORegistryEntrySearchCFProperty(
-				usbDevice,
-				kIOServicePlane,
-				CFSTR(kUSBVendorString),
-				kCFAllocatorDefault,
-				kIORegistryIterateRecursively
-			);
+			usbDevice,
+			kIOServicePlane,
+			CFSTR(kUSBVendorString),
+			kCFAllocatorDefault,
+			kIORegistryIterateRecursively);
 
-		if(manufacturerAsCFString) {
+		if (manufacturerAsCFString)
+		{
 			Boolean result;
-			char    manufacturer[MAXPATHLEN];
+			char manufacturer[MAXPATHLEN];
 
 			// Convert from a CFString to a C (NUL-terminated)
 			result = CFStringGetCString(
-					manufacturerAsCFString,
-					manufacturer,
-					sizeof(manufacturer),
-					kCFStringEncodingUTF8
-				);
+				manufacturerAsCFString,
+				manufacturer,
+				sizeof(manufacturer),
+				kCFStringEncodingUTF8);
 
-			if(result) {
-				deviceItem->deviceParams.manufacturer = manufacturer;
+			if (result)
+			{
+				deviceItem->manufacturer = manufacturer;
 			}
 
 			CFRelease(manufacturerAsCFString);
 		}
 
-		CFStringRef serialNumberAsCFString = (CFStringRef) IORegistryEntrySearchCFProperty(
-				usbDevice,
-				kIOServicePlane,
-				CFSTR(kUSBSerialNumberString),
-				kCFAllocatorDefault,
-				kIORegistryIterateRecursively
-			);
+		CFStringRef serialNumberAsCFString = (CFStringRef)IORegistryEntrySearchCFProperty(
+			usbDevice,
+			kIOServicePlane,
+			CFSTR(kUSBSerialNumberString),
+			kCFAllocatorDefault,
+			kIORegistryIterateRecursively);
 
-		if(serialNumberAsCFString) {
+		if (serialNumberAsCFString)
+		{
 			Boolean result;
-			char    serialNumber[MAXPATHLEN];
+			char serialNumber[MAXPATHLEN];
 
 			// Convert from a CFString to a C (NUL-terminated)
 			result = CFStringGetCString(
-					serialNumberAsCFString,
-					serialNumber,
-					sizeof(serialNumber),
-					kCFStringEncodingUTF8
-				);
+				serialNumberAsCFString,
+				serialNumber,
+				sizeof(serialNumber),
+				kCFStringEncodingUTF8);
 
-			if(result) {
-				deviceItem->deviceParams.serialNumber = serialNumber;
+			if (result)
+			{
+				deviceItem->serialNumber = serialNumber;
 			}
 
 			CFRelease(serialNumberAsCFString);
 		}
-
 
 		// Now, get the locationID of this device. In order to do this, we need to create an IOUSBDeviceInterface
 		// for our device. This will create the necessary connections between our userland application and the
 		// kernel object for the USB Device.
 		kr = IOCreatePlugInInterfaceForService(usbDevice, kIOUSBDeviceUserClientTypeID, kIOCFPlugInInterfaceID, &plugInInterface, &score);
 
-		if((kIOReturnSuccess != kr) || !plugInInterface) {
+		if ((kIOReturnSuccess != kr) || !plugInInterface)
+		{
 			DEBUG_LOG("IOCreatePlugInInterfaceForService returned 0x%08x.\n", kr);
 			continue;
 		}
@@ -227,13 +235,14 @@ static void DeviceAdded(void *refCon, io_iterator_t iterator) {
 		stDeviceListItem *deviceListItem = new stDeviceListItem();
 
 		// Use the plugin interface to retrieve the device interface.
-		res = (*plugInInterface)->QueryInterface(plugInInterface, CFUUIDGetUUIDBytes(kIOUSBDeviceInterfaceID), (LPVOID*) &deviceListItem->deviceInterface);
+		res = (*plugInInterface)->QueryInterface(plugInInterface, CFUUIDGetUUIDBytes(kIOUSBDeviceInterfaceID), (LPVOID *)&deviceListItem->deviceInterface);
 
 		// Now done with the plugin interface.
 		(*plugInInterface)->Release(plugInInterface);
 
-		if(res || deviceListItem->deviceInterface == NULL) {
-			DEBUG_LOG("QueryInterface returned %d.\n", (int) res);
+		if (res || deviceListItem->deviceInterface == NULL)
+		{
+			DEBUG_LOG("QueryInterface returned %d.\n", (int)res);
 			continue;
 		}
 
@@ -242,35 +251,36 @@ static void DeviceAdded(void *refCon, io_iterator_t iterator) {
 		// and will remain the same, even across reboots, so long as the bus topology doesn't change.
 
 		kr = (*deviceListItem->deviceInterface)->GetLocationID(deviceListItem->deviceInterface, &locationID);
-		if(KERN_SUCCESS != kr) {
+		if (KERN_SUCCESS != kr)
+		{
 			DEBUG_LOG("GetLocationID returned 0x%08x.\n", kr);
 			continue;
 		}
-		deviceItem->deviceParams.locationId = locationID;
-
+		deviceItem->locationId = locationID;
 
 		kr = (*deviceListItem->deviceInterface)->GetDeviceAddress(deviceListItem->deviceInterface, &addr);
-		if(KERN_SUCCESS != kr) {
+		if (KERN_SUCCESS != kr)
+		{
 			DEBUG_LOG("GetDeviceAddress returned 0x%08x.\n", kr);
 			continue;
 		}
-		deviceItem->deviceParams.deviceAddress = addr;
-
+		deviceItem->deviceAddress = addr;
 
 		kr = (*deviceListItem->deviceInterface)->GetDeviceVendor(deviceListItem->deviceInterface, &vendorId);
-		if(KERN_SUCCESS != kr) {
+		if (KERN_SUCCESS != kr)
+		{
 			DEBUG_LOG("GetDeviceVendor returned 0x%08x.\n", kr);
 			continue;
 		}
-		deviceItem->deviceParams.vendorId = vendorId;
+		deviceItem->vendorId = vendorId;
 
 		kr = (*deviceListItem->deviceInterface)->GetDeviceProduct(deviceListItem->deviceInterface, &productId);
-		if(KERN_SUCCESS != kr) {
+		if (KERN_SUCCESS != kr)
+		{
 			DEBUG_LOG("GetDeviceProduct returned 0x%08x.\n", kr);
 			continue;
 		}
-		deviceItem->deviceParams.productId = productId;
-
+		deviceItem->productId = productId;
 
 		// Extract path name as unique key
 		io_string_t pathName;
@@ -278,17 +288,16 @@ static void DeviceAdded(void *refCon, io_iterator_t iterator) {
 		deviceNameAsCFString = CFStringCreateWithCString(kCFAllocatorDefault, pathName, kCFStringEncodingASCII);
 		char cPathName[MAXPATHLEN];
 
-		if(deviceNameAsCFString) {
+		if (deviceNameAsCFString)
+		{
 			Boolean result;
 
 			// Convert from a CFString to a C (NUL-terminated)
 			result = CFStringGetCString(
-					deviceNameAsCFString,
-					cPathName,
-					sizeof(cPathName),
-					kCFStringEncodingUTF8
-				);
-
+				deviceNameAsCFString,
+				cPathName,
+				sizeof(cPathName),
+				kCFStringEncodingUTF8);
 
 			CFRelease(deviceNameAsCFString);
 		}
@@ -296,9 +305,10 @@ static void DeviceAdded(void *refCon, io_iterator_t iterator) {
 		AddItemToList(cPathName, deviceItem);
 		deviceListItem->deviceItem = deviceItem;
 
-		if(initialDeviceImport == false) {
+		if (initialDeviceImport == false)
+		{
 			WaitForDeviceHandled();
-			currentItem = &deviceItem->deviceParams;
+			currentItem = deviceItem;
 			isAdded = true;
 			uv_async_send(&async_handler);
 		}
@@ -306,15 +316,16 @@ static void DeviceAdded(void *refCon, io_iterator_t iterator) {
 		// Register for an interest notification of this device being removed. Use a reference to our
 		// private data as the refCon which will be passed to the notification callback.
 		kr = IOServiceAddInterestNotification(
-				gNotifyPort, // notifyPort
-				usbDevice, // service
-				kIOGeneralInterest, // interestType
-				DeviceRemoved, // callback
-				deviceListItem, // refCon
-				&(deviceListItem->notification) // notification
-			);
+			gNotifyPort,					// notifyPort
+			usbDevice,						// service
+			kIOGeneralInterest,				// interestType
+			DeviceRemoved,					// callback
+			deviceListItem,					// refCon
+			&(deviceListItem->notification) // notification
+		);
 
-		if(KERN_SUCCESS != kr) {
+		if (KERN_SUCCESS != kr)
+		{
 			DEBUG_LOG("IOServiceAddInterestNotification returned 0x%08x.\n", kr);
 		}
 
@@ -323,8 +334,10 @@ static void DeviceAdded(void *refCon, io_iterator_t iterator) {
 	}
 }
 
-void Start() {
-	if(isRunning) {
+void Start()
+{
+	if (isRunning)
+	{
 		return;
 	}
 
@@ -339,8 +352,10 @@ void Start() {
 	uv_queue_work(uv_default_loop(), &work_req, cbWork, cbAfter);
 }
 
-void Stop() {
-	if(!isRunning) {
+void Stop()
+{
+	if (!isRunning)
+	{
 		return;
 	}
 
@@ -349,15 +364,17 @@ void Stop() {
 	uv_mutex_destroy(&notify_mutex);
 	uv_signal_stop(&int_signal);
 	uv_signal_stop(&term_signal);
-	uv_close((uv_handle_t *) &async_handler, NULL);
+	uv_close((uv_handle_t *)&async_handler, NULL);
 	uv_cond_destroy(&notifyDeviceHandled);
 
-	if (gRunLoop) {
+	if (gRunLoop)
+	{
 		CFRunLoopStop(gRunLoop);
 	}
 }
 
-void InitDetection() {
+void InitDetection()
+{
 	kern_return_t kr;
 
 	// Set up the matching criteria for the devices we're interested in. The matching criteria needs to follow
@@ -372,7 +389,8 @@ void InitDetection() {
 	// IOUSBDevice and its subclasses
 	matchingDict = IOServiceMatching(kIOUSBDeviceClassName);
 
-	if (matchingDict == NULL) {
+	if (matchingDict == NULL)
+	{
 		DEBUG_LOG("IOServiceMatching returned NULL.\n");
 	}
 
@@ -383,15 +401,16 @@ void InitDetection() {
 
 	// Now set up a notification to be called when a device is first matched by I/O Kit.
 	kr = IOServiceAddMatchingNotification(
-			gNotifyPort, // notifyPort
-			kIOFirstMatchNotification, // notificationType
-			matchingDict, // matching
-			DeviceAdded, // callback
-			NULL, // refCon
-			&gAddedIter // notification
-		);
+		gNotifyPort,			   // notifyPort
+		kIOFirstMatchNotification, // notificationType
+		matchingDict,			   // matching
+		DeviceAdded,			   // callback
+		NULL,					   // refCon
+		&gAddedIter				   // notification
+	);
 
-	if (KERN_SUCCESS != kr) {
+	if (KERN_SUCCESS != kr)
+	{
 		DEBUG_LOG("IOServiceAddMatchingNotification returned 0x%08x.\n", kr);
 	}
 
@@ -400,32 +419,38 @@ void InitDetection() {
 	initialDeviceImport = false;
 }
 
-void EIO_Find(uv_work_t* req) {
-	ListBaton* data = static_cast<ListBaton*>(req->data);
+void EIO_Find(uv_work_t *req)
+{
+	ListBaton *data = static_cast<ListBaton *>(req->data);
 
 	CreateFilteredList(&data->results, data->vid, data->pid);
 }
 
-static void WaitForDeviceHandled() {
+static void WaitForDeviceHandled()
+{
 	uv_mutex_lock(&notify_mutex);
-	if(deviceHandled == false) {
+	if (deviceHandled == false)
+	{
 		uv_cond_wait(&notifyDeviceHandled, &notify_mutex);
 	}
 	deviceHandled = false;
 	uv_mutex_unlock(&notify_mutex);
 }
 
-static void SignalDeviceHandled() {
+static void SignalDeviceHandled()
+{
 	uv_mutex_lock(&notify_mutex);
 	deviceHandled = true;
 	uv_cond_signal(&notifyDeviceHandled);
 	uv_mutex_unlock(&notify_mutex);
 }
 
-static void cbWork(uv_work_t *req) {
+static void cbWork(uv_work_t *req)
+{
 	// We have this check in case we `Stop` before this thread starts,
 	// otherwise the process will hang
-	if(!isRunning) {
+	if (!isRunning)
+	{
 		return;
 	}
 
@@ -439,44 +464,52 @@ static void cbWork(uv_work_t *req) {
 
 	// Creating `gRunLoop` can take some cycles so we also need this second
 	// `isRunning` check here because it happens at a future time
-	if(isRunning) {
+	if (isRunning)
+	{
 		// Start the run loop. Now we'll receive notifications.
 		CFRunLoopRun();
 	}
 
 	// The `CFRunLoopRun` is a blocking call so we also need this second
 	// `isRunning` check here because it happens at a future time
-	if(isRunning) {
+	if (isRunning)
+	{
 		// We should never get here while running
 		DEBUG_LOG("Unexpectedly back from CFRunLoopRun()!\n");
 	}
 }
 
-static void cbAfter(uv_work_t *req, int status) {
+static void cbAfter(uv_work_t *req, int status)
+{
 	Stop();
 }
 
-static void cbAsync(uv_async_t *handle) {
-	if(!isRunning) {
+static void cbAsync(uv_async_t *handle)
+{
+	if (!isRunning)
+	{
 		return;
 	}
 
-	if(isAdded) {
+	if (isAdded)
+	{
 		NotifyAdded(currentItem);
 	}
-	else {
+	else
+	{
 		NotifyRemoved(currentItem);
 	}
 
 	// Delete Item in case of removal
-	if(isAdded == false) {
+	if (isAdded == false)
+	{
 		delete currentItem;
 	}
 
 	SignalDeviceHandled();
 }
 
-
-static void cbTerminate(uv_signal_t *handle, int signum) {
+static void cbTerminate(uv_signal_t *handle, int signum)
+{
 	Stop();
 }

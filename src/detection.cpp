@@ -263,12 +263,23 @@ void NotifyRemoved(ListResultItem_t *it)
 
 void StartMonitoring(const Napi::CallbackInfo &args)
 {
-	Start();
+	if (!Start())
+	{
+		Napi::Error::New(args.Env(), "Failed to start monitoring").ThrowAsJavaScriptException();
+	}
 }
 
 void StopMonitoring(const Napi::CallbackInfo &args)
 {
 	Stop();
+}
+
+Napi::Value IsMonitoring(const Napi::CallbackInfo &args)
+{
+	Napi::Env env = args.Env();
+
+	bool isRunning = IsRunning();
+	return Napi::Boolean::From(env, isRunning);
 }
 
 Napi::Object init(Napi::Env env, Napi::Object exports)
@@ -278,7 +289,8 @@ Napi::Object init(Napi::Env env, Napi::Object exports)
 	exports.Set(Napi::String::New(env, "registerRemoved"), Napi::Function::New(env, RegisterRemoved));
 	exports.Set(Napi::String::New(env, "startMonitoring"), Napi::Function::New(env, StartMonitoring));
 	exports.Set(Napi::String::New(env, "stopMonitoring"), Napi::Function::New(env, StopMonitoring));
-	InitDetection();
+	exports.Set(Napi::String::New(env, "isMonitoring"), Napi::Function::New(env, IsMonitoring));
+	// InitDetection();
 	return exports;
 }
 
