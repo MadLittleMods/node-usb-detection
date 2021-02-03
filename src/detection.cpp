@@ -98,6 +98,54 @@ void NotifyRemoved(ListResultItem_t *it)
 	}
 }
 
+// class FindWorker : public Napi::AsyncWorker
+// {
+// public:
+// 	FindWorker(
+// 		Napi::Env &env,
+// 		int vid,
+// 		int pid)
+// 		: AsyncWorker(env),
+// 		  deferred(Napi::Promise::Deferred::New(env)),
+// 		  vid(vid),
+// 		  pid(pid)
+// 	{
+// 	}
+
+// 	~FindWorker()
+// 	{
+// 	}
+
+// 	void Execute()
+// 	{
+// 		std::string err = DoCompress(this->props);
+// 		if (!err.empty())
+// 		{
+// 			SetError(err);
+// 		}
+// 	}
+
+// 	void OnOK()
+// 	{
+// 		deferred.Resolve(CompressResult(Env(), this->dstBuffer.Value(), this->props));
+// 	}
+
+// 	void OnError(Napi::Error const &error)
+// 	{
+// 		deferred.Reject(error.Value());
+// 	}
+
+// 	Napi::Promise GetPromise() const
+// 	{
+// 		return deferred.Promise();
+// 	}
+
+// private:
+// 	Napi::Promise::Deferred deferred;
+// 	int vid;
+// 	int pid;
+// };
+
 // void Find(const Napi::CallbackInfo &args)
 // {
 // 	Napi::HandleScope scope(env);
@@ -112,7 +160,7 @@ void NotifyRemoved(ListResultItem_t *it)
 // 		return env.Null();
 // 	}
 
-// 	if (args.Length() == 3)
+// 	if (args.Length() >= 3)
 // 	{
 // 		if (args[0].IsNumber() && args[1].IsNumber())
 // 		{
@@ -159,15 +207,15 @@ void NotifyRemoved(ListResultItem_t *it)
 // 		callback = args[0].As<Napi::Function>();
 // 	}
 
-// 	ListBaton *baton = new ListBaton();
-// 	strcpy(baton->errorString, "");
-// 	baton->callback = new Napi::FunctionReference(callback);
-// 	baton->vid = vid;
-// 	baton->pid = pid;
+// 	// ListBaton *baton = new ListBaton();
+// 	// strcpy(baton->errorString, "");
+// 	// baton->callback = new Napi::FunctionReference(callback);
+// 	// baton->vid = vid;
+// 	// baton->pid = pid;
 
-// 	uv_work_t *req = new uv_work_t();
-// 	req->data = baton;
-// 	uv_queue_work(uv_default_loop(), req, EIO_Find, (uv_after_work_cb)EIO_AfterFind);
+// 	// uv_work_t *req = new uv_work_t();
+// 	// req->data = baton;
+// 	// uv_queue_work(uv_default_loop(), req, EIO_Find, (uv_after_work_cb)EIO_AfterFind);
 // }
 
 // void EIO_AfterFind(uv_work_t *req)
