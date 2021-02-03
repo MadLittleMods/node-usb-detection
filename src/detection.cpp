@@ -10,154 +10,162 @@
 #define OBJECT_ITEM_DEVICE_ADDRESS "deviceAddress"
 
 
-Nan::Callback* addedCallback;
+Napi::FunctionReference* addedCallback;
 bool isAddedRegistered = false;
 
-Nan::Callback* removedCallback;
+Napi::FunctionReference* removedCallback;
 bool isRemovedRegistered = false;
 
-void RegisterAdded(const Nan::FunctionCallbackInfo<v8::Value>& args) {
-	Nan::HandleScope scope;
+void RegisterAdded(const Napi::CallbackInfo& args) {
+	Napi::HandleScope scope(env);
 
-	v8::Local<v8::Function> callback;
+	Napi::Function callback;
 
 	if (args.Length() == 0) {
-		return Nan::ThrowTypeError("First argument must be a function");
+		Napi::TypeError::New(env, "First argument must be a function").ThrowAsJavaScriptException();
+return env.Null();
 	}
 
 	if (args.Length() == 1) {
 		// callback
 		if(!args[0]->IsFunction()) {
-			return Nan::ThrowTypeError("First argument must be a function");
+			Napi::TypeError::New(env, "First argument must be a function").ThrowAsJavaScriptException();
+return env.Null();
 		}
 
-		callback = args[0].As<v8::Function>();
+		callback = args[0].As<Napi::Function>();
 	}
 
-	addedCallback = new Nan::Callback(callback);
+	addedCallback = new Napi::FunctionReference(callback);
 	isAddedRegistered = true;
 }
 
 void NotifyAdded(ListResultItem_t* it) {
-	Nan::HandleScope scope;
+	Napi::HandleScope scope(env);
 
 	if (it == NULL) {
 		return;
 	}
 
 	if (isAddedRegistered){
-		v8::Local<v8::Value> argv[1];
-		v8::Local<v8::Object> item = Nan::New<v8::Object>();
-		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_LOCATION_ID).ToLocalChecked(), Nan::New<v8::Number>(it->locationId));
-		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_VENDOR_ID).ToLocalChecked(), Nan::New<v8::Number>(it->vendorId));
-		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_PRODUCT_ID).ToLocalChecked(), Nan::New<v8::Number>(it->productId));
-		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_DEVICE_NAME).ToLocalChecked(), Nan::New<v8::String>(it->deviceName.c_str()).ToLocalChecked());
-		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_MANUFACTURER).ToLocalChecked(), Nan::New<v8::String>(it->manufacturer.c_str()).ToLocalChecked());
-		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_SERIAL_NUMBER).ToLocalChecked(), Nan::New<v8::String>(it->serialNumber.c_str()).ToLocalChecked());
-		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_DEVICE_ADDRESS).ToLocalChecked(), Nan::New<v8::Number>(it->deviceAddress));
+		Napi::Value argv[1];
+		Napi::Object item = Napi::Object::New(env);
+		(item).Set(Napi::String::New(env, OBJECT_ITEM_LOCATION_ID), Napi::Number::New(env, it->locationId));
+		(item).Set(Napi::String::New(env, OBJECT_ITEM_VENDOR_ID), Napi::Number::New(env, it->vendorId));
+		(item).Set(Napi::String::New(env, OBJECT_ITEM_PRODUCT_ID), Napi::Number::New(env, it->productId));
+		(item).Set(Napi::String::New(env, OBJECT_ITEM_DEVICE_NAME), Napi::String::New(env, it->deviceName.c_str()));
+		(item).Set(Napi::String::New(env, OBJECT_ITEM_MANUFACTURER), Napi::String::New(env, it->manufacturer.c_str()));
+		(item).Set(Napi::String::New(env, OBJECT_ITEM_SERIAL_NUMBER), Napi::String::New(env, it->serialNumber.c_str()));
+		(item).Set(Napi::String::New(env, OBJECT_ITEM_DEVICE_ADDRESS), Napi::Number::New(env, it->deviceAddress));
 		argv[0] = item;
 
-		Nan::AsyncResource resource("usb-detection:NotifyAdded");
+		Napi::AsyncResource resource("usb-detection:NotifyAdded");
 		addedCallback->Call(1, argv, &resource);
 	}
 }
 
-void RegisterRemoved(const Nan::FunctionCallbackInfo<v8::Value>& args) {
-	Nan::HandleScope scope;
+void RegisterRemoved(const Napi::CallbackInfo& args) {
+	Napi::HandleScope scope(env);
 
-	v8::Local<v8::Function> callback;
+	Napi::Function callback;
 
 	if (args.Length() == 0) {
-		return Nan::ThrowTypeError("First argument must be a function");
+		Napi::TypeError::New(env, "First argument must be a function").ThrowAsJavaScriptException();
+return env.Null();
 	}
 
 	if (args.Length() == 1) {
 		// callback
 		if(!args[0]->IsFunction()) {
-			return Nan::ThrowTypeError("First argument must be a function");
+			Napi::TypeError::New(env, "First argument must be a function").ThrowAsJavaScriptException();
+return env.Null();
 		}
 
-		callback = args[0].As<v8::Function>();
+		callback = args[0].As<Napi::Function>();
 	}
 
-	removedCallback = new Nan::Callback(callback);
+	removedCallback = new Napi::FunctionReference(callback);
 	isRemovedRegistered = true;
 }
 
 void NotifyRemoved(ListResultItem_t* it) {
-	Nan::HandleScope scope;
+	Napi::HandleScope scope(env);
 
 	if (it == NULL) {
 		return;
 	}
 
 	if (isRemovedRegistered) {
-		v8::Local<v8::Value> argv[1];
-		v8::Local<v8::Object> item = Nan::New<v8::Object>();
-		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_LOCATION_ID).ToLocalChecked(), Nan::New<v8::Number>(it->locationId));
-		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_VENDOR_ID).ToLocalChecked(), Nan::New<v8::Number>(it->vendorId));
-		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_PRODUCT_ID).ToLocalChecked(), Nan::New<v8::Number>(it->productId));
-		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_DEVICE_NAME).ToLocalChecked(), Nan::New<v8::String>(it->deviceName.c_str()).ToLocalChecked());
-		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_MANUFACTURER).ToLocalChecked(), Nan::New<v8::String>(it->manufacturer.c_str()).ToLocalChecked());
-		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_SERIAL_NUMBER).ToLocalChecked(), Nan::New<v8::String>(it->serialNumber.c_str()).ToLocalChecked());
-		Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_DEVICE_ADDRESS).ToLocalChecked(), Nan::New<v8::Number>(it->deviceAddress));
+		Napi::Value argv[1];
+		Napi::Object item = Napi::Object::New(env);
+		(item).Set(Napi::String::New(env, OBJECT_ITEM_LOCATION_ID), Napi::Number::New(env, it->locationId));
+		(item).Set(Napi::String::New(env, OBJECT_ITEM_VENDOR_ID), Napi::Number::New(env, it->vendorId));
+		(item).Set(Napi::String::New(env, OBJECT_ITEM_PRODUCT_ID), Napi::Number::New(env, it->productId));
+		(item).Set(Napi::String::New(env, OBJECT_ITEM_DEVICE_NAME), Napi::String::New(env, it->deviceName.c_str()));
+		(item).Set(Napi::String::New(env, OBJECT_ITEM_MANUFACTURER), Napi::String::New(env, it->manufacturer.c_str()));
+		(item).Set(Napi::String::New(env, OBJECT_ITEM_SERIAL_NUMBER), Napi::String::New(env, it->serialNumber.c_str()));
+		(item).Set(Napi::String::New(env, OBJECT_ITEM_DEVICE_ADDRESS), Napi::Number::New(env, it->deviceAddress));
 		argv[0] = item;
 		
-		Nan::AsyncResource resource("usb-detection:NotifyRemoved");
+		Napi::AsyncResource resource("usb-detection:NotifyRemoved");
 		removedCallback->Call(1, argv, &resource);
 	}
 }
 
-void Find(const Nan::FunctionCallbackInfo<v8::Value>& args) {
-	Nan::HandleScope scope;
+void Find(const Napi::CallbackInfo& args) {
+	Napi::HandleScope scope(env);
 
 	int vid = 0;
 	int pid = 0;
-	v8::Local<v8::Function> callback;
+	Napi::Function callback;
 
 	if (args.Length() == 0) {
-		return Nan::ThrowTypeError("First argument must be a function");
+		Napi::TypeError::New(env, "First argument must be a function").ThrowAsJavaScriptException();
+return env.Null();
 	}
 
 	if (args.Length() == 3) {
-		if (args[0]->IsNumber() && args[1]->IsNumber()) {
-			vid = (int) Nan::To<int>(args[0]).FromJust();
-			pid = (int) Nan::To<int>(args[1]).FromJust();
+		if (args[0].IsNumber() && args[1].IsNumber()) {
+			vid = (int) args[0].As<Napi::Number>().Int32Value();
+			pid = (int) args[1].As<Napi::Number>().Int32Value();
 		}
 
 		// callback
 		if(!args[2]->IsFunction()) {
-			return Nan::ThrowTypeError("Third argument must be a function");
+			Napi::TypeError::New(env, "Third argument must be a function").ThrowAsJavaScriptException();
+return env.Null();
 		}
 
-		callback = args[2].As<v8::Function>();
+		callback = args[2].As<Napi::Function>();
 	}
 
 	if (args.Length() == 2) {
-		if (args[0]->IsNumber()) {
-			vid = (int) Nan::To<int>(args[0]).FromJust();
+		if (args[0].IsNumber()) {
+			vid = (int) args[0].As<Napi::Number>().Int32Value();
 		}
 
 		// callback
 		if(!args[1]->IsFunction()) {
-			return Nan::ThrowTypeError("Second argument must be a function");
+			Napi::TypeError::New(env, "Second argument must be a function").ThrowAsJavaScriptException();
+return env.Null();
 		}
 
-		callback = args[1].As<v8::Function>();
+		callback = args[1].As<Napi::Function>();
 	}
 
 	if (args.Length() == 1) {
 		// callback
 		if(!args[0]->IsFunction()) {
-			return Nan::ThrowTypeError("First argument must be a function");
+			Napi::TypeError::New(env, "First argument must be a function").ThrowAsJavaScriptException();
+return env.Null();
 		}
 
-		callback = args[0].As<v8::Function>();
+		callback = args[0].As<Napi::Function>();
 	}
 
 	ListBaton* baton = new ListBaton();
 	strcpy(baton->errorString, "");
-	baton->callback = new Nan::Callback(callback);
+	baton->callback = new Napi::FunctionReference(callback);
 	baton->vid = vid;
 	baton->pid = pid;
 
@@ -167,34 +175,34 @@ void Find(const Nan::FunctionCallbackInfo<v8::Value>& args) {
 }
 
 void EIO_AfterFind(uv_work_t* req) {
-	Nan::HandleScope scope;
+	Napi::HandleScope scope(env);
 
 	ListBaton* data = static_cast<ListBaton*>(req->data);
 
-	v8::Local<v8::Value> argv[2];
+	Napi::Value argv[2];
 	if(data->errorString[0]) {
-		argv[0] = v8::Exception::Error(Nan::New<v8::String>(data->errorString).ToLocalChecked());
-		argv[1] = Nan::Undefined();
+		argv[0] = v8::Exception::Error(Napi::String::New(env, data->errorString));
+		argv[1] = env.Undefined();
 	}
 	else {
-		v8::Local<v8::Array> results = Nan::New<v8::Array>();
+		Napi::Array results = Napi::Array::New(env);
 		int i = 0;
 		for(std::list<ListResultItem_t*>::iterator it = data->results.begin(); it != data->results.end(); it++, i++) {
-			v8::Local<v8::Object> item = Nan::New<v8::Object>();
-			Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_LOCATION_ID).ToLocalChecked(), Nan::New<v8::Number>((*it)->locationId));
-			Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_VENDOR_ID).ToLocalChecked(), Nan::New<v8::Number>((*it)->vendorId));
-			Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_PRODUCT_ID).ToLocalChecked(), Nan::New<v8::Number>((*it)->productId));
-			Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_DEVICE_NAME).ToLocalChecked(), Nan::New<v8::String>((*it)->deviceName.c_str()).ToLocalChecked());
-			Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_MANUFACTURER).ToLocalChecked(), Nan::New<v8::String>((*it)->manufacturer.c_str()).ToLocalChecked());
-			Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_SERIAL_NUMBER).ToLocalChecked(), Nan::New<v8::String>((*it)->serialNumber.c_str()).ToLocalChecked());
-			Nan::Set(item, Nan::New<v8::String>(OBJECT_ITEM_DEVICE_ADDRESS).ToLocalChecked(), Nan::New<v8::Number>((*it)->deviceAddress));
-			Nan::Set(results, i, item);
+			Napi::Object item = Napi::Object::New(env);
+			(item).Set(Napi::String::New(env, OBJECT_ITEM_LOCATION_ID), Napi::Number::New(env, (*it)->locationId));
+			(item).Set(Napi::String::New(env, OBJECT_ITEM_VENDOR_ID), Napi::Number::New(env, (*it)->vendorId));
+			(item).Set(Napi::String::New(env, OBJECT_ITEM_PRODUCT_ID), Napi::Number::New(env, (*it)->productId));
+			(item).Set(Napi::String::New(env, OBJECT_ITEM_DEVICE_NAME), Napi::String::New(env, (*it)->deviceName.c_str()));
+			(item).Set(Napi::String::New(env, OBJECT_ITEM_MANUFACTURER), Napi::String::New(env, (*it)->manufacturer.c_str()));
+			(item).Set(Napi::String::New(env, OBJECT_ITEM_SERIAL_NUMBER), Napi::String::New(env, (*it)->serialNumber.c_str()));
+			(item).Set(Napi::String::New(env, OBJECT_ITEM_DEVICE_ADDRESS), Napi::Number::New(env, (*it)->deviceAddress));
+			(results).Set(i, item);
 		}
-		argv[0] = Nan::Undefined();
+		argv[0] = env.Undefined();
 		argv[1] = results;
 	}
 
-	Nan::AsyncResource resource("usb-detection:EIO_AfterFind");
+	Napi::AsyncResource resource("usb-detection:EIO_AfterFind");
 	data->callback->Call(2, argv, &resource);
 
 	for(std::list<ListResultItem_t*>::iterator it = data->results.begin(); it != data->results.end(); it++) {
@@ -204,23 +212,23 @@ void EIO_AfterFind(uv_work_t* req) {
 	delete req;
 }
 
-void StartMonitoring(const Nan::FunctionCallbackInfo<v8::Value>& args) {
+void StartMonitoring(const Napi::CallbackInfo& args) {
 	Start();
 }
 
-void StopMonitoring(const Nan::FunctionCallbackInfo<v8::Value>& args) {
+void StopMonitoring(const Napi::CallbackInfo& args) {
 	Stop();
 }
 
 extern "C" {
-	void init (v8::Local<v8::Object> target) {
-		Nan::SetMethod(target, "find", Find);
-		Nan::SetMethod(target, "registerAdded", RegisterAdded);
-		Nan::SetMethod(target, "registerRemoved", RegisterRemoved);
-		Nan::SetMethod(target, "startMonitoring", StartMonitoring);
-		Nan::SetMethod(target, "stopMonitoring", StopMonitoring);
+	void init (Napi::Object target) {
+		exports.Set(Napi::String::New(env, "find"), Napi::Function::New(env, Find));
+		exports.Set(Napi::String::New(env, "registerAdded"), Napi::Function::New(env, RegisterAdded));
+		exports.Set(Napi::String::New(env, "registerRemoved"), Napi::Function::New(env, RegisterRemoved));
+		exports.Set(Napi::String::New(env, "startMonitoring"), Napi::Function::New(env, StartMonitoring));
+		exports.Set(Napi::String::New(env, "stopMonitoring"), Napi::Function::New(env, StopMonitoring));
 		InitDetection();
 	}
 }
 
-NODE_MODULE(detection, init);
+NODE_API_MODULE(detection, init);

@@ -2,7 +2,8 @@
 #ifndef _USB_DETECTION_H
 #define _USB_DETECTION_H
 
-#include <node.h>
+#include <napi.h>
+#include <uv.h>
 #include <v8.h>
 #include <uv.h>
 #include <list>
@@ -10,33 +11,34 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <nan.h>
+#include <napi.h>
+#include <uv.h>
 
 #include "deviceList.h"
 
-void Find(const Nan::FunctionCallbackInfo<v8::Value>& args);
+void Find(const Napi::CallbackInfo& args);
 void EIO_Find(uv_work_t* req);
 void EIO_AfterFind(uv_work_t* req);
 void InitDetection();
-void StartMonitoring(const Nan::FunctionCallbackInfo<v8::Value>& args);
+void StartMonitoring(const Napi::CallbackInfo& args);
 void Start();
-void StopMonitoring(const Nan::FunctionCallbackInfo<v8::Value>& args);
+void StopMonitoring(const Napi::CallbackInfo& args);
 void Stop();
 
 
 struct ListBaton {
 	public:
 		//v8::Persistent<v8::Function> callback;
-		Nan::Callback* callback;
+		Napi::FunctionReference* callback;
 		std::list<ListResultItem_t*> results;
 		char errorString[1024];
 		int vid;
 		int pid;
 };
 
-void RegisterAdded(const Nan::FunctionCallbackInfo<v8::Value>& args);
+void RegisterAdded(const Napi::CallbackInfo& args);
 void NotifyAdded(ListResultItem_t* it);
-void RegisterRemoved(const Nan::FunctionCallbackInfo<v8::Value>& args);
+void RegisterRemoved(const Napi::CallbackInfo& args);
 void NotifyRemoved(ListResultItem_t* it);
 
 #endif
