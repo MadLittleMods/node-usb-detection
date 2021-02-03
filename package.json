@@ -40,10 +40,9 @@
     "node": ">=4"
   },
   "dependencies": {
-    "node-addon-api": "3.1.0",
+    "node-addon-api": "^3.1.0",
     "bindings": "^1.5.0",
     "eventemitter2": "^5.0.1",
-    "node-addon-api": "^3.1.0",
     "prebuild-install": "^6.0.0"
   },
   "devDependencies": {

@@ -17,6 +17,7 @@
         "src/deviceList.cpp"
       ],
       "include_dirs" : [
+        "<!@(node -p \"require('node-addon-api').include\")" 
       ],
       'conditions': [
         ['OS=="win"',

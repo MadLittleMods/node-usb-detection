@@ -3,50 +3,41 @@
 #define _USB_DETECTION_H
 
 #include <napi.h>
-#include <uv.h>
-#include <v8.h>
-#include <uv.h>
+#include <uv.h> // TODO - this NEEDS to be removed for napi to work..
 #include <list>
 #include <string>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <napi.h>
-#include <uv.h>
 
 #include "deviceList.h"
 
-void Find(const Napi::CallbackInfo& args);
-void EIO_Find(uv_work_t* req);
-void EIO_AfterFind(uv_work_t* req);
+void EIO_Find(uv_work_t *req);
 void InitDetection();
-void StartMonitoring(const Napi::CallbackInfo& args);
 void Start();
-void StopMonitoring(const Napi::CallbackInfo& args);
 void Stop();
 
-
-struct ListBaton {
-	public:
-		//v8::Persistent<v8::Function> callback;
-		Napi::FunctionReference* callback;
-		std::list<ListResultItem_t*> results;
-		char errorString[1024];
-		int vid;
-		int pid;
+struct ListBaton
+{
+public:
+	Napi::FunctionReference *callback;
+	std::list<ListResultItem_t *> results;
+	char errorString[1024];
+	int vid;
+	int pid;
 };
 
-void RegisterAdded(const Napi::CallbackInfo& args);
-void NotifyAdded(ListResultItem_t* it);
-void RegisterRemoved(const Napi::CallbackInfo& args);
-void NotifyRemoved(ListResultItem_t* it);
+void NotifyAdded(ListResultItem_t *it);
+void NotifyRemoved(ListResultItem_t *it);
 
 #endif
 
 #ifdef DEBUG
-  #define DEBUG_HEADER fprintf(stderr, "node-usb-detection [%s:%s() %d]: ", __FILE__, __FUNCTION__, __LINE__);
-  #define DEBUG_FOOTER fprintf(stderr, "\n");
-  #define DEBUG_LOG(...) DEBUG_HEADER fprintf(stderr, __VA_ARGS__); DEBUG_FOOTER
+#define DEBUG_HEADER fprintf(stderr, "node-usb-detection [%s:%s() %d]: ", __FILE__, __FUNCTION__, __LINE__);
+#define DEBUG_FOOTER fprintf(stderr, "\n");
+#define DEBUG_LOG(...)                         \
+	DEBUG_HEADER fprintf(stderr, __VA_ARGS__); \
+	DEBUG_FOOTER
 #else
-  #define DEBUG_LOG(...)
+#define DEBUG_LOG(...)
 #endif
