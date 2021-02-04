@@ -35,6 +35,8 @@ Napi::Value Detection::StartMonitoring(const Napi::CallbackInfo &args)
 		return env.Null();
 	}
 
+	// TODO - register a napi_add_env_cleanup_hook ?
+
 	return env.Null();
 }
 

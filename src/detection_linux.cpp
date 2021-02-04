@@ -1,6 +1,7 @@
 #include <libudev.h>
 #include <poll.h>
 #include <thread>
+#include <atomic>
 
 #include "detection.h"
 #include "deviceList.h"
@@ -84,7 +85,7 @@ public:
 		isRunning = true;
 
 		/* Create the udev object */
-		udevHandle = udev_new();
+		udev *udevHandle = udev_new();
 		if (!udevHandle)
 		{
 			printf("Can't create udev\n");
@@ -93,7 +94,7 @@ public:
 		}
 
 		/* Set up a monitor to monitor devices */
-		mon = udev_monitor_new_from_netlink(udevHandle, "udev");
+		udev_monitor *mon = udev_monitor_new_from_netlink(udevHandle, "udev");
 		if (!mon)
 		{
 			printf("Can't create udev monitor\n");
@@ -105,11 +106,11 @@ public:
 		udev_monitor_enable_receiving(mon);
 
 		/* Get the file descriptor (fd) for the monitor.
-	   This fd will get passed to select() */
-		fd = udev_monitor_get_fd(mon);
+		 This fd will get passed to select() */
+		int fd = udev_monitor_get_fd(mon);
 
 		// Do initial scan
-		BuildInitialDeviceList();
+		BuildInitialDeviceList(udevHandle);
 
 		notify_func = Napi::ThreadSafeFunction::New(
 			env,
@@ -117,8 +118,12 @@ public:
 			"Resource Name", // Name
 			0,				 // Unlimited queue
 			1,				 // Only one thread will use this initially
-			[&](Napi::Env) { // Finalizer used to clean threads up
-				poll_thread.join();
+			[=](Napi::Env) { // Finalizer used to clean threads up
+				// Wait for end of the thread, if it wasnt the one to close up
+				if (poll_thread.joinable())
+				{
+					poll_thread.join();
+				}
 			});
 
 		poll_thread = std::thread([=]() {
@@ -161,23 +166,22 @@ public:
 				}
 			}
 
+			udev_monitor_unref(mon);
+			udev_unref(udevHandle);
+
 			notify_func.Release();
-			Stop();
 		});
 
 		return true;
 	}
 	void Stop()
 	{
-		if (!isRunning)
+		if (isRunning)
 		{
-			return;
+			isRunning = false;
+
+			poll_thread.join();
 		}
-
-		isRunning = false;
-
-		udev_monitor_unref(mon);
-		udev_unref(udevHandle);
 	}
 
 private:
@@ -264,7 +268,7 @@ private:
 		}
 	}
 
-	void BuildInitialDeviceList()
+	void BuildInitialDeviceList(udev *udevHandle)
 	{
 		/* Create a list of the devices */
 		auto enumerate = udev_enumerate_new(udevHandle);
@@ -334,11 +338,7 @@ private:
 	std::thread poll_thread;
 	Napi::ThreadSafeFunction notify_func;
 
-	udev *udevHandle;
-	udev_monitor *mon;
-	int fd;
-
-	bool isRunning = false;
+	std::atomic<bool> isRunning = {false};
 };
 
 void InitializeDetection(Napi::Env &env, Napi::Object &target)
