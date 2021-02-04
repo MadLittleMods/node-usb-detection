@@ -23,193 +23,15 @@ using namespace std;
  * Local typedefs
  **********************************/
 
-/**********************************
- * Local Variables
- **********************************/
-
-std::thread poll_thread;
-Napi::ThreadSafeFunction notify_func;
-
-static udev *udev;
-static udev_monitor *mon;
-static int fd;
-
-static DeviceMap deviceMap;
-static bool isRunning = false;
-
-/**********************************
- * Local Helper Functions protoypes
- **********************************/
-static void BuildInitialDeviceList();
-
-static void DeviceAdded(struct udev_device *dev);
-static void DeviceRemoved(struct udev_device *dev);
-
-/**********************************
- * Public Functions
- **********************************/
-
-bool IsRunning()
-{
-	return isRunning;
-}
-
-bool Start(const Napi::Env &env, const Napi::Function &callback)
-{
-	if (isRunning)
-	{
-		return true;
-	}
-
-	isRunning = true;
-
-	/* Create the udev object */
-	udev = udev_new();
-	if (!udev)
-	{
-		printf("Can't create udev\n");
-		isRunning = false;
-		return false;
-	}
-
-	/* Set up a monitor to monitor devices */
-	mon = udev_monitor_new_from_netlink(udev, "udev");
-	if (!mon)
-	{
-		printf("Can't create udev monitor\n");
-		udev_unref(udev);
-		isRunning = false;
-		return false;
-	}
-
-	udev_monitor_enable_receiving(mon);
-
-	/* Get the file descriptor (fd) for the monitor.
-	   This fd will get passed to select() */
-	fd = udev_monitor_get_fd(mon);
-
-	// Do initial scan
-	BuildInitialDeviceList();
-
-	notify_func = Napi::ThreadSafeFunction::New(
-		env,
-		callback,		 // JavaScript function called asynchronously
-		"Resource Name", // Name
-		0,				 // Unlimited queue
-		1,				 // Only one thread will use this initially
-		[](Napi::Env) {	 // Finalizer used to clean threads up
-			poll_thread.join();
-		});
-
-	poll_thread = std::thread([]() {
-		// We have this check in case we `Stop` before this thread starts,
-		// otherwise the process will hang
-		if (!isRunning)
-		{
-			return;
-		}
-
-		// uv_signal_start(&int_signal, cbTerminate, SIGINT);
-		// uv_signal_start(&term_signal, cbTerminate, SIGTERM);
-
-		udev_device *dev;
-
-		pollfd fds = {fd, POLLIN, 0};
-		while (isRunning)
-		{
-			int ret = poll(&fds, 1, 100);
-			if (!ret)
-				continue;
-			if (ret < 0)
-				break;
-
-			dev = udev_monitor_receive_device(mon);
-			if (dev)
-			{
-				if (udev_device_get_devtype(dev) && strcmp(udev_device_get_devtype(dev), DEVICE_TYPE_DEVICE) == 0)
-				{
-					if (strcmp(udev_device_get_action(dev), DEVICE_ACTION_ADDED) == 0)
-					{
-						DeviceAdded(dev);
-					}
-					else if (strcmp(udev_device_get_action(dev), DEVICE_ACTION_REMOVED) == 0)
-					{
-						DeviceRemoved(dev);
-					}
-				}
-				udev_device_unref(dev);
-			}
-		}
-
-		notify_func.Release();
-		Stop();
-	});
-
-	return true;
-}
-
-void Stop()
-{
-	if (!isRunning)
-	{
-		return;
-	}
-
-	isRunning = false;
-
-	udev_monitor_unref(mon);
-	udev_unref(udev);
-}
-
-/**********************************
- * Local Functions
- **********************************/
-static std::shared_ptr<ListResultItem_t> GetProperties(struct udev_device *dev)
-{
-	std::shared_ptr<ListResultItem_t> item(new ListResultItem_t);
-
-	auto sysattrs = udev_device_get_properties_list_entry(dev);
-	struct udev_list_entry *entry;
-	udev_list_entry_foreach(entry, sysattrs)
-	{
-		const char *name = udev_list_entry_get_name(entry);
-		const char *value = udev_list_entry_get_value(entry);
-
-		if (strcmp(name, DEVICE_PROPERTY_NAME) == 0)
-		{
-			item->deviceName = value;
-		}
-		else if (strcmp(name, DEVICE_PROPERTY_SERIAL) == 0)
-		{
-			item->serialNumber = value;
-		}
-		else if (strcmp(name, DEVICE_PROPERTY_VENDOR) == 0)
-		{
-			item->manufacturer = value;
-		}
-	}
-
-	const char *vendor = udev_device_get_sysattr_value(dev, "idVendor");
-	if (vendor)
-	{
-		item->vendorId = strtol(vendor, NULL, 16);
-	}
-	const char *product = udev_device_get_sysattr_value(dev, "idVendor");
-	if (product)
-	{
-		item->productId = strtol(product, NULL, 16);
-	}
-	item->deviceAddress = 0;
-	item->locationId = 0;
-
-	return item;
-}
-
 struct DeviceCallbackItem
 {
 	std::string type;
 	std::shared_ptr<ListResultItem_t> item;
 };
+
+/**********************************
+ * Local Helper Functions
+ **********************************/
 
 static void DeviceItemChangeCallback(Napi::Env env, Napi::Function jsCallback, DeviceCallbackItem *data)
 {
@@ -221,106 +43,305 @@ static void DeviceItemChangeCallback(Napi::Env env, Napi::Function jsCallback, D
 	delete data;
 };
 
-static void DeviceAdded(struct udev_device *dev)
+/**********************************
+ * Public Functions
+ **********************************/
+
+class LinuxDetection : public Detection, public Napi::ObjectWrap<LinuxDetection>
 {
-	std::shared_ptr<ListResultItem_t> item = GetProperties(dev);
-
-	deviceMap.addItem(udev_device_get_devnode(dev), item);
-
-	DeviceCallbackItem *data = new DeviceCallbackItem;
-	data->item = item;
-	data->type = "add";
-
-	napi_status status = notify_func.BlockingCall(data, DeviceItemChangeCallback);
-	if (status != napi_ok)
+public:
+	LinuxDetection(const Napi::CallbackInfo &info)
+		: Napi::ObjectWrap<LinuxDetection>(info)
 	{
-		// Handle error
-		// TODO
-	}
-}
-
-static void DeviceRemoved(struct udev_device *dev)
-{
-	std::shared_ptr<ListResultItem_t> item = deviceMap.popItem(udev_device_get_devnode(dev));
-
-	if (item == nullptr)
-	{
-		item = GetProperties(dev);
 	}
 
-	DeviceCallbackItem *data = new DeviceCallbackItem;
-	data->item = item;
-	data->type = "remove";
-
-	napi_status status = notify_func.BlockingCall(data, DeviceItemChangeCallback);
-	if (status != napi_ok)
+	static void Initialize(Napi::Env &env, Napi::Object &target)
 	{
-		// Handle error
-		// TODO
+		Napi::Function ctor = DefineClass(env, "Detection",
+										  {
+											  InstanceMethod("isMonitoring", &Detection::IsMonitoring),
+											  InstanceMethod("startMonitoring", &Detection::StartMonitoring),
+											  InstanceMethod("stopMonitoring", &Detection::StopMonitoring),
+										  });
+
+		target.Set("Detection", ctor);
+		// constructor = Napi::Persistent(ctor);
+		// constructor.SuppressDestruct();
 	}
-}
 
-static void BuildInitialDeviceList()
-{
-	udev_device *dev;
-
-	/* Create a list of the devices */
-	auto enumerate = udev_enumerate_new(udev);
-	udev_enumerate_scan_devices(enumerate);
-	auto devices = udev_enumerate_get_list_entry(enumerate);
-	/* For each item enumerated, print out its information.
-	   udev_list_entry_foreach is a macro which expands to
-	   a loop. The loop will be executed for each member in
-	   devices, setting dev_list_entry to a list entry
-	   which contains the device's path in /sys. */
-	static udev_list_entry *dev_list_entry;
-	udev_list_entry_foreach(dev_list_entry, devices)
+	bool IsRunning()
 	{
-		const char *path;
-
-		/* Get the filename of the /sys entry for the device
-		   and create a udev_device object (dev) representing it */
-		path = udev_list_entry_get_name(dev_list_entry);
-		dev = udev_device_new_from_syspath(udev, path);
-
-		/* usb_device_get_devnode() returns the path to the device node
-		   itself in /dev. */
-		if (udev_device_get_devnode(dev) == NULL || udev_device_get_sysattr_value(dev, "idVendor") == NULL)
+		return isRunning;
+	}
+	bool Start(const Napi::Env &env, const Napi::Function &callback)
+	{
+		if (isRunning)
 		{
-			continue;
+			return true;
 		}
 
-		/* From here, we can call get_sysattr_value() for each file
-		   in the device's /sys entry. The strings passed into these
-		   functions (idProduct, idVendor, serial, etc.) correspond
-		   directly to the files in the /sys directory which
-		   represents the USB device. Note that USB strings are
-		   Unicode, UCS2 encoded, but the strings returned from
-		   udev_device_get_sysattr_value() are UTF-8 encoded. */
+		isRunning = true;
 
-		// ListResultItem_t *item = new ListResultItem_t();
-		// item->vendorId = strtol(udev_device_get_sysattr_value(dev, "idVendor"), NULL, 16);
-		// item->productId = strtol(udev_device_get_sysattr_value(dev, "idProduct"), NULL, 16);
-		// if (udev_device_get_sysattr_value(dev, "product") != NULL)
-		// {
-		// 	item->deviceName = udev_device_get_sysattr_value(dev, "product");
-		// }
-		// if (udev_device_get_sysattr_value(dev, "manufacturer") != NULL)
-		// {
-		// 	item->manufacturer = udev_device_get_sysattr_value(dev, "manufacturer");
-		// }
-		// if (udev_device_get_sysattr_value(dev, "serial") != NULL)
-		// {
-		// 	item->serialNumber = udev_device_get_sysattr_value(dev, "serial");
-		// }
-		// item->deviceAddress = 0;
-		// item->locationId = 0;
-		auto item = GetProperties(dev);
+		/* Create the udev object */
+		udevHandle = udev_new();
+		if (!udevHandle)
+		{
+			printf("Can't create udev\n");
+			isRunning = false;
+			return false;
+		}
+
+		/* Set up a monitor to monitor devices */
+		mon = udev_monitor_new_from_netlink(udevHandle, "udev");
+		if (!mon)
+		{
+			printf("Can't create udev monitor\n");
+			udev_unref(udevHandle);
+			isRunning = false;
+			return false;
+		}
+
+		udev_monitor_enable_receiving(mon);
+
+		/* Get the file descriptor (fd) for the monitor.
+	   This fd will get passed to select() */
+		fd = udev_monitor_get_fd(mon);
+
+		// Do initial scan
+		BuildInitialDeviceList();
+
+		notify_func = Napi::ThreadSafeFunction::New(
+			env,
+			callback,		 // JavaScript function called asynchronously
+			"Resource Name", // Name
+			0,				 // Unlimited queue
+			1,				 // Only one thread will use this initially
+			[&](Napi::Env) { // Finalizer used to clean threads up
+				poll_thread.join();
+			});
+
+		poll_thread = std::thread([=]() {
+			// We have this check in case we `Stop` before this thread starts,
+			// otherwise the process will hang
+			if (!isRunning)
+			{
+				return;
+			}
+
+			// uv_signal_start(&int_signal, cbTerminate, SIGINT);
+			// uv_signal_start(&term_signal, cbTerminate, SIGTERM);
+
+			udev_device *dev;
+
+			pollfd fds = {fd, POLLIN, 0};
+			while (isRunning)
+			{
+				int ret = poll(&fds, 1, 100);
+				if (!ret)
+					continue;
+				if (ret < 0)
+					break;
+
+				dev = udev_monitor_receive_device(mon);
+				if (dev)
+				{
+					if (udev_device_get_devtype(dev) && strcmp(udev_device_get_devtype(dev), DEVICE_TYPE_DEVICE) == 0)
+					{
+						if (strcmp(udev_device_get_action(dev), DEVICE_ACTION_ADDED) == 0)
+						{
+							DeviceAdded(dev);
+						}
+						else if (strcmp(udev_device_get_action(dev), DEVICE_ACTION_REMOVED) == 0)
+						{
+							DeviceRemoved(dev);
+						}
+					}
+					udev_device_unref(dev);
+				}
+			}
+
+			notify_func.Release();
+			Stop();
+		});
+
+		return true;
+	}
+	void Stop()
+	{
+		if (!isRunning)
+		{
+			return;
+		}
+
+		isRunning = false;
+
+		udev_monitor_unref(mon);
+		udev_unref(udevHandle);
+	}
+
+private:
+	/**********************************
+ 	 * Local Functions
+	 **********************************/
+	std::shared_ptr<ListResultItem_t> GetProperties(struct udev_device *dev)
+	{
+		std::shared_ptr<ListResultItem_t> item(new ListResultItem_t);
+
+		auto sysattrs = udev_device_get_properties_list_entry(dev);
+		struct udev_list_entry *entry;
+		udev_list_entry_foreach(entry, sysattrs)
+		{
+			const char *name = udev_list_entry_get_name(entry);
+			const char *value = udev_list_entry_get_value(entry);
+
+			if (strcmp(name, DEVICE_PROPERTY_NAME) == 0)
+			{
+				item->deviceName = value;
+			}
+			else if (strcmp(name, DEVICE_PROPERTY_SERIAL) == 0)
+			{
+				item->serialNumber = value;
+			}
+			else if (strcmp(name, DEVICE_PROPERTY_VENDOR) == 0)
+			{
+				item->manufacturer = value;
+			}
+		}
+
+		const char *vendor = udev_device_get_sysattr_value(dev, "idVendor");
+		if (vendor)
+		{
+			item->vendorId = strtol(vendor, NULL, 16);
+		}
+		const char *product = udev_device_get_sysattr_value(dev, "idVendor");
+		if (product)
+		{
+			item->productId = strtol(product, NULL, 16);
+		}
+		item->deviceAddress = 0;
+		item->locationId = 0;
+
+		return item;
+	}
+
+	void DeviceAdded(struct udev_device *dev)
+	{
+		std::shared_ptr<ListResultItem_t> item = GetProperties(dev);
 
 		deviceMap.addItem(udev_device_get_devnode(dev), item);
 
-		udev_device_unref(dev);
+		DeviceCallbackItem *data = new DeviceCallbackItem;
+		data->item = item;
+		data->type = "add";
+
+		napi_status status = notify_func.BlockingCall(data, DeviceItemChangeCallback);
+		if (status != napi_ok)
+		{
+			// Handle error
+			// TODO
+		}
 	}
-	/* Free the enumerator object */
-	udev_enumerate_unref(enumerate);
+
+	void DeviceRemoved(struct udev_device *dev)
+	{
+		std::shared_ptr<ListResultItem_t> item = deviceMap.popItem(udev_device_get_devnode(dev));
+
+		if (item == nullptr)
+		{
+			item = GetProperties(dev);
+		}
+
+		DeviceCallbackItem *data = new DeviceCallbackItem;
+		data->item = item;
+		data->type = "remove";
+
+		napi_status status = notify_func.BlockingCall(data, DeviceItemChangeCallback);
+		if (status != napi_ok)
+		{
+			// Handle error
+			// TODO
+		}
+	}
+
+	void BuildInitialDeviceList()
+	{
+		/* Create a list of the devices */
+		auto enumerate = udev_enumerate_new(udevHandle);
+		udev_enumerate_scan_devices(enumerate);
+		auto devices = udev_enumerate_get_list_entry(enumerate);
+		/* For each item enumerated, print out its information.
+	     udev_list_entry_foreach is a macro which expands to
+	     a loop. The loop will be executed for each member in
+	     devices, setting dev_list_entry to a list entry
+	     which contains the device's path in /sys. */
+		udev_list_entry *dev_list_entry;
+		udev_device *dev;
+		udev_list_entry_foreach(dev_list_entry, devices)
+		{
+			const char *path;
+
+			/* Get the filename of the /sys entry for the device
+		   and create a udev_device object (dev) representing it */
+			path = udev_list_entry_get_name(dev_list_entry);
+			dev = udev_device_new_from_syspath(udevHandle, path);
+
+			/* usb_device_get_devnode() returns the path to the device node
+		     itself in /dev. */
+			if (udev_device_get_devnode(dev) == NULL || udev_device_get_sysattr_value(dev, "idVendor") == NULL)
+			{
+				continue;
+			}
+
+			/* From here, we can call get_sysattr_value() for each file
+		     in the device's /sys entry. The strings passed into these
+		     functions (idProduct, idVendor, serial, etc.) correspond
+		     directly to the files in the /sys directory which
+		     represents the USB device. Note that USB strings are
+		     Unicode, UCS2 encoded, but the strings returned from
+		     udev_device_get_sysattr_value() are UTF-8 encoded. */
+
+			// ListResultItem_t *item = new ListResultItem_t();
+			// item->vendorId = strtol(udev_device_get_sysattr_value(dev, "idVendor"), NULL, 16);
+			// item->productId = strtol(udev_device_get_sysattr_value(dev, "idProduct"), NULL, 16);
+			// if (udev_device_get_sysattr_value(dev, "product") != NULL)
+			// {
+			// 	item->deviceName = udev_device_get_sysattr_value(dev, "product");
+			// }
+			// if (udev_device_get_sysattr_value(dev, "manufacturer") != NULL)
+			// {
+			// 	item->manufacturer = udev_device_get_sysattr_value(dev, "manufacturer");
+			// }
+			// if (udev_device_get_sysattr_value(dev, "serial") != NULL)
+			// {
+			// 	item->serialNumber = udev_device_get_sysattr_value(dev, "serial");
+			// }
+			// item->deviceAddress = 0;
+			// item->locationId = 0;
+			auto item = GetProperties(dev);
+
+			deviceMap.addItem(udev_device_get_devnode(dev), item);
+
+			udev_device_unref(dev);
+		}
+		/* Free the enumerator object */
+		udev_enumerate_unref(enumerate);
+	}
+
+	/**********************************
+	 * Local Variables
+	 **********************************/
+	std::thread poll_thread;
+	Napi::ThreadSafeFunction notify_func;
+
+	udev *udevHandle;
+	udev_monitor *mon;
+	int fd;
+
+	DeviceMap deviceMap;
+	bool isRunning = false;
+};
+
+void InitializeDetection(Napi::Env &env, Napi::Object &target)
+{
+	LinuxDetection::Initialize(env, target);
 }

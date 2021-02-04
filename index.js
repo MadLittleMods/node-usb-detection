@@ -10,8 +10,10 @@ function isFunction(functionToCheck) {
 if(global[index.name] && global[index.name].version === index.version) {
 	module.exports = global[index.name];
 } else {
-	var detection = require('bindings')('detection.node');
+	var binding = require('bindings')('detection.node');
 	var EventEmitter2 = require('eventemitter2').EventEmitter2;
+
+	var detectionInstance = new binding.Detection();
 
 	var detector = new EventEmitter2({
 		wildcard: true,
@@ -57,7 +59,7 @@ if(global[index.name] && global[index.name].version === index.version) {
 			});
 
 			// Fire off the `find` function that actually does all of the work
-			detection.find.apply(detection, args);
+			binding.find.apply(binding, args);
 		});
 	};
 
@@ -99,15 +101,15 @@ if(global[index.name] && global[index.name].version === index.version) {
 	}
 
 	detector.isMonitoring = function() {
-		return detection.isMonitoring();
-	}
+		return detectionInstance.isMonitoring();
+	};
 
 	detector.startMonitoring = function() {
-		detection.startMonitoring(fireEvent);
+		detectionInstance.startMonitoring(fireEvent);
 	};
 
 	detector.stopMonitoring = function() {
-		detection.stopMonitoring();
+		detectionInstance.stopMonitoring();
 	};
 
 	detector.version = index.version;

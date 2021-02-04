@@ -11,11 +11,23 @@
 
 #include "deviceList.h"
 
+void InitializeDetection(Napi::Env &env, Napi::Object &target);
+
+class Detection
+{
+public:
+	~Detection();
+
+	virtual bool IsRunning() = 0;
+	virtual bool Start(const Napi::Env &env, const Napi::Function &callback) = 0;
+	virtual void Stop() = 0;
+
+	Napi::Value StartMonitoring(const Napi::CallbackInfo &args);
+	void StopMonitoring(const Napi::CallbackInfo &args);
+	Napi::Value IsMonitoring(const Napi::CallbackInfo &args);
+};
+
 // void EIO_Find(uv_work_t *req);
-// void InitDetection();
-bool IsRunning();
-bool Start(const Napi::Env &env, const Napi::Function &callback);
-void Stop();
 
 Napi::Value DeviceItemToObject(const Napi::Env &env, std::shared_ptr<ListResultItem_t> it);
 

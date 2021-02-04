@@ -8,6 +8,49 @@
 #define OBJECT_ITEM_SERIAL_NUMBER "serialNumber"
 #define OBJECT_ITEM_DEVICE_ADDRESS "deviceAddress"
 
+Detection::~Detection()
+{
+}
+
+Napi::Value Detection::StartMonitoring(const Napi::CallbackInfo &args)
+{
+	Napi::Env env = args.Env();
+
+	if (args.Length() == 0)
+	{
+		Napi::TypeError::New(env, "First argument must be a function").ThrowAsJavaScriptException();
+		return env.Null();
+	}
+
+	// callback
+	if (!args[0].IsFunction())
+	{
+		Napi::TypeError::New(env, "First argument must be a function").ThrowAsJavaScriptException();
+		return env.Null();
+	}
+
+	if (!Start(env, args[0].As<Napi::Function>()))
+	{
+		Napi::Error::New(args.Env(), "Failed to start monitoring").ThrowAsJavaScriptException();
+		return env.Null();
+	}
+
+	return env.Null();
+}
+
+void Detection::StopMonitoring(const Napi::CallbackInfo &args)
+{
+	Stop();
+}
+
+Napi::Value Detection::IsMonitoring(const Napi::CallbackInfo &args)
+{
+	Napi::Env env = args.Env();
+
+	bool isRunning = IsRunning();
+	return Napi::Boolean::From(env, isRunning);
+}
+
 Napi::Value DeviceItemToObject(const Napi::Env &env, std::shared_ptr<ListResultItem_t> it)
 {
 	Napi::Object item = Napi::Object::New(env);
@@ -184,52 +227,9 @@ Napi::Value DeviceItemToObject(const Napi::Env &env, std::shared_ptr<ListResultI
 // 	delete req;
 // }
 
-Napi::Value StartMonitoring(const Napi::CallbackInfo &args)
-{
-	Napi::Env env = args.Env();
-
-	if (args.Length() == 0)
-	{
-		Napi::TypeError::New(env, "First argument must be a function").ThrowAsJavaScriptException();
-		return env.Null();
-	}
-
-	// callback
-	if (!args[0].IsFunction())
-	{
-		Napi::TypeError::New(env, "First argument must be a function").ThrowAsJavaScriptException();
-		return env.Null();
-	}
-
-	if (!Start(env, args[0].As<Napi::Function>()))
-	{
-		Napi::Error::New(args.Env(), "Failed to start monitoring").ThrowAsJavaScriptException();
-		return env.Null();
-	}
-
-	return env.Null();
-}
-
-void StopMonitoring(const Napi::CallbackInfo &args)
-{
-	Stop();
-}
-
-Napi::Value IsMonitoring(const Napi::CallbackInfo &args)
-{
-	Napi::Env env = args.Env();
-
-	bool isRunning = IsRunning();
-	return Napi::Boolean::From(env, isRunning);
-}
-
 Napi::Object init(Napi::Env env, Napi::Object exports)
 {
-	// exports.Set(Napi::String::New(env, "find"), Napi::Function::New(env, Find));
-	exports.Set(Napi::String::New(env, "startMonitoring"), Napi::Function::New(env, StartMonitoring));
-	exports.Set(Napi::String::New(env, "stopMonitoring"), Napi::Function::New(env, StopMonitoring));
-	exports.Set(Napi::String::New(env, "isMonitoring"), Napi::Function::New(env, IsMonitoring));
-	// InitDetection();
+	InitializeDetection(env, exports);
 	return exports;
 }
 
