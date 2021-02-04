@@ -20,6 +20,7 @@ export function find(vid: number): Promise<Device[]>;
 export function find(callback: (error: any, devices: Device[]) => any): void;
 export function find(): Promise<Device[]>;
 
+export function isMonitoring(): boolean;
 export function startMonitoring(): void;
 export function stopMonitoring(): void;
 export function on(event: string, callback: (device: Device) => void): void;

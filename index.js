@@ -1,5 +1,5 @@
-//var SegfaultHandler = require('segfault-handler');
-//SegfaultHandler.registerHandler();
+// var SegfaultHandler = require('segfault-handler');
+// SegfaultHandler.registerHandler();
 
 var index = require('./package.json');
 
@@ -10,8 +10,10 @@ function isFunction(functionToCheck) {
 if(global[index.name] && global[index.name].version === index.version) {
 	module.exports = global[index.name];
 } else {
-	var detection = require('bindings')('detection.node');
+	var binding = require('bindings')('detection.node');
 	var EventEmitter2 = require('eventemitter2').EventEmitter2;
+
+	var detection = new binding.Detection();
 
 	var detector = new EventEmitter2({
 		wildcard: true,
@@ -34,34 +36,25 @@ if(global[index.name] && global[index.name].version === index.version) {
 			// Assemble the optional args into something we can use with `apply`
 			var args = [];
 			if(vid) {
-				args = args.concat(vid);
+				args.push(vid);
 			}
 			if(pid) {
-				args = args.concat(pid);
+				args.push(pid);
 			}
 
-			// Tack on our own callback that takes care of things
-			args = args.concat(function(err, devices) {
-
-				// We call the callback if they passed one
-				if(callback) {
-					callback.call(callback, err, devices);
-				}
-
-				// But also do the promise stuff
-				if(err) {
-					reject(err);
-					return;
-				}
-				resolve(devices);
-			});
-
 			// Fire off the `find` function that actually does all of the work
-			detection.find.apply(detection, args);
+			const devices = detection.findDevices.apply(detection, args);
+			
+			// We call the callback if they passed one
+			if(callback) {
+				callback.call(callback, undefined, devices);
+			}
+
+			resolve(devices)
 		});
 	};
 
-	detection.registerAdded(function(device) {
+	function fireAdded(device) {
 		detector.emit('add:' + device.vendorId + ':' + device.productId, device);
 		detector.emit('insert:' + device.vendorId + ':' + device.productId, device);
 		detector.emit('add:' + device.vendorId, device);
@@ -72,9 +65,9 @@ if(global[index.name] && global[index.name].version === index.version) {
 		detector.emit('change:' + device.vendorId + ':' + device.productId, device);
 		detector.emit('change:' + device.vendorId, device);
 		detector.emit('change', device);
-	});
+	}
 
-	detection.registerRemoved(function(device) {
+	function fireRemoved(device) {
 		detector.emit('remove:' + device.vendorId + ':' + device.productId, device);
 		detector.emit('remove:' + device.vendorId, device);
 		detector.emit('remove', device);
@@ -82,25 +75,31 @@ if(global[index.name] && global[index.name].version === index.version) {
 		detector.emit('change:' + device.vendorId + ':' + device.productId, device);
 		detector.emit('change:' + device.vendorId, device);
 		detector.emit('change', device);
-	});
+	}
 
-	var started = false;
+	function fireEvent(type, device) {
+		switch (type) {
+		case 'add':
+			fireAdded(device);
+			break;
+		case 'remove':
+			fireRemoved(device);
+			break;
+		default:
+			// Ignore
+			break;
+		}
+	}
+
+	detector.isMonitoring = function() {
+		return detection.isMonitoring();
+	};
 
 	detector.startMonitoring = function() {
-		if(started) {
-			return;
-		}
-
-		started = true;
-		detection.startMonitoring();
+		detection.startMonitoring(fireEvent);
 	};
 
 	detector.stopMonitoring = function() {
-		if(!started) {
-			return;
-		}
-
-		started = false;
 		detection.stopMonitoring();
 	};
 
