@@ -5,6 +5,7 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <mutex>
 
 typedef struct
 {
@@ -34,6 +35,7 @@ public:
 
 private:
 	std::map<std::string, std::shared_ptr<ListResultItem_t>> deviceMap;
+	std::mutex mapLock;
 };
 
 #endif

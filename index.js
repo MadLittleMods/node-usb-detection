@@ -13,7 +13,7 @@ if(global[index.name] && global[index.name].version === index.version) {
 	var binding = require('bindings')('detection.node');
 	var EventEmitter2 = require('eventemitter2').EventEmitter2;
 
-	var detectionInstance = new binding.Detection();
+	var detection = new binding.Detection();
 
 	var detector = new EventEmitter2({
 		wildcard: true,
@@ -42,24 +42,15 @@ if(global[index.name] && global[index.name].version === index.version) {
 				args.push(pid);
 			}
 
-			// Tack on our own callback that takes care of things
-			args.push(function(err, devices) {
-
-				// We call the callback if they passed one
-				if(callback) {
-					callback.call(callback, err, devices);
-				}
-
-				// But also do the promise stuff
-				if(err) {
-					reject(err);
-					return;
-				}
-				resolve(devices);
-			});
-
 			// Fire off the `find` function that actually does all of the work
-			binding.find.apply(binding, args);
+			const devices = detection.findDevices.apply(detection, args);
+			
+			// We call the callback if they passed one
+			if(callback) {
+				callback.call(callback, null, devices);
+			}
+
+			resolve(devices)
 		});
 	};
 
@@ -101,15 +92,15 @@ if(global[index.name] && global[index.name].version === index.version) {
 	}
 
 	detector.isMonitoring = function() {
-		return detectionInstance.isMonitoring();
+		return detection.isMonitoring();
 	};
 
 	detector.startMonitoring = function() {
-		detectionInstance.startMonitoring(fireEvent);
+		detection.startMonitoring(fireEvent);
 	};
 
 	detector.stopMonitoring = function() {
-		detectionInstance.stopMonitoring();
+		detection.stopMonitoring();
 	};
 
 	detector.version = index.version;

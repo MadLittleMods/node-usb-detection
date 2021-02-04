@@ -62,6 +62,7 @@ public:
 											  InstanceMethod("isMonitoring", &Detection::IsMonitoring),
 											  InstanceMethod("startMonitoring", &Detection::StartMonitoring),
 											  InstanceMethod("stopMonitoring", &Detection::StopMonitoring),
+											  InstanceMethod("findDevices", &Detection::FindDevices),
 										  });
 
 		target.Set("Detection", ctor);
@@ -337,7 +338,6 @@ private:
 	udev_monitor *mon;
 	int fd;
 
-	DeviceMap deviceMap;
 	bool isRunning = false;
 };
 

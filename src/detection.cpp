@@ -51,6 +51,42 @@ Napi::Value Detection::IsMonitoring(const Napi::CallbackInfo &args)
 	return Napi::Boolean::From(env, isRunning);
 }
 
+Napi::Value Detection::FindDevices(const Napi::CallbackInfo &args)
+{
+	Napi::Env env = args.Env();
+
+	int vid = 0;
+	int pid = 0;
+
+	if (args.Length() >= 2)
+	{
+		if (args[0].IsNumber() && args[1].IsNumber())
+		{
+			vid = (int)args[0].As<Napi::Number>().Int32Value();
+			pid = (int)args[1].As<Napi::Number>().Int32Value();
+		}
+	}
+
+	if (args.Length() == 1)
+	{
+		if (args[0].IsNumber())
+		{
+			vid = (int)args[0].As<Napi::Number>().Int32Value();
+		}
+	}
+
+	auto devices = deviceMap.filterItems(vid, pid);
+
+	Napi::Array results = Napi::Array::New(env);
+	int i = 0;
+	for (auto it = devices.begin(); it != devices.end(); it++, i++)
+	{
+		results.Set(i, DeviceItemToObject(env, *it));
+	}
+
+	return results;
+}
+
 Napi::Value DeviceItemToObject(const Napi::Env &env, std::shared_ptr<ListResultItem_t> it)
 {
 	Napi::Object item = Napi::Object::New(env);
@@ -63,54 +99,6 @@ Napi::Value DeviceItemToObject(const Napi::Env &env, std::shared_ptr<ListResultI
 	item.Set(Napi::String::New(env, OBJECT_ITEM_DEVICE_ADDRESS), Napi::Number::New(env, it->deviceAddress));
 	return item;
 }
-
-// class FindWorker : public Napi::AsyncWorker
-// {
-// public:
-// 	FindWorker(
-// 		Napi::Env &env,
-// 		int vid,
-// 		int pid)
-// 		: AsyncWorker(env),
-// 		  deferred(Napi::Promise::Deferred::New(env)),
-// 		  vid(vid),
-// 		  pid(pid)
-// 	{
-// 	}
-
-// 	~FindWorker()
-// 	{
-// 	}
-
-// 	void Execute()
-// 	{
-// 		std::string err = DoCompress(this->props);
-// 		if (!err.empty())
-// 		{
-// 			SetError(err);
-// 		}
-// 	}
-
-// 	void OnOK()
-// 	{
-// 		deferred.Resolve(CompressResult(Env(), this->dstBuffer.Value(), this->props));
-// 	}
-
-// 	void OnError(Napi::Error const &error)
-// 	{
-// 		deferred.Reject(error.Value());
-// 	}
-
-// 	Napi::Promise GetPromise() const
-// 	{
-// 		return deferred.Promise();
-// 	}
-
-// private:
-// 	Napi::Promise::Deferred deferred;
-// 	int vid;
-// 	int pid;
-// };
 
 // void Find(const Napi::CallbackInfo &args)
 // {

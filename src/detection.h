@@ -25,6 +25,11 @@ public:
 	Napi::Value StartMonitoring(const Napi::CallbackInfo &args);
 	void StopMonitoring(const Napi::CallbackInfo &args);
 	Napi::Value IsMonitoring(const Napi::CallbackInfo &args);
+
+	Napi::Value FindDevices(const Napi::CallbackInfo &args);
+
+protected:
+	DeviceMap deviceMap;
 };
 
 // void EIO_Find(uv_work_t *req);
