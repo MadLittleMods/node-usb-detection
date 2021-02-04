@@ -1,5 +1,5 @@
-var SegfaultHandler = require('segfault-handler');
-SegfaultHandler.registerHandler();
+// var SegfaultHandler = require('segfault-handler');
+// SegfaultHandler.registerHandler();
 
 var index = require('./package.json');
 
@@ -47,7 +47,7 @@ if(global[index.name] && global[index.name].version === index.version) {
 			
 			// We call the callback if they passed one
 			if(callback) {
-				callback.call(callback, null, devices);
+				callback.call(callback, undefined, devices);
 			}
 
 			resolve(devices)
