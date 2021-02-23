@@ -6,6 +6,8 @@
   - Thanks to [@mcous](https://github.com/mcous) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/121)
 - Add install for Electron instructions to readme
   - Thanks to [@mcous](https://github.com/mcous) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/120)
+- Add prebuilds for latest node and Electron versions 
+  - Thanks to [@NoahAndrews](https://github.com/NoahAndrews) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/125)
 
 ## 4.10.0 - 2020-7-21
 
