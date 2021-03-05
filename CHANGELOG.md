@@ -1,6 +1,6 @@
 # Changelog
 
-## 4.11.0 - *upcoming*
+## 4.11.0 - 2021-03-04
 
 - Use SPDX identifier for MIT in `package.json` license field
   - Thanks to [@mcous](https://github.com/mcous) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/121)
@@ -9,19 +9,19 @@
 - Add prebuilds for latest node and Electron versions 
   - Thanks to [@NoahAndrews](https://github.com/NoahAndrews) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/125)
 
-## 4.10.0 - 2020-7-21
+## 4.10.0 - 2020-07-21
 
 - Update `node-gyp@6.1.0`, https://github.com/MadLittleMods/node-usb-detection/pull/109
 - Update `prebuild-install@5.3.5` and `node-abi@2.18.0` to support Electron 9
   - Thanks to [@NoahAndrews](https://github.com/NoahAndrews) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/117)
 
-## 4.9.0 - 2020-4-23
+## 4.9.0 - 2020-04-23
 
 - Update dependencies (`npm audit fix`), https://github.com/MadLittleMods/node-usb-detection/pull/108
 - Remove `fprintf` logging from macOS and add conditional `--debug` flag when building if you want logs
   - Thanks to [@DomiR](https://github.com/DomiR) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/101)
 
-## 4.8.0 - 2020-4-23
+## 4.8.0 - 2020-04-23
 
 - Update `prebuild` dependencies to latest
   - Thanks to [@mcous](https://github.com/mcous) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/106)
@@ -38,22 +38,22 @@
 - Add support for Node.js v13
   - Thanks to [@kryops](https://github.com/kryops) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/92)
 
-## 4.5.0 - 2019-10-6
+## 4.5.0 - 2019-10-06
 
 - Unbind ATL lib on Windows (`atlstr.h`)
   - Thanks to [@sarakusha](https://github.com/sarakusha) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/84)
 
-## 4.4.0 - 2019-10-6
+## 4.4.0 - 2019-10-06
 
 - Fix `deviceName` garbled in Windows
   - Thanks to [@nononoone](https://github.com/nononoone) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/86)
 
-## 4.3.0 - 2019-5-27
+## 4.3.0 - 2019-05-27
 
 - Add support for Node.js v12
   - Thanks to [@kryops](https://github.com/kryops) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/81)
 
-## 4.2.0 - 2019-5-9
+## 4.2.0 - 2019-05-09
 
 - Add note about `usbDetect.find()` requiring `usbDetect.startMonitoring()` for proper results after insert/remove
   - Thanks to [@mikew](https://github.com/mikew) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/79)
@@ -65,29 +65,29 @@
 - Add Windows backslash normalization for instance id's to fix certain USB devices not being detected
   - Thanks to [@LanetheGreat](https://github.com/LanetheGreat) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/73)
 
-## v4.0.0 - 2018-9-27
+## v4.0.0 - 2018-09-27
 
 - Use native Promises, https://github.com/MadLittleMods/node-usb-detection/pull/69
   - Now requires Node.js >=4
 - Update dependencies based on npm security audit, https://github.com/MadLittleMods/node-usb-detection/pull/70
 
-## v3.2.0 - 2018-7-23
+## v3.2.0 - 2018-07-23
 
 - Add TypeScript declarations/definitions
   - Thanks to [@thegecko](https://github.com/thegecko) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/66)
 
-## v3.1.0 - 2018-6-4
+## v3.1.0 - 2018-06-04
 
 - Add serial number support to Windows
   - Thanks to [@doganmurat](https://github.com/doganmurat) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/62)
 
-## v3.0.0 - 2018-5-13
+## v3.0.0 - 2018-05-13
 
 - Show multiple/duplicate USB devices on Windows
   - Thanks to [@doganmurat](https://github.com/doganmurat) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/54)
 - Update all dependencies
 
-## v2.1.0 - 2018-2-6
+## v2.1.0 - 2018-02-06
 
 - Add npm `install` hook that will use our prebuilt binaries instead of having to compile from source with node-gyp.
 - Remove side-effects when you `require('usb-detection')` so the process won't hang from just requiring.
@@ -118,7 +118,7 @@
 - Create prebuilt binaries on tagged releases
   - Thanks to [@jayalfredprufrock](https://github.com/jayalfredprufrock) for the PoC and [@Lange](https://github.com/Lange) for the [contribution](https://github.com/MadLittleMods/node-usb-detection/pull/47)
 
-## v1.4.0 - 2016-3-20
+## v1.4.0 - 2016-03-20
 
 - Add compatibility for `node@0.10.x` by using more `nan` types and methods.
   - Thanks to [@apla](https://github.com/apla) for [this contribution](https://github.com/MadLittleMods/node-usb-detection/pull/26)!
@@ -128,7 +128,7 @@
 - Add compatibility for Node 4
   - Upgrade [`nan`](https://www.npmjs.com/package/nan) dependency nan@2.x. Thank you [@lorenc-tomasz](https://github.com/lorenc-tomasz)
 
-## v1.2.0 - 2015-6-12
+## v1.2.0 - 2015-06-12
 
 - New maintainer/owner [@MadLittleMods](https://github.com/MadLittleMods). Previously maintained by [@adrai](https://github.com/adrai) :+1:
 - Add tests `npm test`
