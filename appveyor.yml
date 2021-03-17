@@ -1,19 +1,17 @@
 environment:
-  nodejs_version: "8"
+  nodejs_version: "10"
   prebuild_upload:
     secure: BDiKaYwmeMVpwJdnXMx4k0+5aKmFzJT2qR+fHn03SPovO7K3QPz8RewH4WRRp9Qs
 
   matrix:
-  - nodejs_version: "4"
-  - nodejs_version: "6"
-  - binary_builder: "true"
-    nodejs_version: "8"
   - binary_builder: "true"
     nodejs_version: "10"
   - binary_builder: "true"
     nodejs_version: "12"
   - binary_builder: "true"
     nodejs_version: "13"
+  - binary_builder: "true"
+    nodejs_version: "14"
 
 platform:
   - x86
