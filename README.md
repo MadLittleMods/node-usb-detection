@@ -25,6 +25,18 @@ See the [Electron docs for using native modules][electron-native-modules] to ens
 [electron-rebuild]: https://github.com/electron/electron-rebuild
 [electron-native-modules]: https://www.electronjs.org/docs/tutorial/using-native-node-modules
 
+---
+
+If you run into the following error, here are the exact steps you can use:
+
+```
+detection.node was compiled against a different Node.js version using NODE_MODULE_VERSION 72. This version of Node.js requires NODE_MODULE_VERSION 80. Please try re-compiling or re-installing 
+```
+
+ 1. `npm i electron-rebuild --save-dev`
+ 1. `./node_modules/.bin/electron-rebuild`
+
+
 # Usage
 
 ```js
