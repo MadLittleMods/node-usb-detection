@@ -13,23 +13,9 @@ env:
   global:
   - secure: "AIpbFdTVntCzsjRqdfQYog1fxoiHLHaJCLEsIKfRtP4OD9c+Abejc/TF2uRhHvwL4Qux4AVLE1DDOsElt6MRC9rooJYehlYBc8lWYz2nx92DvaivNmDHs2UG63+s3cF6vaaBKOpFuHuEUfoTjUtwZYWy+p88HT9EsU6AD3096BA="
   matrix:
-  - TRAVIS_NODE_VERSION="4"
-  - TRAVIS_NODE_VERSION="4" ARCH="x86"
-  - TRAVIS_NODE_VERSION="6"
-  - TRAVIS_NODE_VERSION="6" ARCH="x86"
-  - BINARY_BUILDER="true" TRAVIS_NODE_VERSION="8"
-  - BINARY_BUILDER="true" TRAVIS_NODE_VERSION="8" ARCH="x86"
   - BINARY_BUILDER="true" TRAVIS_NODE_VERSION="10"
   - BINARY_BUILDER="true" TRAVIS_NODE_VERSION="12"
   - BINARY_BUILDER="true" TRAVIS_NODE_VERSION="13"
-matrix:
-  exclude:
-  - os: osx
-    env: TRAVIS_NODE_VERSION="4" ARCH="x86"
-  - os: osx
-    env: TRAVIS_NODE_VERSION="6" ARCH="x86"
-  - os: osx
-    env: BINARY_BUILDER="true" TRAVIS_NODE_VERSION="8" ARCH="x86"
 
 cache:
   directories:
