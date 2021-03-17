@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.12.0 - *upcoming*
+
+- Add specific instructions for rebuilding for Electron, https://github.com/MadLittleMods/node-usb-detection/pull/133
+
 ## 4.11.0 - 2021-03-04
 
 - Use SPDX identifier for MIT in `package.json` license field
