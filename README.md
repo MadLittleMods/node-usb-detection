@@ -197,12 +197,8 @@ usbDetect.stopMonitoring();
 
 Make sure you call `usbDetect.startMonitoring()` before any calls to `usbDetect.find()`.
 
-# Development (compile from source)
 
-This assumes you also have everything on your system necessary to compile ANY native module for Node.js. This may not be the case, though, so please ensure the following requirements are satisfied before filing an issue about "Does not install". For all operating systems, please ensure you have Python 2.x installed AND not 3.0, [node-gyp](https://github.com/TooTallNate/node-gyp) (what we use to compile) requires Python 2.x.
-
-
-#### `npm run rebuild` -> `The system cannot find the path specified.`
+### `npm run rebuild` -> `The system cannot find the path specified.`
 
 If you are running into the `The system cannot find the path specified.` error when running `npm run rebuild`,
 make sure you have Python 2 installed and on your PATH.
@@ -219,6 +215,18 @@ gyp verb `which` succeeded python2 C:\Python27\python2.EXE
 If you already have Python 3 installed, you can install Python 2 alongside and
 create a symlink called `python2.exe` via `mklink "C:\Python27\python2.exe" "C:\Python27\python.exe"`
 and add the directory to your path.
+
+
+### To build a debug version with error outputs use:
+
+```sh
+$ npm run rebuild --debug
+```
+
+
+# Development (compile from source)
+
+This assumes you also have everything on your system necessary to compile ANY native module for Node.js. This may not be the case, though, so please ensure the following requirements are satisfied before filing an issue about "Does not install". For all operating systems, please ensure you have Python 2.x installed AND not 3.0, [node-gyp](https://github.com/TooTallNate/node-gyp) (what we use to compile) requires Python 2.x.
 
 
 ### Windows:
@@ -251,12 +259,6 @@ Also install libudev:
 sudo apt-get install libudev-dev
 ```
 
-
-# To build a debug version with error outputs use:
-
-```sh
-$ npm run rebuild --debug
-```
 
 
 # Testing
