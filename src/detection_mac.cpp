@@ -419,13 +419,6 @@ void InitDetection()
 	initialDeviceImport = false;
 }
 
-void EIO_Find(uv_work_t *req)
-{
-	ListBaton *data = static_cast<ListBaton *>(req->data);
-
-	CreateFilteredList(&data->results, data->vid, data->pid);
-}
-
 static void WaitForDeviceHandled()
 {
 	uv_mutex_lock(&notify_mutex);
