@@ -21,30 +21,6 @@ using namespace std;
 #define DEVICE_PROPERTY_VENDOR "ID_VENDOR"
 
 /**********************************
- * Local typedefs
- **********************************/
-
-struct DeviceCallbackItem
-{
-	std::string type;
-	std::shared_ptr<ListResultItem_t> item;
-};
-
-/**********************************
- * Local Helper Functions
- **********************************/
-
-static void DeviceItemChangeCallback(Napi::Env env, Napi::Function jsCallback, DeviceCallbackItem *data)
-{
-	Napi::Value type = Napi::String::From(env, data->type);
-	Napi::Value value = DeviceItemToObject(env, data->item);
-	jsCallback.Call({type, value});
-
-	// We're finished with the data.
-	delete data;
-};
-
-/**********************************
  * Public Functions
  **********************************/
 
@@ -155,11 +131,21 @@ public:
 					{
 						if (strcmp(udev_device_get_action(dev), DEVICE_ACTION_ADDED) == 0)
 						{
-							DeviceAdded(dev);
+							std::shared_ptr<ListResultItem_t> item = GetProperties(dev);
+
+							deviceMap.addItem(udev_device_get_devnode(dev), item);
+
+							DeviceAdded(item);
 						}
 						else if (strcmp(udev_device_get_action(dev), DEVICE_ACTION_REMOVED) == 0)
 						{
-							DeviceRemoved(dev);
+							std::shared_ptr<ListResultItem_t> item = deviceMap.popItem(udev_device_get_devnode(dev));
+							if (item == nullptr)
+							{
+								item = GetProperties(dev);
+							}
+
+							DeviceRemoved(item);
 						}
 					}
 					udev_device_unref(dev);
@@ -227,45 +213,6 @@ private:
 		item->locationId = 0;
 
 		return item;
-	}
-
-	void DeviceAdded(struct udev_device *dev)
-	{
-		std::shared_ptr<ListResultItem_t> item = GetProperties(dev);
-
-		deviceMap.addItem(udev_device_get_devnode(dev), item);
-
-		DeviceCallbackItem *data = new DeviceCallbackItem;
-		data->item = item;
-		data->type = "add";
-
-		napi_status status = notify_func.BlockingCall(data, DeviceItemChangeCallback);
-		if (status != napi_ok)
-		{
-			// Handle error
-			// TODO
-		}
-	}
-
-	void DeviceRemoved(struct udev_device *dev)
-	{
-		std::shared_ptr<ListResultItem_t> item = deviceMap.popItem(udev_device_get_devnode(dev));
-
-		if (item == nullptr)
-		{
-			item = GetProperties(dev);
-		}
-
-		DeviceCallbackItem *data = new DeviceCallbackItem;
-		data->item = item;
-		data->type = "remove";
-
-		napi_status status = notify_func.BlockingCall(data, DeviceItemChangeCallback);
-		if (status != napi_ok)
-		{
-			// Handle error
-			// TODO
-		}
 	}
 
 	void BuildInitialDeviceList(udev *udevHandle)
@@ -336,7 +283,6 @@ private:
 	 * Local Variables
 	 **********************************/
 	std::thread poll_thread;
-	Napi::ThreadSafeFunction notify_func;
 
 	std::atomic<bool> isRunning = {false};
 };

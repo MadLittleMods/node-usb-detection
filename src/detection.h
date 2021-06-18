@@ -26,8 +26,12 @@ public:
 
 	Napi::Value FindDevices(const Napi::CallbackInfo &args);
 
+	void DeviceAdded(const std::shared_ptr<ListResultItem_t> item);
+	void DeviceRemoved(const std::shared_ptr<ListResultItem_t> item);
+
 protected:
 	DeviceMap deviceMap;
+	Napi::ThreadSafeFunction notify_func;
 };
 
 // void EIO_Find(uv_work_t *req);
