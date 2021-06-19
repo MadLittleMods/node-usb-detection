@@ -206,6 +206,7 @@ public:
 										  {
 											  NotificationDeviceItem *notifyItem = (NotificationDeviceItem *)item->data;
 											  FreeNotificationItem(notifyItem);
+											  delete notifyItem;
 										  }
 									  }
 
