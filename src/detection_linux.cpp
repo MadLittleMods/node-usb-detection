@@ -43,8 +43,6 @@ public:
 										  });
 
 		target.Set("Detection", ctor);
-		// constructor = Napi::Persistent(ctor);
-		// constructor.SuppressDestruct();
 	}
 
 	bool IsRunning()
@@ -239,40 +237,21 @@ private:
 			dev = udev_device_new_from_syspath(udevHandle, path);
 
 			/* usb_device_get_devnode() returns the path to the device node
-		     itself in /dev. */
-			if (udev_device_get_devnode(dev) == NULL || udev_device_get_sysattr_value(dev, "idVendor") == NULL)
+			 itself in /dev. */
+			if (udev_device_get_devnode(dev) != nullptr && udev_device_get_sysattr_value(dev, "idVendor") != nullptr)
 			{
-				continue;
+				/* From here, we can call get_sysattr_value() for each file
+				in the device's /sys entry. The strings passed into these
+				functions (idProduct, idVendor, serial, etc.) correspond
+				directly to the files in the /sys directory which
+				represents the USB device. Note that USB strings are
+				Unicode, UCS2 encoded, but the strings returned from
+				udev_device_get_sysattr_value() are UTF-8 encoded. */
+
+				auto item = GetProperties(dev);
+
+				deviceMap.addItem(udev_device_get_devnode(dev), item);
 			}
-
-			/* From here, we can call get_sysattr_value() for each file
-		     in the device's /sys entry. The strings passed into these
-		     functions (idProduct, idVendor, serial, etc.) correspond
-		     directly to the files in the /sys directory which
-		     represents the USB device. Note that USB strings are
-		     Unicode, UCS2 encoded, but the strings returned from
-		     udev_device_get_sysattr_value() are UTF-8 encoded. */
-
-			// ListResultItem_t *item = new ListResultItem_t();
-			// item->vendorId = strtol(udev_device_get_sysattr_value(dev, "idVendor"), NULL, 16);
-			// item->productId = strtol(udev_device_get_sysattr_value(dev, "idProduct"), NULL, 16);
-			// if (udev_device_get_sysattr_value(dev, "product") != NULL)
-			// {
-			// 	item->deviceName = udev_device_get_sysattr_value(dev, "product");
-			// }
-			// if (udev_device_get_sysattr_value(dev, "manufacturer") != NULL)
-			// {
-			// 	item->manufacturer = udev_device_get_sysattr_value(dev, "manufacturer");
-			// }
-			// if (udev_device_get_sysattr_value(dev, "serial") != NULL)
-			// {
-			// 	item->serialNumber = udev_device_get_sysattr_value(dev, "serial");
-			// }
-			// item->deviceAddress = 0;
-			// item->locationId = 0;
-			auto item = GetProperties(dev);
-
-			deviceMap.addItem(udev_device_get_devnode(dev), item);
 
 			udev_device_unref(dev);
 		}
