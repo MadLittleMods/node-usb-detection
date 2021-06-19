@@ -17,6 +17,7 @@ public:
 	std::string manufacturer;
 	std::string serialNumber;
 	int deviceAddress;
+	void *data;
 };
 
 enum DeviceState_t
@@ -32,6 +33,8 @@ public:
 	std::shared_ptr<ListResultItem_t> popItem(std::string key);
 
 	std::list<std::shared_ptr<ListResultItem_t> > filterItems(int vid, int pid);
+
+	std::list<std::shared_ptr<ListResultItem_t> > popAll();
 
 private:
 	std::map<std::string, std::shared_ptr<ListResultItem_t> > deviceMap;

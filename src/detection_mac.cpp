@@ -51,6 +51,20 @@ static void DeviceRemovedOuter(void *refCon, io_service_t service, natural_t mes
 //================================================================================================
 static void DeviceAddedOuter(void *refCon, io_iterator_t iterator);
 
+void FreeNotificationItem(NotificationDeviceItem *notifyItem)
+{
+	if (notifyItem->deviceInterface)
+	{
+		(*notifyItem->deviceInterface)->Release(notifyItem->deviceInterface);
+		notifyItem->deviceInterface = nullptr;
+	}
+
+	IOObjectRelease(notifyItem->notification);
+	notifyItem->notification = 0;
+
+	notifyItem->deviceItem->data = nullptr;
+}
+
 /**********************************
  * Public Functions
  **********************************/
@@ -115,8 +129,6 @@ public:
 
 		gNotifyPort = IONotificationPortCreate(kIOMasterPortDefault);
 
-		io_iterator_t gAddedIter;
-
 		// Now set up a notification to be called when a device is first matched by I/O Kit.
 		kr = IOServiceAddMatchingNotification(
 			gNotifyPort,			   // notifyPort
@@ -153,30 +165,48 @@ public:
 								  {
 									  // We have this check in case we `Stop` before this thread starts,
 									  // otherwise the process will hang
-									  if (!isRunning)
-									  {
-										  return;
-									  }
-
-									  CFRunLoopSourceRef runLoopSource = IONotificationPortGetRunLoopSource(gNotifyPort);
-
-									  gRunLoop = CFRunLoopGetCurrent();
-									  CFRunLoopAddSource(gRunLoop, runLoopSource, kCFRunLoopDefaultMode);
-
-									  // Creating `gRunLoop` can take some cycles so we also need this second
-									  // `isRunning` check here because it happens at a future time
 									  if (isRunning)
 									  {
-										  // Start the run loop. Now we'll receive notifications.
-										  CFRunLoopRun();
+
+										  CFRunLoopSourceRef runLoopSource = IONotificationPortGetRunLoopSource(gNotifyPort);
+
+										  gRunLoop = CFRunLoopGetCurrent();
+										  CFRunLoopAddSource(gRunLoop, runLoopSource, kCFRunLoopDefaultMode);
+
+										  // Creating `gRunLoop` can take some cycles so we also need this second
+										  // `isRunning` check here because it happens at a future time
+										  if (isRunning)
+										  {
+											  // Start the run loop. Now we'll receive notifications.
+											  CFRunLoopRun();
+										  }
+
+										  // The `CFRunLoopRun` is a blocking call so we also need this second
+										  // `isRunning` check here because it happens at a future time
+										  if (isRunning)
+										  {
+											  // We should never get here while running
+											  DEBUG_LOG("Unexpectedly back from CFRunLoopRun()!\n");
+										  }
+
+										  // Remove the runloop source
+										  CFRunLoopRemoveSource(gRunLoop, runLoopSource, kCFRunLoopDefaultMode);
 									  }
 
-									  // The `CFRunLoopRun` is a blocking call so we also need this second
-									  // `isRunning` check here because it happens at a future time
-									  if (isRunning)
+									  // Destroy the port
+									  IOObjectRelease(gAddedIter);
+									  IONotificationPortDestroy(gNotifyPort);
+
+									  // free the listeners allocated for each device
+									  auto remainingDevices = deviceMap.popAll();
+									  for (auto it = remainingDevices.begin(); it != remainingDevices.end(); ++it)
 									  {
-										  // We should never get here while running
-										  DEBUG_LOG("Unexpectedly back from CFRunLoopRun()!\n");
+										  std::shared_ptr<ListResultItem_t> item = *it;
+										  if (item->data != nullptr)
+										  {
+											  NotificationDeviceItem *notifyItem = (NotificationDeviceItem *)item->data;
+											  FreeNotificationItem(notifyItem);
+										  }
 									  }
 
 									  notify_func.Release();
@@ -382,8 +412,10 @@ public:
 				CFRelease(deviceNameAsCFString);
 			}
 
-			deviceMap.addItem(cPathName, item);
 			notificationItem->deviceItem = item;
+			item->data = notificationItem;
+			deviceMap.addItem(cPathName, item);
+			// notificationMap.insert(notificationItem, item);
 
 			if (notify)
 			{
@@ -418,9 +450,11 @@ private:
 	std::thread poll_thread;
 
 	IONotificationPortRef gNotifyPort;
+	io_iterator_t gAddedIter;
 	CFRunLoopRef gRunLoop;
 
 	CFMutableDictionaryRef matchingDict;
+	std::map<ListResultItem_t *, std::unique_ptr<NotificationDeviceItem> > notificationMap;
 
 	std::atomic<bool> isRunning = {false};
 };
@@ -438,18 +472,14 @@ static void DeviceAddedOuter(void *refCon, io_iterator_t iterator)
 
 static void DeviceRemovedOuter(void *refCon, io_service_t service, natural_t messageType, void *messageArgument)
 {
-	kern_return_t kr;
 	NotificationDeviceItem *notifyItem = (NotificationDeviceItem *)refCon;
 
 	if (messageType == kIOMessageServiceIsTerminated)
 	{
-		if (notifyItem->deviceInterface)
-		{
-			kr = (*notifyItem->deviceInterface)->Release(notifyItem->deviceInterface);
-		}
-
-		kr = IOObjectRelease(notifyItem->notification);
+		FreeNotificationItem(notifyItem);
 
 		notifyItem->parent->DeviceRemoved(notifyItem->deviceItem);
+
+		delete notifyItem;
 	}
 }
