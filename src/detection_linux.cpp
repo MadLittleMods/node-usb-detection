@@ -102,61 +102,62 @@ public:
 				}
 			});
 
-		poll_thread = std::thread([=]() {
-			// We have this check in case we `Stop` before this thread starts,
-			// otherwise the process will hang
-			if (!isRunning)
-			{
-				return;
-			}
+		poll_thread = std::thread([=]()
+								  {
+									  // We have this check in case we `Stop` before this thread starts,
+									  // otherwise the process will hang
+									  if (!isRunning)
+									  {
+										  return;
+									  }
 
-			// uv_signal_start(&int_signal, cbTerminate, SIGINT);
-			// uv_signal_start(&term_signal, cbTerminate, SIGTERM);
+									  // uv_signal_start(&int_signal, cbTerminate, SIGINT);
+									  // uv_signal_start(&term_signal, cbTerminate, SIGTERM);
 
-			udev_device *dev;
+									  udev_device *dev;
 
-			pollfd fds = {fd, POLLIN, 0};
-			while (isRunning)
-			{
-				int ret = poll(&fds, 1, 100);
-				if (!ret)
-					continue;
-				if (ret < 0)
-					break;
+									  pollfd fds = {fd, POLLIN, 0};
+									  while (isRunning)
+									  {
+										  int ret = poll(&fds, 1, 100);
+										  if (!ret)
+											  continue;
+										  if (ret < 0)
+											  break;
 
-				dev = udev_monitor_receive_device(mon);
-				if (dev)
-				{
-					if (udev_device_get_devtype(dev) && strcmp(udev_device_get_devtype(dev), DEVICE_TYPE_DEVICE) == 0)
-					{
-						if (strcmp(udev_device_get_action(dev), DEVICE_ACTION_ADDED) == 0)
-						{
-							std::shared_ptr<ListResultItem_t> item = GetProperties(dev);
+										  dev = udev_monitor_receive_device(mon);
+										  if (dev)
+										  {
+											  if (udev_device_get_devtype(dev) && strcmp(udev_device_get_devtype(dev), DEVICE_TYPE_DEVICE) == 0)
+											  {
+												  if (strcmp(udev_device_get_action(dev), DEVICE_ACTION_ADDED) == 0)
+												  {
+													  std::shared_ptr<ListResultItem_t> item = GetProperties(dev);
 
-							deviceMap.addItem(udev_device_get_devnode(dev), item);
+													  deviceMap.addItem(udev_device_get_devnode(dev), item);
 
-							DeviceAdded(item);
-						}
-						else if (strcmp(udev_device_get_action(dev), DEVICE_ACTION_REMOVED) == 0)
-						{
-							std::shared_ptr<ListResultItem_t> item = deviceMap.popItem(udev_device_get_devnode(dev));
-							if (item == nullptr)
-							{
-								item = GetProperties(dev);
-							}
+													  DeviceAdded(item);
+												  }
+												  else if (strcmp(udev_device_get_action(dev), DEVICE_ACTION_REMOVED) == 0)
+												  {
+													  std::shared_ptr<ListResultItem_t> item = deviceMap.popItem(udev_device_get_devnode(dev));
+													  if (item == nullptr)
+													  {
+														  item = GetProperties(dev);
+													  }
 
-							DeviceRemoved(item);
-						}
-					}
-					udev_device_unref(dev);
-				}
-			}
+													  DeviceRemoved(item);
+												  }
+											  }
+											  udev_device_unref(dev);
+										  }
+									  }
 
-			udev_monitor_unref(mon);
-			udev_unref(udevHandle);
+									  udev_monitor_unref(mon);
+									  udev_unref(udevHandle);
 
-			notify_func.Release();
-		});
+									  notify_func.Release();
+								  });
 
 		return true;
 	}

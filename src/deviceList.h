@@ -7,7 +7,7 @@
 #include <memory>
 #include <mutex>
 
-typedef struct
+struct ListResultItem_t
 {
 public:
 	int locationId;
@@ -17,13 +17,13 @@ public:
 	std::string manufacturer;
 	std::string serialNumber;
 	int deviceAddress;
-} ListResultItem_t;
+};
 
-typedef enum _DeviceState_t
+enum DeviceState_t
 {
 	DeviceState_Connect,
 	DeviceState_Disconnect,
-} DeviceState_t;
+};
 
 class DeviceMap
 {
@@ -31,10 +31,10 @@ public:
 	void addItem(std::string key, std::shared_ptr<ListResultItem_t> item);
 	std::shared_ptr<ListResultItem_t> popItem(std::string key);
 
-	std::list<std::shared_ptr<ListResultItem_t>> filterItems(int vid, int pid);
+	std::list<std::shared_ptr<ListResultItem_t> > filterItems(int vid, int pid);
 
 private:
-	std::map<std::string, std::shared_ptr<ListResultItem_t>> deviceMap;
+	std::map<std::string, std::shared_ptr<ListResultItem_t> > deviceMap;
 	std::mutex mapLock;
 };
 
